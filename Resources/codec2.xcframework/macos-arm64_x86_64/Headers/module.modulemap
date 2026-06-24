@@ -1,8 +1,0 @@
-module CCodec2 {
-    header "codec2.h"
-    export *
-}
-module COpus {
-    header "opus.h"
-    export *
-}

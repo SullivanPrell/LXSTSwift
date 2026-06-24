@@ -9,3 +9,7 @@ Packages/
 DerivedData/
 .netrc
 .claude/
+
+# Binaries are fetched from Releases via binaryTarget(url:).
+Resources/*.xcframework/
+Resources/*.xcframework.zip
