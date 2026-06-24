@@ -63,7 +63,7 @@ jobs:
           python3 scripts/set-binary-target.py CCodec2 \
             "https://github.com/$REPO/releases/download/codec2-${{ inputs.codec2_version }}/codec2.xcframework.zip" \
             "${{ steps.sums.outputs.codec2 }}"
-          git rm -r --quiet --ignore-unmatch Resources/codec2.xcframework Resources/opus.xcframework
+          git rm -rf --quiet --ignore-unmatch Resources/codec2.xcframework Resources/opus.xcframework
           rm -f Resources/codec2.xcframework.zip Resources/opus.xcframework.zip
           grep -q 'Resources/\*.xcframework' .gitignore \
             || printf '\n# Binaries are fetched from Releases via binaryTarget(url:).\nResources/*.xcframework/\nResources/*.xcframework.zip\n' >> .gitignore
