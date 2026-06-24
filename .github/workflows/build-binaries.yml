@@ -1,0 +1,82 @@
+name: Build binaries
+
+# Manually triggered, pinned-version build of the codec2 + opus xcframeworks.
+# Builds from source, publishes each as a Release asset, then opens a PR that
+# points Package.swift at the release URLs (checksummed) and removes the
+# committed binaries. This is NOT scheduled — bumping a version is deliberate.
+
+on:
+  workflow_dispatch:
+    inputs:
+      codec2_version:
+        description: codec2 git tag to build
+        default: v1.2.0
+      opus_version:
+        description: opus git tag to build
+        default: v1.6.1
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build opus.xcframework
+        run: OPUS_VERSION="${{ inputs.opus_version }}" bash scripts/build-opus.sh
+
+      - name: Build codec2.xcframework
+        run: |
+          CODEC2_VERSION="${{ inputs.codec2_version }}" \
+          OPUS_VERSION="${{ inputs.opus_version }}" \
+          bash scripts/build-codec2.sh
+
+      - name: Compute checksums
+        id: sums
+        run: |
+          echo "opus=$(swift package compute-checksum Resources/opus.xcframework.zip)"   >> "$GITHUB_OUTPUT"
+          echo "codec2=$(swift package compute-checksum Resources/codec2.xcframework.zip)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          publish() {  # tag  file  title  notes
+            gh release create "$1" "$2" --title "$3" --notes "$4" \
+              || gh release upload "$1" "$2" --clobber
+          }
+          publish "opus-${{ inputs.opus_version }}"     Resources/opus.xcframework.zip \
+                  "opus ${{ inputs.opus_version }}"     "libopus xcframework (BSD). sha256: ${{ steps.sums.outputs.opus }}"
+          publish "codec2-${{ inputs.codec2_version }}" Resources/codec2.xcframework.zip \
+                  "codec2 ${{ inputs.codec2_version }}" "libcodec2 xcframework (LGPL-2.1). sha256: ${{ steps.sums.outputs.codec2 }}"
+
+      - name: Point Package.swift at the releases and drop committed binaries
+        run: |
+          REPO="${{ github.repository }}"
+          python3 scripts/set-binary-target.py COpus \
+            "https://github.com/$REPO/releases/download/opus-${{ inputs.opus_version }}/opus.xcframework.zip" \
+            "${{ steps.sums.outputs.opus }}"
+          python3 scripts/set-binary-target.py CCodec2 \
+            "https://github.com/$REPO/releases/download/codec2-${{ inputs.codec2_version }}/codec2.xcframework.zip" \
+            "${{ steps.sums.outputs.codec2 }}"
+          git rm -r --quiet --ignore-unmatch Resources/codec2.xcframework Resources/opus.xcframework
+          rm -f Resources/codec2.xcframework.zip Resources/opus.xcframework.zip
+          grep -q 'Resources/\*.xcframework' .gitignore \
+            || printf '\n# Binaries are fetched from Releases via binaryTarget(url:).\nResources/*.xcframework/\nResources/*.xcframework.zip\n' >> .gitignore
+
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          branch: binaries/codec2-${{ inputs.codec2_version }}-opus-${{ inputs.opus_version }}
+          title: "Fetch codec2 ${{ inputs.codec2_version }} / opus ${{ inputs.opus_version }} from Releases"
+          commit-message: "build: fetch codec2/opus binaries from Releases (out of git)"
+          body: |
+            Built **codec2 ${{ inputs.codec2_version }}** and **opus ${{ inputs.opus_version }}**
+            from source, published them as Release assets, switched `Package.swift` to
+            `binaryTarget(url:checksum:)`, and removed the committed xcframeworks.
+
+            - codec2 sha256: `${{ steps.sums.outputs.codec2 }}`
+            - opus sha256: `${{ steps.sums.outputs.opus }}`

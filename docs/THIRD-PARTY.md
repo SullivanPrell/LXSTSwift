@@ -11,6 +11,10 @@ codec libraries, under their own licenses, reproduced below.
 
 ---
 
+> **Pinned versions:** codec2 **v1.2.0**, opus **v1.6.1**. Both are built by the
+> *Build binaries* workflow and distributed as Release assets (not committed to
+> git), consumed via checksummed `binaryTarget(url:)`.
+
 ## codec2 — GNU LGPL v2.1
 
 `Resources/codec2.xcframework` is a prebuilt static library of **codec2**:

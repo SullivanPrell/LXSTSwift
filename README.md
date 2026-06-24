@@ -27,8 +27,9 @@ Telephone primitive. **245 unit tests, 0 failures.**
 
 - Swift 5.9+, iOS 16+ / macOS 13+
 - Depends on [ReticulumSwift](https://github.com/SullivanPrell/ReticulumSwift) 1.0.0+
-- The prebuilt codec2 / opus binaries are committed to the repo, so a normal
-  `git clone` is all you need — no extra tooling required.
+- The codec2 / opus binaries are fetched automatically by SwiftPM from GitHub
+  Releases (checksummed `binaryTarget`s), built from pinned source by the
+  *Build binaries* workflow — a normal `git clone` + `swift build` is all you need.
 
 ## Installation
 
