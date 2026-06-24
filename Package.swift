@@ -30,7 +30,7 @@ let package = Package(
         .binaryTarget(
             name: "CCodec2",
             url: "https://github.com/SullivanPrell/LXSTSwift/releases/download/codec2-1.2.0/codec2.xcframework.zip",
-            checksum: "d683b62d07a454a354246c7af9e785f71ae59505811b659ff42979a9198a3d6b"
+            checksum: "549523cbc4d735221ecdb3fdd00a0af4dbe98c82e7b51ee416bb8e22e3fd73f8"
         ),
 
         // Pre-built libopus XCFramework (arm64-iOS + arm64/x86_64-macOS), committed directly.
@@ -38,7 +38,7 @@ let package = Package(
         .binaryTarget(
             name: "COpus",
             url: "https://github.com/SullivanPrell/LXSTSwift/releases/download/opus-v1.6.1/opus.xcframework.zip",
-            checksum: "fc7aace7e63d6c90e026d4a5925320bf7f92173fa677f13d1740ab8af2c8759d"
+            checksum: "d59291ff428d8aa47cbd2b78b2698b7b91646f91745e39369fbab2e4e3e01086"
         ),
 
         .target(

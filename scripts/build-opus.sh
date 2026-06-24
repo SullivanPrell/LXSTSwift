@@ -1,11 +1,17 @@
 #!/bin/bash
 # build-opus.sh — build opus.xcframework from a pinned upstream version.
 #
-# Produces Resources/opus.xcframework with slices matching the committed one:
+# Produces Resources/opus.xcframework with slices:
 #   macos-arm64_x86_64, ios-arm64, ios-simulator-arm64_x86_64
-# Each slice carries libopus.a + the four public opus headers (NO modulemap —
-# the COpus Clang module is declared by codec2.xcframework's modulemap; see
-# build-codec2.sh). Finishes by zipping and printing the SwiftPM checksum.
+# Each slice carries ONLY libopus.a — NO headers and NO modulemap. The opus public
+# headers and the `COpus` Clang module are declared once, in codec2.xcframework's
+# combined modulemap (see build-codec2.sh); this xcframework exists purely to link
+# COpus's symbols. Shipping the opus headers in BOTH xcframeworks made a clean Xcode
+# app build fail ("Multiple commands produce …/include/opus.h" — and, with a second
+# modulemap, …/include/module.modulemap), because each binary target stages its
+# public headers into the same products include dir. A header-less library target
+# contributes nothing to that dir, so there is no collision. Finishes by zipping +
+# printing the SwiftPM checksum.
 #
 # Usage:
 #   bash scripts/build-opus.sh            # clones the pinned tag
@@ -23,6 +29,9 @@ XCFW="$REPO_ROOT/Resources/opus.xcframework"
 NCPU="$(sysctl -n hw.logicalcpu)"
 
 mkdir -p "$BUILD_ROOT"
+# Resources/ is gitignored now that the binaries live in Releases, so it may not
+# exist on a fresh checkout — create it before staging the xcframework + zip.
+mkdir -p "$REPO_ROOT/Resources"
 
 # --- obtain source at the pinned tag ---
 if [ -n "${OPUS_SRC:-}" ]; then
@@ -64,19 +73,13 @@ echo "==> lipo universal libs"
 lipo -create "$MAC_ARM" "$MAC_X86" -output "$BUILD_ROOT/libopus_macos.a"
 lipo -create "$SIM_ARM" "$SIM_X86" -output "$BUILD_ROOT/libopus_sim.a"
 
-# --- assemble per-slice header dirs (bare opus headers, no modulemap) ---
-HDR="$BUILD_ROOT/opus_headers"
-rm -rf "$HDR"; mkdir -p "$HDR"
-for h in opus.h opus_defines.h opus_multistream.h opus_types.h; do
-    cp "$SRC/include/$h" "$HDR/$h"
-done
-
+# --- assemble xcframework (library only — no headers, no modulemap) ---
 echo "==> assembling xcframework"
 rm -rf "$XCFW" "$BUILD_ROOT/opus.xcframework"
 xcodebuild -create-xcframework \
-    -library "$BUILD_ROOT/libopus_macos.a" -headers "$HDR" \
-    -library "$IOS_ARM"                     -headers "$HDR" \
-    -library "$BUILD_ROOT/libopus_sim.a"    -headers "$HDR" \
+    -library "$BUILD_ROOT/libopus_macos.a" \
+    -library "$IOS_ARM" \
+    -library "$BUILD_ROOT/libopus_sim.a" \
     -output "$BUILD_ROOT/opus.xcframework" >/dev/null
 cp -R "$BUILD_ROOT/opus.xcframework" "$XCFW"
 
