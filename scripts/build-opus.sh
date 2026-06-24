@@ -1,11 +1,14 @@
 #!/bin/bash
 # build-opus.sh — build opus.xcframework from a pinned upstream version.
 #
-# Produces Resources/opus.xcframework with slices matching the committed one:
+# Produces Resources/opus.xcframework with slices:
 #   macos-arm64_x86_64, ios-arm64, ios-simulator-arm64_x86_64
-# Each slice carries libopus.a + the four public opus headers (NO modulemap —
-# the COpus Clang module is declared by codec2.xcframework's modulemap; see
-# build-codec2.sh). Finishes by zipping and printing the SwiftPM checksum.
+# Each slice carries libopus.a + the four public opus headers AND a Clang
+# modulemap that declares the `COpus` module. opus.xcframework is fully
+# self-contained: the opus module/headers live here and ONLY here (codec2.xcframework
+# no longer cross-bundles them — that previously caused a clean Xcode app build to
+# fail with "Multiple commands produce …/include/opus.h"). Finishes by zipping +
+# printing the SwiftPM checksum.
 #
 # Usage:
 #   bash scripts/build-opus.sh            # clones the pinned tag
@@ -23,6 +26,9 @@ XCFW="$REPO_ROOT/Resources/opus.xcframework"
 NCPU="$(sysctl -n hw.logicalcpu)"
 
 mkdir -p "$BUILD_ROOT"
+# Resources/ is gitignored now that the binaries live in Releases, so it may not
+# exist on a fresh checkout — create it before staging the xcframework + zip.
+mkdir -p "$REPO_ROOT/Resources"
 
 # --- obtain source at the pinned tag ---
 if [ -n "${OPUS_SRC:-}" ]; then
@@ -64,12 +70,18 @@ echo "==> lipo universal libs"
 lipo -create "$MAC_ARM" "$MAC_X86" -output "$BUILD_ROOT/libopus_macos.a"
 lipo -create "$SIM_ARM" "$SIM_X86" -output "$BUILD_ROOT/libopus_sim.a"
 
-# --- assemble per-slice header dirs (bare opus headers, no modulemap) ---
+# --- assemble header dir (opus headers + COpus modulemap) ---
 HDR="$BUILD_ROOT/opus_headers"
 rm -rf "$HDR"; mkdir -p "$HDR"
 for h in opus.h opus_defines.h opus_multistream.h opus_types.h; do
     cp "$SRC/include/$h" "$HDR/$h"
 done
+cat > "$HDR/module.modulemap" <<'MODMAP'
+module COpus {
+    header "opus.h"
+    export *
+}
+MODMAP
 
 echo "==> assembling xcframework"
 rm -rf "$XCFW" "$BUILD_ROOT/opus.xcframework"

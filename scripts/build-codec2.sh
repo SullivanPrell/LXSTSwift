@@ -1,13 +1,16 @@
 #!/bin/bash
 # build-codec2.sh — build codec2.xcframework from a pinned upstream version.
 #
-# Produces Resources/codec2.xcframework with slices matching the committed one:
+# Produces Resources/codec2.xcframework with slices:
 #   macos-arm64_x86_64, ios-arm64, ios-simulator-arm64_x86_64
-# Each slice carries libcodec2.a + headers AND the combined Clang modulemap that
-# declares BOTH the `CCodec2` and `COpus` modules (the COpus module's symbols are
-# linked from opus.xcframework's libopus.a — see build-opus.sh). The four opus
-# public headers are cross-bundled here so the modulemap's `header "opus.h"`
-# resolves. Finishes by zipping and printing the SwiftPM checksum.
+# Each slice carries libcodec2.a + the codec2 headers and a Clang modulemap that
+# declares ONLY the `CCodec2` module. The opus module/headers live entirely in
+# opus.xcframework (see build-opus.sh) — they are deliberately NOT bundled here.
+# Bundling opus.h in both xcframeworks made a clean Xcode app build fail with
+# "Multiple commands produce …/include/opus.h" (each binary target stages its
+# public headers into the same products include dir). Keeping each xcframework
+# self-contained avoids the collision. Finishes by zipping + printing the
+# SwiftPM checksum.
 #
 # Usage:
 #   bash scripts/build-codec2.sh           # clones the pinned codec2 + opus tags
@@ -18,7 +21,6 @@
 set -euo pipefail
 
 CODEC2_VERSION="${CODEC2_VERSION:-1.2.0}"   # note: codec2 tags have no 'v' prefix
-OPUS_VERSION="${OPUS_VERSION:-v1.6.1}"   # only the headers are used here
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BUILD_ROOT="${BUILD_ROOT:-/tmp/codec2_build}"
@@ -26,18 +28,16 @@ XCFW="$REPO_ROOT/Resources/codec2.xcframework"
 NCPU="$(sysctl -n hw.logicalcpu)"
 
 mkdir -p "$BUILD_ROOT"
+# Resources/ is gitignored now that the binaries live in Releases, so it may not
+# exist on a fresh checkout — create it before staging the xcframework + zip.
+mkdir -p "$REPO_ROOT/Resources"
 
-# --- source at pinned tags ---
+# --- source at pinned tag ---
 if [ -n "${CODEC2_SRC:-}" ]; then SRC="$CODEC2_SRC"; else
     SRC="$BUILD_ROOT/codec2-$CODEC2_VERSION"
     [ -d "$SRC" ] || { echo "==> cloning codec2 $CODEC2_VERSION"; git clone --depth 1 --branch "$CODEC2_VERSION" https://github.com/drowe67/codec2 "$SRC"; }
 fi
-if [ -n "${OPUS_SRC:-}" ]; then OSRC="$OPUS_SRC"; else
-    OSRC="$BUILD_ROOT/opus-$OPUS_VERSION"
-    [ -d "$OSRC" ] || { echo "==> cloning opus $OPUS_VERSION (headers only)"; git clone --depth 1 --branch "$OPUS_VERSION" https://github.com/xiph/opus "$OSRC"; }
-fi
 echo "==> codec2 source: $SRC"
-echo "==> opus headers:  $OSRC/include"
 
 build_slice() {            # name  extra-cmake-flags...
     local name="$1"; shift
@@ -62,7 +62,7 @@ echo "==> lipo universal libs"
 lipo -create "$MAC_ARM" "$MAC_X86" -output "$BUILD_ROOT/libcodec2_macos.a"
 lipo -create "$SIM_ARM" "$SIM_X86" -output "$BUILD_ROOT/libcodec2_sim.a"
 
-# --- assemble combined header dir (codec2 + opus headers + combined modulemap) ---
+# --- assemble header dir (codec2 headers + CCodec2-only modulemap) ---
 HDR="$BUILD_ROOT/codec2_headers"
 rm -rf "$HDR"; mkdir -p "$HDR/codec2"
 cp "$SRC/src/codec2.h" "$HDR/codec2.h"
@@ -70,16 +70,9 @@ cp "$SRC/src/codec2.h" "$HDR/codec2.h"
 VER="$(find "$BUILD_ROOT/macos_arm64" -path '*/codec2/version.h' -print -quit)"
 [ -n "$VER" ] || { echo "error: generated codec2/version.h not found" >&2; exit 1; }
 cp "$VER" "$HDR/codec2/version.h"
-for h in opus.h opus_defines.h opus_multistream.h opus_types.h; do
-    cp "$OSRC/include/$h" "$HDR/$h"
-done
 cat > "$HDR/module.modulemap" <<'MODMAP'
 module CCodec2 {
     header "codec2.h"
-    export *
-}
-module COpus {
-    header "opus.h"
     export *
 }
 MODMAP
