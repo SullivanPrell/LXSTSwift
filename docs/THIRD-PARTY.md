@@ -11,7 +11,7 @@ codec libraries, under their own licenses, reproduced below.
 
 ---
 
-> **Pinned versions:** codec2 **v1.2.0**, opus **v1.6.1**. Both are built by the
+> **Pinned versions:** codec2 **1.2.0**, opus **v1.6.1**. Both are built by the
 > *Build binaries* workflow and distributed as Release assets (not committed to
 > git), consumed via checksummed `binaryTarget(url:)`.
 

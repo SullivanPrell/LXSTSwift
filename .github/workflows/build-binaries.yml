@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
     inputs:
       codec2_version:
-        description: codec2 git tag to build
-        default: v1.2.0
+        description: codec2 git tag to build (no 'v' prefix)
+        default: "1.2.0"
       opus_version:
         description: opus git tag to build
         default: v1.6.1

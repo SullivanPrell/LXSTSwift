@@ -32,7 +32,7 @@ RETICULUM_LOCAL_DEPS=1 swift test
 `codec2.xcframework` and `opus.xcframework` are **not committed to git** — they
 are built from **pinned source** and published as GitHub **Release** assets, then
 consumed via `binaryTarget(url:checksum:)` in `Package.swift`. Pinned versions:
-**codec2 v1.2.0**, **opus v1.6.1**.
+**codec2 1.2.0**, **opus v1.6.1**.
 
 > codec2's xcframework also carries the combined Clang modulemap that declares
 > both the `CCodec2` and `COpus` modules (opus's xcframework is headers-only) —
@@ -49,7 +49,7 @@ opens a PR updating the `binaryTarget` urls + checksums. Review and merge it.
 
 ```sh
 bash scripts/build-opus.sh      # clones opus v1.6.1, builds opus.xcframework + checksum
-bash scripts/build-codec2.sh    # clones codec2 v1.2.0 (+ opus headers), builds codec2.xcframework
+bash scripts/build-codec2.sh    # clones codec2 1.2.0 (+ opus headers), builds codec2.xcframework
 ```
 
 Override the pinned tag with `OPUS_VERSION=` / `CODEC2_VERSION=`, or point at a

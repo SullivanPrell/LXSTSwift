@@ -17,7 +17,7 @@
 
 set -euo pipefail
 
-CODEC2_VERSION="${CODEC2_VERSION:-v1.2.0}"
+CODEC2_VERSION="${CODEC2_VERSION:-1.2.0}"   # note: codec2 tags have no 'v' prefix
 OPUS_VERSION="${OPUS_VERSION:-v1.6.1}"   # only the headers are used here
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
