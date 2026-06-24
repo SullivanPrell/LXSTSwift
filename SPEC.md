@@ -1,6 +1,6 @@
 # LXSTSwift Specification
 
-**Version:** 1.1 (100% Python parity pass)  
+**Version:** 1.1  
 **Reference implementation:** LXST 0.4.6 (Python)  
 **Date:** 2026-05-22
 

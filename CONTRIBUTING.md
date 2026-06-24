@@ -5,8 +5,8 @@ LXSTSwift targets **wire compatibility with Python LXST**
 
 ## Ground rules
 
-- **Test-driven**: failing test first, implement to green, commit. Keep
-  `swift test` at 245/0.
+- **Test-driven**: failing test first, implement to green, commit. Keep the full
+  `swift test` suite green (no regressions).
 - **Mind retain cycles**: the audio graph (Pipeline ↔ Source ↔ Codec ↔ Sink)
   uses `weak` references in the right places, mirroring Python's `release()`.
   Always `release()` a pipeline when done, and prefer `weak self` in audio

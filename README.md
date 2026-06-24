@@ -6,7 +6,8 @@ audio over Reticulum.
 
 [![Platforms](https://img.shields.io/badge/platforms-iOS%2016%2B%20%7C%20macOS%2013%2B-blue)](#requirements)
 [![Swift](https://img.shields.io/badge/Swift-5.9-orange)](https://swift.org)
-[![Tests](https://img.shields.io/badge/tests-245%20passing-brightgreen)](#testing)
+[![CI](https://github.com/SullivanPrell/LXSTSwift/actions/workflows/ci.yml/badge.svg)](https://github.com/SullivanPrell/LXSTSwift/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-58%25-yellow)](#testing)
 [![License](https://img.shields.io/badge/license-Reticulum-lightgrey)](LICENSE)
 
 LXST carries live audio (and other signals) over Reticulum links — the protocol
@@ -19,9 +20,11 @@ This is part of the [ReticulumSwift stack](https://github.com/SullivanPrell/Reti
 
 ## Status
 
-**At parity with Python LXST 0.4.6.** Real I/O (libopus, Codec2, AVAudioEngine),
-streaming pipeline, file record/playback, filters (HP/LP/BP/AGC), and the
-Telephone primitive. **245 unit tests, 0 failures.**
+LXSTSwift implements the LXST 0.4.6 protocol — audio capture and playback via
+AVAudioEngine, Opus and Codec2 codecs, a streaming pipeline, file record/playback,
+filters (high/low/band-pass, AGC), and the Telephone primitive — and is
+wire-compatible with the Python reference. Covered by 245 unit tests (~58% line
+coverage; the audio-hardware paths are exercised on-device rather than in unit tests).
 
 ## Requirements
 

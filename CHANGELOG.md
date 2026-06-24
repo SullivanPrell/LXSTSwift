@@ -11,7 +11,7 @@ Transport), wire-compatible with the Python reference (LXST 0.4.6).
 
 ### Highlights
 
-- **Real audio I/O** via AVAudioEngine (microphone capture, speaker playback).
+- **Audio I/O** via AVAudioEngine (microphone capture, speaker playback).
 - **Codecs**: Opus (AVAudioConverter), Codec2 (very-low-bitrate speech), Raw PCM,
   and Null pass-through.
 - **Pipeline**: `Source → Codec → Sink` with mid-stream codec switching and
@@ -23,5 +23,6 @@ Transport), wire-compatible with the Python reference (LXST 0.4.6).
   up calls, mute/gain control, and call-admission lists.
 - **Network**: packetize/transmit and receive audio over RNS links.
 
-245 unit tests, 0 failures. Built on ReticulumSwift 1.0.0. Bundles prebuilt
-codec2 (LGPL v2.1) and opus (BSD) binaries committed directly.
+Covered by 245 unit tests (~58% line coverage; audio-hardware paths run
+on-device). Built on ReticulumSwift 1.0.0. Bundles prebuilt codec2 (LGPL v2.1)
+and opus (BSD) binaries.
