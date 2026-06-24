@@ -1,0 +1,25 @@
+LXSTSwift
+Copyright (c) 2026 LXSTSwift contributors
+
+This product is a Swift port of LXST (Lightweight Extensible Signal Transport)
+and is a derivative work of the original Python implementation:
+
+  LXST — Copyright (c) Mark Qvist
+  https://github.com/markqvist/LXST
+
+It builds on ReticulumSwift, a port of the Reticulum Network Stack
+(https://github.com/markqvist/Reticulum), also by Mark Qvist.
+
+LXSTSwift is distributed under the Reticulum License (see LICENSE).
+
+------------------------------------------------------------------------
+Bundled third-party components (prebuilt binaries in Resources/)
+------------------------------------------------------------------------
+
+  codec2 — © David Rowe and contributors — GNU LGPL v2.1
+           https://github.com/drowe67/codec2
+
+  opus   — © Xiph.Org, Skype Limited, and contributors — BSD 3-Clause
+           https://gitlab.xiph.org/xiph/opus
+
+Full license texts and LGPL relinking instructions are in docs/THIRD-PARTY.md.

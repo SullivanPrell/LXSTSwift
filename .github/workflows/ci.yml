@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    name: Build & test (macOS)
+    runs-on: macos-14
+    steps:
+      - name: Checkout (with LFS for codec2/opus binaries)
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Show toolchain
+        run: swift --version
+      # Resolves ReticulumSwift from its published GitHub release.
+      - name: Build
+        run: swift build
+      - name: Test
+        run: swift test
