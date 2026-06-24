@@ -29,14 +29,16 @@ let package = Package(
         // Built from https://github.com/drowe67/codec2 (LGPL-2.1).
         .binaryTarget(
             name: "CCodec2",
-            path: "Resources/codec2.xcframework"
+            url: "https://github.com/SullivanPrell/LXSTSwift/releases/download/codec2-1.2.0/codec2.xcframework.zip",
+            checksum: "d683b62d07a454a354246c7af9e785f71ae59505811b659ff42979a9198a3d6b"
         ),
 
         // Pre-built libopus XCFramework (arm64-iOS + arm64/x86_64-macOS), committed directly.
         // Built from https://gitlab.xiph.org/xiph/opus (BSD-3-Clause).
         .binaryTarget(
             name: "COpus",
-            path: "Resources/opus.xcframework"
+            url: "https://github.com/SullivanPrell/LXSTSwift/releases/download/opus-v1.6.1/opus.xcframework.zip",
+            checksum: "fc7aace7e63d6c90e026d4a5925320bf7f92173fa677f13d1740ab8af2c8759d"
         ),
 
         .target(
