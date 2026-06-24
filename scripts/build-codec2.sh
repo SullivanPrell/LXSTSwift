@@ -1,13 +1,17 @@
 #!/bin/bash
 # build-codec2.sh — build codec2.xcframework from a pinned upstream version.
 #
-# Produces Resources/codec2.xcframework with slices matching the committed one:
+# Produces Resources/codec2.xcframework with slices:
 #   macos-arm64_x86_64, ios-arm64, ios-simulator-arm64_x86_64
 # Each slice carries libcodec2.a + headers AND the combined Clang modulemap that
-# declares BOTH the `CCodec2` and `COpus` modules (the COpus module's symbols are
-# linked from opus.xcframework's libopus.a — see build-opus.sh). The four opus
-# public headers are cross-bundled here so the modulemap's `header "opus.h"`
-# resolves. Finishes by zipping and printing the SwiftPM checksum.
+# declares BOTH the `CCodec2` and `COpus` modules. This xcframework is the SOLE
+# owner of all public headers and the modulemap — the four opus headers are
+# cross-bundled here so `header "opus.h"` resolves, and opus.xcframework ships
+# NO headers (just libopus.a, for linking COpus's symbols — see build-opus.sh).
+# Keeping one header set in one xcframework avoids "Multiple commands produce
+# …/include/<file>" collisions in a clean Xcode app build, where each binary
+# target stages its public headers into the same products include dir. Finishes
+# by zipping and printing the SwiftPM checksum.
 #
 # Usage:
 #   bash scripts/build-codec2.sh           # clones the pinned codec2 + opus tags
@@ -26,6 +30,9 @@ XCFW="$REPO_ROOT/Resources/codec2.xcframework"
 NCPU="$(sysctl -n hw.logicalcpu)"
 
 mkdir -p "$BUILD_ROOT"
+# Resources/ is gitignored now that the binaries live in Releases, so it may not
+# exist on a fresh checkout — create it before staging the xcframework + zip.
+mkdir -p "$REPO_ROOT/Resources"
 
 # --- source at pinned tags ---
 if [ -n "${CODEC2_SRC:-}" ]; then SRC="$CODEC2_SRC"; else
