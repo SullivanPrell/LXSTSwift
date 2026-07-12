@@ -1,5 +1,13 @@
 import Foundation
 
+/// A sink that receives a mixer's *reference* output — the mixed signal as it
+/// is played out (before codec encoding) — for use as an echo-cancellation
+/// reference. Python: any object with `handle_reference(frame, samplerate)`
+/// registered in `Mixer.reference_outs`.
+public protocol ReferenceSink: AnyObject {
+    func handleReference(_ frame: AudioFrame, samplerate: Double)
+}
+
 /// Multi-source audio mixer that additively combines incoming frames.
 ///
 /// Python: `LXST.Mixer.Mixer`
@@ -28,6 +36,10 @@ public final class Mixer: Source, Sink {
     public var gain: Float = 0.0
     /// Whether this mixer is muted. Python: `muted = False`
     public var muted: Bool = false
+
+    /// Reference outputs — each receives every mixed (pre-codec) frame, for use
+    /// as an echo-cancellation reference signal. Python: `Mixer.reference_outs`
+    public var referenceOuts: [any ReferenceSink] = []
 
     private var incomingFrames: [ObjectIdentifier: [AudioFrame]] = [:]
     private var sourceMaxFrames: [ObjectIdentifier: Int] = [:]
@@ -159,6 +171,14 @@ public final class Mixer: Source, Sink {
                 }
             } else {
                 sink?.handleFrame(outFrame, from: self)
+            }
+
+            // Deliver the raw (pre-codec) mixed frame to any reference outputs,
+            // e.g. an echo suppressor tracking the played-out signal.
+            // Python: `for ref in self.reference_outs: ref.handle_reference(mixed_frame, self.samplerate)`
+            let refs = referenceOuts
+            if !refs.isEmpty {
+                for ref in refs { ref.handleReference(outFrame, samplerate: sampleRate) }
             }
         }
     }

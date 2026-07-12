@@ -372,4 +372,28 @@ final class TelephonyTests: XCTestCase {
         XCTAssertEqual(TelephonyProfile.next(after: TelephonyProfile.available.last!),
                        TelephonyProfile.available.first!)
     }
+
+    // MARK: - LXST 0.4.8: per-profile buffer frames
+
+    func testProfileBufferFramesMatchReference() {
+        // Python: Profiles.get_buffer_frames(profile)
+        XCTAssertEqual(TelephonyProfile.bandwidthUltraLow.bufferFrames, 2)
+        XCTAssertEqual(TelephonyProfile.bandwidthVeryLow.bufferFrames, 2)
+        XCTAssertEqual(TelephonyProfile.bandwidthLow.bufferFrames, 2)
+        XCTAssertEqual(TelephonyProfile.qualityMedium.bufferFrames, 5)
+        XCTAssertEqual(TelephonyProfile.qualityHigh.bufferFrames, 5)
+        XCTAssertEqual(TelephonyProfile.qualityMax.bufferFrames, 5)
+        XCTAssertEqual(TelephonyProfile.latencyLow.bufferFrames, 3)
+        XCTAssertEqual(TelephonyProfile.latencyUltraLow.bufferFrames, 2)
+    }
+
+    // MARK: - LXST 0.4.8: mic filter chain toggles
+
+    func testFilterToggleDefaults() {
+        // Python: use_agc / use_bandpass / use_echo_cancellation all default True.
+        let phone = Telephone(identity: Identity(), transport: Transport())
+        XCTAssertTrue(phone.useAGC)
+        XCTAssertTrue(phone.useBandpass)
+        XCTAssertTrue(phone.useEchoCancellation)
+    }
 }

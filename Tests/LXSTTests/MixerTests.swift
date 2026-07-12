@@ -125,4 +125,44 @@ final class MixerTests: XCTestCase {
         let m: any Sink = Mixer()
         XCTAssertNotNil(m)
     }
+
+    // MARK: - Reference outputs (echo-cancellation reference)
+
+    final class MockReferenceSink: ReferenceSink {
+        let lock = NSLock()
+        private var _frames: [AudioFrame] = []
+        private var _rates: [Double] = []
+        var onReceive: (() -> Void)?
+        var frames: [AudioFrame] { lock.lock(); defer { lock.unlock() }; return _frames }
+        var rates: [Double] { lock.lock(); defer { lock.unlock() }; return _rates }
+        func handleReference(_ frame: AudioFrame, samplerate: Double) {
+            lock.lock(); _frames.append(frame); _rates.append(samplerate); lock.unlock()
+            onReceive?()
+        }
+    }
+
+    func testReferenceOutReceivesMixedFrame() {
+        let m = Mixer(targetFrameMs: 10, sampleRate: 48000)
+        let sink = MockSink()
+        let ref = MockReferenceSink()
+        m.sink = sink
+        m.referenceOuts = [ref]
+
+        let exp = expectation(description: "reference out received a frame")
+        exp.assertForOverFulfill = false
+        ref.onReceive = { exp.fulfill() }
+
+        let n = Int(48000 * 10 / 1000)  // 480 samples per 10 ms frame
+        let src = Loopback()
+        m.handleFrame(AudioFrame(samples: [Float](repeating: 0.5, count: n),
+                                 channelCount: 1, sampleRate: 48000), from: src)
+        m.start()
+        wait(for: [exp], timeout: 3.0)
+        m.stop()
+
+        XCTAssertFalse(ref.frames.isEmpty, "reference sink must receive the mixed frame")
+        XCTAssertEqual(ref.rates.first, 48000, "reference sink must receive the mixer samplerate")
+        // The reference frame is the raw mixed signal (0.5 gain-unity), not silence.
+        XCTAssertEqual(ref.frames.first?.samples.first ?? 0, 0.5, accuracy: 1e-6)
+    }
 }

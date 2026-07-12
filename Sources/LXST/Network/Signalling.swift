@@ -35,21 +35,31 @@ open class SignallingReceiver {
         }
     }
 
-    /// Send a signal to `destination`.
+    /// Send one or more signals to `destination` in a single packet.
     ///
     /// Python:
     /// ```
-    /// signalling_data = {FIELD_SIGNALLING:[signal]}
+    /// if type(signal) != list: signalling_data = {FIELD_SIGNALLING: [signal]}
+    /// else:                    signalling_data = {FIELD_SIGNALLING: signal}
     /// RNS.Packet(destination, mp.packb(signalling_data), create_receipt=False).send()
     /// ```
-    /// We msgpack-encode the real signal list and transmit it over the link, so
-    /// the payload is encrypted with the link key and routed by transport.
-    public func signal(_ signal: Int, to destination: any LXSTDestination, immediate: Bool = true) {
+    /// A whole list of composite codes (e.g. `[PREFERRED_PROFILE+profile,
+    /// PREFERRED_MODE+mode]`) rides in one `FIELD_SIGNALLING` array, matching the
+    /// "Combined signalling" change in LXST 0.5.0. We msgpack-encode the list and
+    /// transmit it over the link, so the payload is encrypted with the link key
+    /// and routed by transport.
+    public func signal(_ signals: [Int], to destination: any LXSTDestination, immediate: Bool = true) {
         guard immediate else { return }  // non-immediate scheduling TBD (Python has the same TODO)
-        let signallingData = Self.encodeSignals([signal])
+        let signallingData = Self.encodeSignals(signals)
         if let link = destination as? Link {
             try? link.send(signallingData)
         }
+    }
+
+    /// Convenience single-signal overload — wraps `signal` in a one-element list,
+    /// exactly as Python does for a non-list argument.
+    public func signal(_ signal: Int, to destination: any LXSTDestination, immediate: Bool = true) {
+        self.signal([signal], to: destination, immediate: immediate)
     }
 
     /// Propagate received signals to proxy.

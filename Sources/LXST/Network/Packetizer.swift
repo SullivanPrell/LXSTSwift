@@ -30,6 +30,11 @@ public final class Packetizer: RemoteSink {
     /// True after a transmit failure. Python: `transmit_failure`
     public private(set) var transmitFailure: Bool = false
 
+    /// When squelched, `handleFrame` drops frames instead of transmitting them —
+    /// used by half-duplex call mode to gate the local transmit path.
+    /// Python: `Packetizer.squelched`
+    public private(set) var squelched: Bool = false
+
     /// Called on transmit failure. Python: `failure_callback`
     public var onFailure: (() -> Void)?
 
@@ -42,9 +47,18 @@ public final class Packetizer: RemoteSink {
 
     // MARK: - Sink: encode and transmit
 
+    /// Squelch the transmit path — subsequent frames are dropped until unsquelched.
+    /// Python: `Packetizer.squelch()`
+    public func squelch()   { squelched = true }
+
+    /// Resume transmitting frames. Python: `Packetizer.unsquelch()`
+    public func unsquelch() { squelched = false }
+
     /// Python: `Packetizer.handle_frame(frame, source=None)`
     public override func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
         guard let dest = destination else { return }
+        // Half-duplex: drop the frame while squelched (Python: `if self.squelched: return`).
+        if squelched { return }
 
         // Determine codec from the source
         let codec = source?.codec ?? self.source?.codec

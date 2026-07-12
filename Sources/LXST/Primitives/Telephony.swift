@@ -31,6 +31,44 @@ public enum SignallingStatus: UInt8, Equatable, CaseIterable {
 /// Python: `Signalling.PREFERRED_PROFILE = 0xFF`
 public let SIGNALLING_PREFERRED_PROFILE: UInt8 = 0xFF
 
+/// Marker byte added to `CallMode.rawValue` to signal a preferred call mode
+/// (full/half duplex). Composite values (`0xF1`, `0xF2`) sit below
+/// `PREFERRED_PROFILE` (0xFF) so profile and mode composites never overlap.
+/// Python: `Signalling.PREFERRED_MODE = 0xF0`
+public let SIGNALLING_PREFERRED_MODE: UInt8 = 0xF0
+
+// MARK: - CallMode
+
+/// Duplex mode for a telephony call. In half-duplex mode the local transmit
+/// packetizer is squelched, so audio only flows one way at a time.
+/// Python: `Profiles.MODE_FULL_DUPLEX` / `Profiles.MODE_HALF_DUPLEX`.
+public enum CallMode: UInt8, CaseIterable {
+    case fullDuplex = 0x01   // Python: MODE_FULL_DUPLEX
+    case halfDuplex = 0x02   // Python: MODE_HALF_DUPLEX
+
+    /// Python: `Profiles.DEFAULT_MODE = MODE_FULL_DUPLEX`
+    public static let defaultMode: CallMode = .fullDuplex
+
+    /// Python: `Profiles.available_modes()`
+    public static var available: [CallMode] { [.fullDuplex, .halfDuplex] }
+
+    /// Python: `Profiles.mode_name(profile)`
+    public var name: String {
+        switch self {
+        case .fullDuplex: return "Full Duplex"
+        case .halfDuplex: return "Half Duplex"
+        }
+    }
+
+    /// Python: `Profiles.mode_abbrevation(profile)` — note: typo in Python preserved
+    public var abbreviation: String {
+        switch self {
+        case .fullDuplex: return "FDX"
+        case .halfDuplex: return "HDX"
+        }
+    }
+}
+
 // MARK: - AllowedCallers
 
 /// Controls which callers a `Telephone` accepts.
@@ -106,6 +144,18 @@ public enum TelephonyProfile: UInt8, CaseIterable {
         }
     }
 
+    /// Number of frames to buffer on the receive mixer's audio source for this
+    /// profile — larger for higher-quality profiles, smaller for low-latency.
+    /// Python: `Profiles.get_buffer_frames(profile)`
+    public var bufferFrames: Int {
+        switch self {
+        case .bandwidthUltraLow, .bandwidthVeryLow, .bandwidthLow: return 2
+        case .qualityMedium, .qualityHigh, .qualityMax:            return 5
+        case .latencyLow:                                          return 3
+        case .latencyUltraLow:                                     return 2
+        }
+    }
+
     /// Python: `get_codec(profile)` — returns a fresh codec instance
     public var codec: any Codec {
         switch self {
@@ -140,9 +190,17 @@ public final class ActiveCall {
     public var ringTimeout:  Bool = false
     public var answered:     Bool = false
     public var profile: TelephonyProfile?
+    /// Duplex mode for this call (nil until selected). Python: `link.call_mode`
+    public var callMode: CallMode?
+    /// When the call reached ESTABLISHED (nil until then). Python: `link.established_at`
+    public var establishedAt: TimeInterval?
     public var packetizer: Packetizer?
     public var audioSource: LinkSource?
     public var filters: [any Filter] = []
+    /// The echo suppressor in this call's mic filter chain, if echo
+    /// cancellation is enabled. Its reference input is the receive mixer's
+    /// played-out signal. Python: `link.echo_suppressor`.
+    public var echoSuppressor: EchoSuppressor?
 
     public init(link: Link) { self.link = link }
 
@@ -226,8 +284,10 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     private var receiveIsMuted:  Bool = false
     private var transmitIsMuted: Bool = false
 
-    // AGC
+    // Mic filter chain toggles. Python: use_agc / use_bandpass / use_echo_cancellation.
     public var useAGC: Bool = true
+    public var useBandpass: Bool = true
+    public var useEchoCancellation: Bool = true
 
     // Audio device selection
     public var speakerDevice:    String? = nil
@@ -260,6 +320,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     private var transmitCodec: (any Codec)?
     private var receiveCodec:  (any Codec)?
     private var targetFrameTimeMs: Double = 60
+    /// Receive-mixer per-source frame buffer depth for the active profile.
+    /// Python: `target_buffer_frames`. Default matches the default profile.
+    private var targetBufferFrames: Int = TelephonyProfile.defaultProfile.bufferFrames
 
     // Thread safety
     private let callHandlerLock          = NSLock()
@@ -411,6 +474,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// Python: `active_profile` property
     public var activeProfile: TelephonyProfile? { activeCall?.profile }
 
+    /// Python: `active_mode` property
+    public var activeMode: CallMode? { activeCall?.callMode }
+
     /// Python: `receive_muted` property
     public var receiveMuted: Bool {
         receiveMixer?.muted ?? receiveIsMuted
@@ -423,25 +489,37 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 
     // MARK: - Signalling
 
-    /// Send a raw signal value on `link` and update `callStatus` if it's an
-    /// auto-status code, then transmit it over the link.
+    /// Send one or more raw signal values on `link`, updating `callStatus` for
+    /// each auto-status code, then transmit them in a single packet.
     ///
-    /// Python: `Telephone.signal(signal, link)` →
+    /// Python: `Telephone.signal(signals, link)` →
     /// ```
-    /// if signal in Signalling.AUTO_STATUS_CODES: self.call_status = signal
-    /// super().signal(signal, link)
+    /// if type(signals) != list: signals = [signals]
+    /// for signal in signals:
+    ///     if signal in Signalling.AUTO_STATUS_CODES: self.call_status = signal
+    /// super().signal(signals, link)
     /// ```
+    /// Values are `Int` (not `UInt8`) so composites like `PREFERRED_PROFILE +
+    /// profile` (e.g. `0x13F`) round-trip intact. A combined
+    /// `[PREFERRED_PROFILE+profile, PREFERRED_MODE+mode]` list rides in one packet.
+    public func sendSignal(_ signals: [Int], on link: Link) {
+        for signal in signals {
+            if signal >= 0, signal <= 0xFF,
+               let status = SignallingStatus(rawValue: UInt8(signal)),
+               SignallingStatus.autoStatusCodes.contains(status) {
+                callStatus = status
+            }
+        }
+        // Inherited SignallingReceiver.signal — encodes {FIELD_SIGNALLING: signals}
+        // and sends it over the link (encrypted with the link key, routed by transport).
+        self.signal(signals, to: link)
+    }
+
+    /// Convenience single-signal overload.
     /// The value is an `Int` (not `UInt8`) so the composite
     /// `PREFERRED_PROFILE + profile` (e.g. `0x13F`) round-trips intact.
     public func sendSignal(_ signal: Int, on link: Link) {
-        if signal >= 0, signal <= 0xFF,
-           let status = SignallingStatus(rawValue: UInt8(signal)),
-           SignallingStatus.autoStatusCodes.contains(status) {
-            callStatus = status
-        }
-        // Inherited SignallingReceiver.signal — encodes {FIELD_SIGNALLING:[signal]}
-        // and sends it over the link (encrypted with the link key, routed by transport).
-        self.signal(signal, to: link)
+        sendSignal([signal], on: link)
     }
 
     /// Convenience overload for sending a `SignallingStatus` code.
@@ -449,11 +527,28 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         sendSignal(Int(status.rawValue), on: link)
     }
 
+    // MARK: - Transmit squelch (half-duplex)
+
+    /// Squelch the local transmit path (used by half-duplex mode).
+    /// Python: `Telephone.squelch_transmit(squelch=True)`
+    public func squelchTransmit(_ squelch: Bool = true) {
+        guard let pkt = activeCall?.packetizer else { return }
+        if squelch { pkt.squelch() } else { pkt.unsquelch() }
+    }
+
+    /// Resume the local transmit path. Python: `Telephone.unsquelch_transmit(unsquelch=True)`
+    public func unsquelchTransmit(_ unsquelch: Bool = true) {
+        guard let pkt = activeCall?.packetizer else { return }
+        if unsquelch { pkt.unsquelch() } else { pkt.squelch() }
+    }
+
     // MARK: - Outgoing call
 
     /// Initiate an outgoing call to `identity`.
-    /// Python: `Telephone.call(identity, profile=None)`
-    public func call(identity: Identity, profile: TelephonyProfile? = nil) {
+    /// Python: `Telephone.call(identity, profile=None, mode=None)`
+    public func call(identity: Identity,
+                     profile: TelephonyProfile? = nil,
+                     mode: CallMode? = nil) {
         callHandlerLock.lock()
         defer { callHandlerLock.unlock() }
         guard activeCall == nil else { return }
@@ -472,7 +567,10 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         call.isIncoming    = false
         call.isOutgoing    = true
         call.isTerminating = false
+        call.ringTimeout   = false
+        call.establishedAt = nil
         call.profile       = profile ?? TelephonyProfile.defaultProfile
+        call.callMode      = mode
         activeCall = call
 
         link.onEstablished = { [weak self] l in
@@ -506,6 +604,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         guard call.remoteIdentity?.hash == identity.hash else { return false }
 
         call.answered = true
+        call.establishedAt = Date().timeIntervalSince1970   // Python: active_call.established_at = time.time()
         openPipelines(for: identity)
         startPipelines()
         establishedCallback?(identity)
@@ -572,12 +671,50 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         call.profile = profile
         transmitCodec = profile.codec
         targetFrameTimeMs = Double(profile.frameTimeMs)
+        targetBufferFrames = profile.bufferFrames
         if !fromSignalling, let link = activeCall?.link {
             // Python: self.signal(Signalling.PREFERRED_PROFILE + self.active_call.profile, ...)
             let composite = Int(SIGNALLING_PREFERRED_PROFILE) + Int(profile.rawValue)
             sendSignal(composite, on: link)
         }
         reconfigureTransmitPipeline()
+        // Python: self.receive_mixer.set_source_max_frames(audio_source, target_buffer_frames)
+        if let src = call.audioSource {
+            receiveMixer?.setSourceMaxFrames(targetBufferFrames, for: src)
+        }
+    }
+
+    // MARK: - Mode switching (half-duplex)
+
+    /// Switch duplex mode mid-call, signalling the peer unless the switch was
+    /// itself triggered by inbound signalling.
+    /// Python: `Telephone.switch_mode(mode=None, from_signalling=False)`
+    public func switchMode(_ mode: CallMode, fromSignalling: Bool = false) {
+        guard let call = activeCall else { return }
+        guard call.callMode != mode else { return }
+        guard CallMode.available.contains(mode) else { return }
+        guard callStatus == .established else { return }
+        call.callMode = mode
+        if !fromSignalling {
+            // Python: self.signal(Signalling.PREFERRED_MODE + self.active_call.call_mode, ...)
+            let composite = Int(SIGNALLING_PREFERRED_MODE) + Int(mode.rawValue)
+            sendSignal(composite, on: call.link)
+        }
+        selectCallMode(mode)
+    }
+
+    /// Apply a duplex mode locally (default to `DEFAULT_MODE` when nil), squelching
+    /// or unsquelching the transmit packetizer to match.
+    /// Python: `Telephone.__select_call_mode(mode=None)`
+    private func selectCallMode(_ mode: CallMode? = nil) {
+        let resolved = mode ?? CallMode.defaultMode
+        activeCall?.callMode = resolved
+        if let pkt = activeCall?.packetizer {
+            switch resolved {
+            case .halfDuplex: pkt.squelch()
+            case .fullDuplex: pkt.unsquelch()
+            }
+        }
     }
 
     // MARK: - SignallingReceiver override
@@ -589,14 +726,18 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 
         for signal in signals {
             // Incoming, not-yet-answered calls ignore status codes but still accept
-            // profile-preference signals (>= PREFERRED_PROFILE), so the preferred
-            // codec is recorded while ringing. Python: first guard of signalling_received.
-            if call.isIncoming, !call.answered, signal < Int(SIGNALLING_PREFERRED_PROFILE) {
+            // profile- and mode-preference signals (>= PREFERRED_MODE), so the
+            // preferred codec/duplex-mode is recorded while ringing.
+            // Python: first guard of signalling_received (threshold lowered to
+            // PREFERRED_MODE in LXST 0.5.0 to allow mode signalling before answer).
+            if call.isIncoming, !call.answered, signal < Int(SIGNALLING_PREFERRED_MODE) {
                 return
             }
 
             // Profile-preference composite signal (Python: signal >= PREFERRED_PROFILE).
             // PREFERRED_PROFILE (0xFF) + profile (0x10..0x80) exceeds a single byte.
+            // Checked before the mode branch because profile composites (>= 0xFF)
+            // are also >= PREFERRED_MODE (0xF0); mode composites (0xF1/0xF2) are not.
             if signal >= Int(SIGNALLING_PREFERRED_PROFILE) {
                 let profileRaw = signal - Int(SIGNALLING_PREFERRED_PROFILE)
                 if profileRaw >= 0, profileRaw <= 0xFF,
@@ -605,6 +746,21 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
                         switchProfile(profile, fromSignalling: true)
                     } else {
                         selectCallProfile(profile)
+                    }
+                }
+                continue
+            }
+
+            // Mode-preference composite signal (Python: signal >= PREFERRED_MODE).
+            // PREFERRED_MODE (0xF0) + mode (0x01/0x02) = 0xF1/0xF2.
+            if signal >= Int(SIGNALLING_PREFERRED_MODE) {
+                let modeRaw = signal - Int(SIGNALLING_PREFERRED_MODE)
+                if modeRaw >= 0, modeRaw <= 0xFF,
+                   let mode = CallMode(rawValue: UInt8(modeRaw)) {
+                    if callStatus == .established {
+                        switchMode(mode, fromSignalling: true)
+                    } else {
+                        selectCallMode(mode)
                     }
                 }
                 continue
@@ -627,12 +783,15 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 
             case .ringing:
                 callStatus = .ringing
-                prepareDiallingPipelines()
+                prepareDiallingPipelines()   // selects call mode → call.callMode is set below
                 if call.isOutgoing {
-                    // Python: self.signal(Signalling.PREFERRED_PROFILE + self.active_call.profile, ...)
-                    let composite = Int(SIGNALLING_PREFERRED_PROFILE) +
-                                    Int((call.profile ?? .qualityMedium).rawValue)
-                    sendSignal(composite, on: call.link)
+                    // Python (combined signalling, LXST 0.5.0):
+                    // self.signal([PREFERRED_PROFILE+profile, PREFERRED_MODE+call_mode], ...)
+                    let profileComposite = Int(SIGNALLING_PREFERRED_PROFILE) +
+                                           Int((call.profile ?? .qualityMedium).rawValue)
+                    let modeComposite    = Int(SIGNALLING_PREFERRED_MODE) +
+                                           Int((call.callMode ?? .defaultMode).rawValue)
+                    sendSignal([profileComposite, modeComposite], on: call.link)
                 }
 
             case .connecting:
@@ -649,6 +808,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
                     disableDialTone()
                     callerPipelineOpenLock.unlock()
                     callStatus = .established
+                    call.establishedAt = Date().timeIntervalSince1970   // Python: active_call.established_at = time.time()
                     establishedCallback?(call.remoteIdentity)
                 }
 
@@ -765,10 +925,12 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         transmitCodec = profile.codec
         receiveCodec  = NullCodec()
         targetFrameTimeMs = Double(profile.frameTimeMs)
+        targetBufferFrames = profile.bufferFrames
     }
 
     private func prepareDiallingPipelines() {
         selectCallProfile(activeCall?.profile ?? .qualityMedium)
+        selectCallMode(activeCall?.callMode)   // Python: self.__select_call_mode(self.active_call.call_mode)
         if audioOutput    == nil { audioOutput    = LineSink(device: speakerDevice, backend: makeAudioBackend?()) }
         if receiveMixer   == nil { receiveMixer   = Mixer(targetFrameMs: targetFrameTimeMs, gain: receiveGain) }
         if dialTone       == nil { dialTone       = ToneSource(frequency: Telephone.dialToneFrequency,
@@ -800,10 +962,18 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         pipelineLock.lock()
         defer { pipelineLock.unlock() }
 
-        let filters: [any Filter] = useAGC
-            ? [BandPass(lowCut: 250, highCut: 8500), AGC(targetLevel: -15)]
-            : [BandPass(lowCut: 250, highCut: 8500)]
-
+        // Build the mic filter chain: bandpass → AGC → echo suppressor.
+        // Python: filter_chain construction in __open_audio_pipelines.
+        var filters: [any Filter] = []
+        if useBandpass { filters.append(BandPass(lowCut: 250, highCut: 8500)) }
+        if useAGC      { filters.append(AGC(targetLevel: -15)) }
+        var suppressor: EchoSuppressor? = nil
+        if useEchoCancellation {
+            let es = EchoSuppressor()
+            suppressor = es
+            filters.append(es)
+        }
+        activeCall?.echoSuppressor = suppressor
         activeCall?.filters = filters
         prepareDiallingPipelines()
 
@@ -811,10 +981,19 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
               let rMixer = receiveMixer,
               let output = audioOutput else { return }
 
+        // Feed the receive mixer's played-out signal to the echo suppressor as
+        // its reference. Python: self.receive_mixer.reference_outs = [suppressor]
+        if let es = call.echoSuppressor {
+            rMixer.referenceOuts = [es]
+        }
+
         let pkt = Packetizer(destination: call.link, onFailure: { [weak self] in
             self?.hangup()
         })
         call.packetizer = pkt
+        // Half-duplex: start with the transmit path squelched.
+        // Python: if self.active_call.call_mode == Profiles.MODE_HALF_DUPLEX: packetizer.squelch()
+        if call.callMode == .halfDuplex { pkt.squelch() }
 
         let tMixer = Mixer(targetFrameMs: targetFrameTimeMs, gain: transmitGain)
         transmitMixer = tMixer
@@ -835,7 +1014,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 
         let audioSrc = LinkSource(link: call.link, signallingProxy: self, sink: rMixer)
         call.audioSource = audioSrc
-        rMixer.setSourceMaxFrames(2, for: audioSrc)
+        // Python: self.receive_mixer.set_source_max_frames(audio_source, self.target_buffer_frames)
+        rMixer.setSourceMaxFrames(targetBufferFrames, for: audioSrc)
 
         if call.isIncoming {
             sendSignal(.connecting, on: call.link)
