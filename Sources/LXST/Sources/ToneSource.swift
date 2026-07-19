@@ -21,8 +21,18 @@ public final class ToneSource: Source {
     public private(set) var sampleRate:    Double
     public private(set) var channelCount:  Int    = 1
     public private(set) var bitDepth:      Int    = 32
-    public private(set) var shouldRun:     Bool   = false
     public private(set) var targetFrameMs: Double
+
+    // The generate loop reads `shouldRun` every frame on the `lxst.tone` thread
+    // while start()/stop() write it from control threads (the Telephone dial tone
+    // is stopped from a different thread than the one running the loop). Guard it
+    // with a lock so the read/write can't race. Same pattern as `Mixer`.
+    private let runLock = NSLock()
+    private var _shouldRun = false
+    public private(set) var shouldRun: Bool {
+        get { runLock.lock(); defer { runLock.unlock() }; return _shouldRun }
+        set { runLock.lock(); _shouldRun = newValue; runLock.unlock() }
+    }
 
     // MARK: - Tone parameters
     public var frequency: Double
