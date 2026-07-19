@@ -430,37 +430,40 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 
     /// Python: `set_receive_gain(gain=0.0)`
     public func setReceiveGain(_ gain: Float = 0.0) {
-        receiveGain = gain
-        receiveMixer?.setGain(gain)
+        // receiveGain is read by the pipeline-build methods under pipelineLock, so
+        // write it (and snapshot the mixer) under the same lock; the Mixer call is
+        // a callout and stays outside.
+        pipelineLock.lock(); receiveGain = gain; let m = receiveMixer; pipelineLock.unlock()
+        m?.setGain(gain)
     }
 
     /// Python: `set_transmit_gain(gain=0.0)`
     public func setTransmitGain(_ gain: Float = 0.0) {
-        transmitGain = gain
-        transmitMixer?.setGain(gain)
+        pipelineLock.lock(); transmitGain = gain; let m = transmitMixer; pipelineLock.unlock()
+        m?.setGain(gain)
     }
 
     // MARK: - Mute
 
     /// Python: `mute_receive(mute=True)`
     public func muteReceive(_ mute: Bool = true) {
-        receiveIsMuted = mute
-        receiveMixer?.mute(mute)
+        pipelineLock.lock(); receiveIsMuted = mute; let m = receiveMixer; pipelineLock.unlock()
+        m?.mute(mute)
     }
     /// Python: `unmute_receive(unmute=True)`
     public func unmuteReceive(_ unmute: Bool = true) {
-        receiveIsMuted = !unmute
-        receiveMixer?.unmute(unmute)
+        pipelineLock.lock(); receiveIsMuted = !unmute; let m = receiveMixer; pipelineLock.unlock()
+        m?.unmute(unmute)
     }
     /// Python: `mute_transmit(mute=True)`
     public func muteTransmit(_ mute: Bool = true) {
-        transmitIsMuted = mute
-        transmitMixer?.mute(mute)
+        pipelineLock.lock(); transmitIsMuted = mute; let m = transmitMixer; pipelineLock.unlock()
+        m?.mute(mute)
     }
     /// Python: `unmute_transmit(unmute=True)`
     public func unmuteTransmit(_ unmute: Bool = true) {
-        transmitIsMuted = !unmute
-        transmitMixer?.unmute(unmute)
+        pipelineLock.lock(); transmitIsMuted = !unmute; let m = transmitMixer; pipelineLock.unlock()
+        m?.unmute(unmute)
     }
 
     // MARK: - Computed properties
@@ -478,12 +481,14 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 
     /// Python: `receive_muted` property
     public var receiveMuted: Bool {
-        receiveMixer?.muted ?? receiveIsMuted
+        pipelineLock.lock(); let m = receiveMixer; let fallback = receiveIsMuted; pipelineLock.unlock()
+        return m?.muted ?? fallback
     }
 
     /// Python: `transmit_muted` property
     public var transmitMuted: Bool {
-        transmitMixer?.muted ?? transmitIsMuted
+        pipelineLock.lock(); let m = transmitMixer; let fallback = transmitIsMuted; pipelineLock.unlock()
+        return m?.muted ?? fallback
     }
 
     // MARK: - Signalling
@@ -640,18 +645,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         }
 
         stopPipelines()
-        pipelineLock.lock()
-        receiveMixer      = nil
-        transmitMixer     = nil
-        receivePipeline   = nil
-        transmitPipeline  = nil
-        audioOutput       = nil
-        dialTone          = nil
-        pipelineLock.unlock()
+        clearPipelineFields()
 
         callStatus       = .available
-        receiveIsMuted   = false
-        transmitIsMuted  = false
 
         switch reason {
         case .busy:
@@ -684,7 +680,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         reconfigureTransmitPipeline()
         // Python: self.receive_mixer.set_source_max_frames(audio_source, target_buffer_frames)
         if let src = call.audioSource {
-            receiveMixer?.setSourceMaxFrames(targetBufferFrames, for: src)
+            pipelineLock.lock(); let m = receiveMixer; pipelineLock.unlock()
+            m?.setSourceMaxFrames(targetBufferFrames, for: src)
         }
     }
 
@@ -937,7 +934,22 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         targetBufferFrames = profile.bufferFrames
     }
 
+    /// Locking wrapper for callers that do NOT already hold `pipelineLock`
+    /// (the `.ringing` and incoming-caller-identified paths). Callers already
+    /// holding the lock (`openPipelines`, `resetDiallingPipelines`) must call
+    /// `_prepareDiallingPipelinesLocked()` directly to avoid re-entering the
+    /// non-recursive lock.
     private func prepareDiallingPipelines() {
+        pipelineLock.lock(); defer { pipelineLock.unlock() }
+        _prepareDiallingPipelinesLocked()
+    }
+
+    /// Builds the receive-side dialling pipeline. Caller MUST hold `pipelineLock`.
+    /// The body is byte-identical to the original `prepareDiallingPipelines` — the
+    /// nil-check-then-assign order (audioOutput → receiveMixer → dialTone →
+    /// receivePipeline) and every constructor argument are unchanged, so audio/wire
+    /// behavior is identical; only the lock discipline around it changed.
+    private func _prepareDiallingPipelinesLocked() {
         selectCallProfile(activeCall?.profile ?? .qualityMedium)
         selectCallMode(activeCall?.callMode)   // Python: self.__select_call_mode(self.active_call.call_mode)
         if audioOutput    == nil { audioOutput    = LineSink(device: speakerDevice, backend: makeAudioBackend?()) }
@@ -954,6 +966,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     }
 
     private func resetDiallingPipelines() {
+        // Hold pipelineLock across the ENTIRE stop → nil → rebuild sequence so no
+        // other thread observes the half-nil'd fields (closes the torn-state window
+        // that existed between the old unlock() and the follow-up prepare()).
         pipelineLock.lock()
         audioOutput?.stop()
         dialTone?.stop()
@@ -963,8 +978,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         dialTone       = nil
         receivePipeline = nil
         receiveMixer   = nil
+        _prepareDiallingPipelinesLocked()
         pipelineLock.unlock()
-        prepareDiallingPipelines()
     }
 
     private func openPipelines(for identity: Identity) {
@@ -984,7 +999,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         }
         activeCall?.echoSuppressor = suppressor
         activeCall?.filters = filters
-        prepareDiallingPipelines()
+        _prepareDiallingPipelinesLocked()   // openPipelines already holds pipelineLock
 
         guard let call = activeCall,
               let rMixer = receiveMixer,
@@ -1055,15 +1070,23 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 
     private func reconfigureTransmitPipeline() {
         guard callStatus == .established else { return }
-        audioInput?.stop()
-        transmitMixer?.stop()
-        transmitPipeline?.stop()
-
-        let tMixer = Mixer(targetFrameMs: targetFrameTimeMs, gain: transmitGain)
-        tMixer.mute(transmitIsMuted)
-        transmitMixer = tMixer
+        // Snapshot + clear the old transmit-path fields under the lock; stop them
+        // OUTSIDE it (stop() is a callout). The build (makeAudioBackend / Pipeline)
+        // also happens outside the lock; we re-acquire only to commit.
+        pipelineLock.lock()
+        let oldInput = audioInput
+        let oldMixer = transmitMixer
+        let oldPipe  = transmitPipeline
+        let gainSnapshot = transmitGain
+        let mutedSnapshot = transmitIsMuted
+        pipelineLock.unlock()
+        oldInput?.stop()
+        oldMixer?.stop()
+        oldPipe?.stop()
 
         guard let call = activeCall else { return }
+        let tMixer = Mixer(targetFrameMs: targetFrameTimeMs, gain: gainSnapshot)
+        tMixer.mute(mutedSnapshot)
         let input = LineSource(device: microphoneDevice,
                                targetFrameMs: targetFrameTimeMs,
                                codec: RawCodec(),
@@ -1071,19 +1094,50 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
                                filters: call.filters,
                                skip: 0.075,
                                backend: makeAudioBackend?())
-        audioInput = input
-
+        var newPipeline: Pipeline? = nil
         if let txCodec = transmitCodec, let pkt = call.packetizer {
-            transmitPipeline = try? Pipeline(source: tMixer, codec: txCodec, sink: pkt)
+            newPipeline = try? Pipeline(source: tMixer, codec: txCodec, sink: pkt)
         }
+
+        // Commit under the lock — but only if the call is still established. A
+        // concurrent hangup wins the race and we discard (stop) the freshly-built
+        // objects rather than leak a started transmit pipeline onto a dead call.
+        pipelineLock.lock()
+        guard callStatus == .established, activeCall != nil else {
+            pipelineLock.unlock()
+            tMixer.stop(); input.stop(); newPipeline?.stop()
+            return
+        }
+        transmitMixer = tMixer
+        audioInput = input
+        transmitPipeline = newPipeline
+        pipelineLock.unlock()
 
         tMixer.start()
         input.start()
-        transmitPipeline?.start()
+        newPipeline?.start()
     }
 
     private func disableDialTone() {
-        dialTone?.stop()
+        pipelineLock.lock(); let dt = dialTone; pipelineLock.unlock()
+        dt?.stop()
+    }
+
+    /// Nil out every pipeline field + reset the mute flags, all under `pipelineLock`
+    /// (the mute flags are guarded there too so this stays consistent with the gain/
+    /// mute accessors). Pipeline .stop() is done by the caller (stopPipelines) first.
+    private func clearPipelineFields() {
+        pipelineLock.lock()
+        receiveMixer      = nil
+        transmitMixer     = nil
+        receivePipeline   = nil
+        transmitPipeline  = nil
+        audioInput        = nil
+        audioOutput       = nil
+        dialTone          = nil
+        receiveIsMuted    = false
+        transmitIsMuted   = false
+        pipelineLock.unlock()
     }
 }
 
@@ -1125,5 +1179,20 @@ extension Telephone {
         if SignallingStatus.autoStatusCodes.contains(status) {
             callStatus = status
         }
+    }
+
+    /// Test-only: populate the receive-side dialling pipeline (no call/link needed),
+    /// exercising the locking `prepareDiallingPipelines()` wrapper.
+    func testPreparePipelines() { prepareDiallingPipelines() }
+    /// Test-only: stop+nil+rebuild the dialling pipeline under the lock.
+    func testResetPipelines() { resetDiallingPipelines() }
+    /// Test-only: nil out all pipeline fields under the lock (hangup's field-clear).
+    func testNilPipelines() { clearPipelineFields() }
+    /// Test-only: read the pipeline field REFERENCES under the lock without calling
+    /// any Mixer/Pipeline method — exercises the Telephone field-reference race
+    /// surface (the target of this fix) without forcing concurrent Mixer access.
+    func testPipelineFieldsPresent() -> (Bool, Bool, Bool, Bool) {
+        pipelineLock.lock(); defer { pipelineLock.unlock() }
+        return (receiveMixer != nil, transmitMixer != nil, audioOutput != nil, receivePipeline != nil)
     }
 }
