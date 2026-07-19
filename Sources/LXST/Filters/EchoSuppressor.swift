@@ -508,8 +508,15 @@ public final class EchoSuppressor: Filter, ReferenceSink {
         frameCount += 1
         var refDelayed: [Float]? = nil
 
-        if refValid < N + 100 { return frame }
-        if let cur = samplerate, cur != sr { return frame }
+        // `refValid`/`samplerate` are written under `lock` by handleReference/
+        // ensureBuffer on the mixer reference thread — snapshot them under the
+        // lock before the early-return checks instead of reading them raw.
+        lock.lock()
+        let refValidSnapshot = refValid
+        let samplerateSnapshot = samplerate
+        lock.unlock()
+        if refValidSnapshot < N + 100 { return frame }
+        if let cur = samplerateSnapshot, cur != sr { return frame }
 
         let doEstimate = (frameCount % estimateEveryN) == 0
 
