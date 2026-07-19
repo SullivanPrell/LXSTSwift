@@ -124,6 +124,100 @@ final class ParityGapTests: XCTestCase {
                        "setMode must update the active mode")
     }
 
+    // MARK: - Codec2 decode adopts the wire mode-header byte
+    // Python: Codec2.decode reads frame_bytes[0], maps HEADER_MODES[frame_header],
+    // and set_mode(frame_mode) before decoding — so a receiver decodes whatever
+    // mode the sender used, not just its own current mode.
+    //
+    // NOTE on assertions: libcodec2's low-bitrate synthesis uses randomised
+    // phase (a shared libc RNG) for unvoiced frames, so two decoders — even two
+    // *native* same-mode ones — do not produce bit-identical PCM from the same
+    // bytes. The deterministic, parity-relevant facts are therefore the adopted
+    // MODE and the frame GEOMETRY (sample count), not the exact sample values.
+    // Before the fix the geometry was wrong: a different-mode frame either
+    // decoded as garbage or, when its length wasn't a multiple of the receiver's
+    // bytes-per-frame, threw `invalidFrame`.
+
+    /// A receiver at the DEFAULT mode (2400) must decode a frame the sender
+    /// encoded at a *different* mode (3200 — a different bytes-per-frame), by
+    /// reading the wire header and adopting that mode.
+    func testCodec2DecodeAdoptsWireModeHeaderDifferentBPF() throws {
+        let sender = Codec2Codec(mode: .codec2_3200)
+        let input  = [Float](repeating: 0.15, count: 320)   // 40 ms @ 8 kHz
+        let frame  = AudioFrame(samples: input, channelCount: 1, sampleRate: 8000)
+        let wire   = try sender.encode(frame)
+        XCTAssertEqual(wire[wire.startIndex], Codec2Mode.codec2_3200.headerByte,
+                       "sanity: wire header announces mode 3200 (0x06)")
+
+        let receiver = Codec2Codec()   // default .codec2_2400
+        let decoded  = try receiver.decode(wire)
+
+        XCTAssertEqual(receiver.mode, .codec2_3200,
+                       "decode must adopt the wire header's mode (Python: set_mode)")
+        // Adopting mode 3200 (160 samples/frame) for two frames' worth of bytes
+        // must recover the original 320-sample frame. The pre-fix decoder threw.
+        XCTAssertEqual(decoded.sampleCount, 320,
+                       "decode at the adopted mode must recover the original frame length")
+        let reference = try Codec2Codec(mode: .codec2_3200).decode(wire)
+        XCTAssertEqual(decoded.sampleCount, reference.sampleCount,
+                       "sample count must match a native mode-3200 decode")
+    }
+
+    /// Same, but the wire mode (700C) has a different *samples*-per-frame than
+    /// the receiver's default (2400), so a mis-adopted mode would also yield the
+    /// wrong sample count.
+    func testCodec2DecodeAdoptsWireModeHeaderDifferentSPF() throws {
+        let sender = Codec2Codec(mode: .codec2_700c)
+        let input  = [Float](repeating: -0.2, count: 320)
+        let frame  = AudioFrame(samples: input, channelCount: 1, sampleRate: 8000)
+        let wire   = try sender.encode(frame)
+
+        let receiver = Codec2Codec()   // default .codec2_2400
+        let decoded  = try receiver.decode(wire)
+
+        XCTAssertEqual(receiver.mode, .codec2_700c,
+                       "decode must adopt mode 700C from the wire header")
+        XCTAssertEqual(decoded.sampleCount, 320,
+                       "700C is 320 samples/frame; one frame must recover 320 samples")
+        let reference = try Codec2Codec(mode: .codec2_700c).decode(wire)
+        XCTAssertEqual(decoded.sampleCount, reference.sampleCount,
+                       "sample count must match a native mode-700C decode")
+    }
+
+    /// A frame already at the receiver's current mode still decodes (regression
+    /// guard: the header path must not disturb the common same-mode case).
+    func testCodec2DecodeSameModeStillWorks() throws {
+        let c     = Codec2Codec(mode: .codec2_2400)
+        let input = [Float](repeating: 0.2, count: 320)
+        let frame = AudioFrame(samples: input, channelCount: 1, sampleRate: 8000)
+        let wire  = try c.encode(frame)
+
+        let receiver = Codec2Codec(mode: .codec2_2400)
+        let decoded  = try receiver.decode(wire)
+        XCTAssertEqual(receiver.mode, .codec2_2400,
+                       "same-mode decode must leave the mode unchanged")
+        XCTAssertEqual(decoded.sampleCount, 320)
+    }
+
+    /// An unrecognised header byte keeps the current mode and decodes the rest,
+    /// exactly like Python (`else: frame_mode = self.mode`).
+    func testCodec2DecodeUnknownHeaderKeepsCurrentMode() throws {
+        // Encode at 2400, then overwrite the header byte with an invalid mode
+        // marker (0x07 is not in HEADER_MODES). The remaining bytes are still a
+        // valid 2400 payload, so a receiver at 2400 must decode them as 2400.
+        let c     = Codec2Codec(mode: .codec2_2400)
+        let input = [Float](repeating: 0.1, count: 320)
+        let frame = AudioFrame(samples: input, channelCount: 1, sampleRate: 8000)
+        var wire  = try c.encode(frame)
+        wire[wire.startIndex] = 0x07   // unknown header
+
+        let receiver = Codec2Codec(mode: .codec2_2400)
+        let decoded  = try receiver.decode(wire)
+        XCTAssertEqual(receiver.mode, .codec2_2400,
+                       "unknown header must leave the current mode unchanged")
+        XCTAssertEqual(decoded.sampleCount, 320)
+    }
+
     // MARK: - get_backend() module-level function
 
     func testGetBackendReturnsAudioBackend() {

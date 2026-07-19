@@ -155,11 +155,27 @@ public final class Codec2Codec: Codec {
     /// Input: `[mode_header_byte][codec2_encoded_bytes]`
     public func decode(_ data: Data) throws -> AudioFrame {
         lock.lock(); defer { lock.unlock() }
-        try ensureState()
 
         guard data.count > 1 else { throw CodecError.invalidFrame }
 
-        // First byte is the mode header (may differ from our current mode — handle gracefully)
+        // Adopt the sender's mode from the wire header byte, exactly like Python
+        // `Codec2.decode` (HEADER_MODES[frame_header] → set_mode(frame_mode)):
+        // a receiver decodes whatever mode the sender used, not just its own.
+        // An unrecognised header keeps the current mode (Python: `else frame_mode
+        // = self.mode`). This MUST run before `ensureState()` so the codec
+        // geometry (samples/bytes-per-frame) matches the wire mode — otherwise
+        // a different-mode frame is mis-sliced (garbage audio, or an
+        // `invalidFrame` throw when its length isn't a multiple of our BPF).
+        let frameHeader = data[data.startIndex]
+        let frameMode = Codec2Mode.from(headerByte: frameHeader) ?? mode
+        if frameMode != mode {
+            if let s = state { codec2_destroy(s); state = nil }
+            mode = frameMode
+        }
+
+        try ensureState()
+
+        // Drop the mode-header byte; the remainder is the codec2 payload.
         let payload = Data(data.dropFirst())
         guard payload.count % bytesPerFrame == 0 else { throw CodecError.invalidFrame }
 
