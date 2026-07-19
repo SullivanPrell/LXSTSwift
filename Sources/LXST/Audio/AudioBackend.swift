@@ -139,10 +139,17 @@ final class AVAudioPlayerAdapter: AudioPlayer {
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else { return }
         buffer.frameLength = frameCount
         if let ptr = buffer.floatChannelData {
-            let ch = frame.channelCount
-            for c in 0..<ch {
+            // `ptr` has one entry per BUFFER-FORMAT channel; indexing it by the
+            // frame's channel count crashes when they differ. Fill only the common
+            // channels and guard the source index so a short/oversized frame can't
+            // overrun `frame.samples`. Normal (matching) frames are unaffected.
+            let bufCh = Int(format.channelCount)
+            let ch = max(1, frame.channelCount)
+            let usable = min(bufCh, ch)
+            for c in 0..<usable {
                 for i in 0..<frame.sampleCount {
-                    ptr[c][i] = frame.samples[i * ch + c]
+                    let srcIdx = i * ch + c
+                    ptr[c][i] = srcIdx < frame.samples.count ? frame.samples[srcIdx] : 0
                 }
             }
         }

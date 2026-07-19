@@ -32,8 +32,9 @@ public final class LinkSource: RemoteSource {
 
         var dict: [Int: MsgPack.Value] = [:]
         for (k, v) in pairs {
-            if case .int(let n) = k { dict[Int(n)] = v }
-            if case .uint(let n) = k { dict[Int(n)] = v }
+            // Guard the UInt64->Int narrowing: a wire key above Int.max would trap.
+            if case .int(let n) = k, let key = Int(exactly: n) { dict[key] = v }
+            if case .uint(let n) = k, let key = Int(exactly: n) { dict[key] = v }
         }
 
         // Handle frames field

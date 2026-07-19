@@ -298,8 +298,13 @@ public final class EchoSuppressor: Filter, ReferenceSink {
     }
 
     private func getCng(_ n: Int) -> [Float] {
+        guard n > 0 else { return [] }
         if cngBufferPos + n > cngBuffer.count {
-            cngBuffer = generateCngBlock(cngBlockSize)
+            // Regenerate a block at least as large as the request. A request larger
+            // than cngBlockSize (e.g. an oversized inbound frame) previously
+            // produced a too-small block and the slice below overran, crashing.
+            // Comfort-noise is local DSP, so sizing the block up is wire-neutral.
+            cngBuffer = generateCngBlock(max(cngBlockSize, n))
             cngBufferPos = 0
         }
         let slice = Array(cngBuffer[cngBufferPos ..< cngBufferPos + n])
