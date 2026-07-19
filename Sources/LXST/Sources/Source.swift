@@ -36,8 +36,20 @@ open class LocalSource: Source {
     public var sampleRate:     Double        = 48000
     public var channelCount:   Int           = 1
     public var bitDepth:       Int           = 32
-    public var shouldRun:      Bool          = false
     public var targetFrameMs:  Double        = 80
+
+    // `shouldRun` is the run flag: written by start()/stop() from control
+    // threads — including stop() on the Reticulum callback thread during hangup —
+    // while background job threads read it every iteration (e.g.
+    // `OpusFileSource.ingestJob`) and `Pipeline.running` reads it from the app
+    // thread. Guard it with a lock so the read/write can't race
+    // (ThreadSanitizer-clean). Same pattern as `Mixer`.
+    private let runLock = NSLock()
+    private var _shouldRun = false
+    public var shouldRun: Bool {
+        get { runLock.lock(); defer { runLock.unlock() }; return _shouldRun }
+        set { runLock.lock(); _shouldRun = newValue; runLock.unlock() }
+    }
 
     public init() {}
 
@@ -65,8 +77,17 @@ open class RemoteSource: Source {
     public var sampleRate:     Double        = 48000
     public var channelCount:   Int           = 1
     public var bitDepth:       Int           = 32
-    public var shouldRun:      Bool          = false
     public var targetFrameMs:  Double        = 40
+
+    // See `LocalSource.shouldRun` — the run flag is read from control threads
+    // (`Pipeline.running`) while start()/stop() write it (stop() runs on the
+    // Reticulum callback thread during hangup). Guard it with a lock.
+    private let runLock = NSLock()
+    private var _shouldRun = false
+    public var shouldRun: Bool {
+        get { runLock.lock(); defer { runLock.unlock() }; return _shouldRun }
+        set { runLock.lock(); _shouldRun = newValue; runLock.unlock() }
+    }
 
     public init() {}
 

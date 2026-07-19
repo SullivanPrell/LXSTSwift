@@ -25,21 +25,52 @@ public final class Mixer: Source, Sink {
     public private(set) var sampleRate:    Double
     public private(set) var channelCount:  Int    = 1
     public private(set) var bitDepth:      Int    = 32
-    public private(set) var shouldRun:     Bool   = false
     public private(set) var targetFrameMs: Double
 
     // MARK: - Sink protocol
     public var channels: Int? = nil
 
-    // MARK: - Mixer state
+    // MARK: - Mixer control-plane state (thread-safe)
+    //
+    // `gain`, `muted`, `shouldRun` and `referenceOuts` are written from control
+    // threads — the app/UI thread (setGain/mute/unmute), and hangup → stop() on
+    // the Reticulum callback thread — while the mix loop reads them on every frame
+    // from the `lxst.mixer` thread. All four are guarded by `stateLock` so a
+    // control write can never race a mix-loop read (ThreadSanitizer-clean, and, for
+    // `referenceOuts`, crash-safe — a Swift Array read racing a write can crash).
+    //
+    // `stateLock` is only ever held for the trivial load/store in the accessors
+    // below — never across mixing, codec encode/decode, or sink delivery — so it
+    // adds no audio-path contention. It is also never held together with
+    // `insertLock`, so the two locks cannot deadlock.
+    private let stateLock = NSLock()
+    private var _gain:          Float = 0.0
+    private var _muted:         Bool  = false
+    private var _shouldRun:     Bool  = false
+    private var _referenceOuts: [any ReferenceSink] = []
+
     /// dB offset applied to the mixed output. Python: `gain = 0.0`
-    public var gain: Float = 0.0
+    public var gain: Float {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _gain }
+        set { stateLock.lock(); _gain = newValue; stateLock.unlock() }
+    }
     /// Whether this mixer is muted. Python: `muted = False`
-    public var muted: Bool = false
+    public var muted: Bool {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _muted }
+        set { stateLock.lock(); _muted = newValue; stateLock.unlock() }
+    }
+    /// Whether the mix loop is running. Python: `should_run`.
+    public private(set) var shouldRun: Bool {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _shouldRun }
+        set { stateLock.lock(); _shouldRun = newValue; stateLock.unlock() }
+    }
 
     /// Reference outputs — each receives every mixed (pre-codec) frame, for use
     /// as an echo-cancellation reference signal. Python: `Mixer.reference_outs`
-    public var referenceOuts: [any ReferenceSink] = []
+    public var referenceOuts: [any ReferenceSink] {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _referenceOuts }
+        set { stateLock.lock(); _referenceOuts = newValue; stateLock.unlock() }
+    }
 
     private var incomingFrames: [ObjectIdentifier: [AudioFrame]] = [:]
     private var sourceMaxFrames: [ObjectIdentifier: Int] = [:]
@@ -59,7 +90,7 @@ public final class Mixer: Source, Sink {
         self.sampleRate    = sampleRate ?? 48000
         self.codec  = codec
         self.sink   = sink
-        self.gain   = gain
+        self._gain  = gain
     }
 
     // MARK: - Gain and mute (Python: set_gain, mute, unmute)

@@ -141,6 +141,120 @@ final class MixerTests: XCTestCase {
         }
     }
 
+    // MARK: - Concurrency (run under `swift test --sanitize=thread`)
+
+    /// A sink whose frame count is guarded by a lock, so the test thread can read
+    /// it without racing the mix thread's writes.
+    final class CountingSink: Sink {
+        var channels:   Int?   = 1
+        var sampleRate: Double = 48000
+        private let lock = NSLock()
+        private var _count = 0
+        var count: Int { lock.lock(); defer { lock.unlock() }; return _count }
+        func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
+            lock.lock(); _count += 1; lock.unlock()
+        }
+    }
+
+    /// The core regression test for the ThreadSanitizer race in `Mixer.setGain`:
+    /// while the mix loop reads `gain`/`muted`/`referenceOuts`/`shouldRun` every
+    /// frame on the `lxst.mixer` thread, hammer all of them (plus the frame queue)
+    /// from several control threads. Must be clean under `--sanitize=thread`.
+    func testConcurrentControlPlaneStressIsRaceFree() {
+        let m = Mixer(targetFrameMs: 5, sampleRate: 48000)
+        m.sink = CountingSink()
+
+        let src = Loopback()
+        m.setSourceMaxFrames(64, for: src)
+
+        let n = Int(48000 * 5 / 1000) // 240 samples per 5 ms frame
+        let frame = AudioFrame(samples: [Float](repeating: 0.25, count: n),
+                               channelCount: 1, sampleRate: 48000)
+
+        m.start()
+
+        let deadline = Date().addingTimeInterval(0.4)
+        let group = DispatchGroup()
+
+        func spawn(_ body: @escaping () -> Void) {
+            group.enter()
+            DispatchQueue.global().async { body(); group.leave() }
+        }
+
+        // Writer: gain (Telephone.setReceiveGain path)
+        spawn { var i = 0; while Date() < deadline { m.setGain(Float(i % 12) - 6); i += 1 } }
+        // Writer: mute/unmute (Telephone.muteReceive path)
+        spawn { var on = false; while Date() < deadline { on.toggle(); m.mute(on) } }
+        // Writer: referenceOuts churn (openPipelines assigns this on a live mixer)
+        spawn {
+            let refs = [MockReferenceSink(), MockReferenceSink()]
+            var i = 0
+            while Date() < deadline { m.referenceOuts = (i % 2 == 0) ? refs : []; i += 1 }
+        }
+        // Producer: frames into the queue + backpressure check
+        spawn { while Date() < deadline { if m.canReceive(from: src) { m.handleFrame(frame, from: src) } } }
+        // Reader: public getters from an unrelated thread (Telephone.receiveMuted path)
+        spawn { while Date() < deadline { _ = m.gain; _ = m.muted; _ = m.shouldRun; _ = m.referenceOuts } }
+        // Churn the per-source frame limit (switchProfile path)
+        spawn { var k = 1; while Date() < deadline { m.setSourceMaxFrames((k % 8) + 1, for: src); k += 1 } }
+
+        group.wait()
+        m.stop()
+        Thread.sleep(forTimeInterval: 0.05) // let the mix loop wind down
+
+        // The actual race detector for this test is ThreadSanitizer: the
+        // gain/muted/shouldRun scalar read/write races are benign on this
+        // hardware (aligned word-sized loads don't tear into wrong values), so
+        // ONLY `--sanitize=thread` observes them — a plain `swift test` cannot.
+        // What a plain run CAN check is that the lock-backed run-flag accessor
+        // still functions after the storm: a full start→stop round-trip that a
+        // broken getter/setter would fail (unlike a bare post-stop() assert,
+        // which is tautological because stop() sets the flag false unconditionally).
+        XCTAssertFalse(m.shouldRun, "mixer must be stopped after stop()")
+        m.start(); XCTAssertTrue(m.shouldRun, "start() must set the run flag through the lock")
+        m.stop();  XCTAssertFalse(m.shouldRun, "stop() must clear the run flag through the lock")
+    }
+
+    /// Specifically targets `stop()` (hangup → stopPipelines, on the Reticulum
+    /// callback thread) racing `setGain`/`mute` (app thread) while the mix loop
+    /// reads. `stop` and the gain/mute writes all mutate control state under the
+    /// same lock, so this must be race-free.
+    func testStopRacingControlWritesIsRaceFree() {
+        let m = Mixer(targetFrameMs: 5, sampleRate: 48000)
+        m.sink = CountingSink()
+
+        let src = Loopback()
+        let n = Int(48000 * 5 / 1000)
+        let frame = AudioFrame(samples: [Float](repeating: 0.1, count: n),
+                               channelCount: 1, sampleRate: 48000)
+        m.setSourceMaxFrames(32, for: src)
+        m.start()
+
+        let deadline = Date().addingTimeInterval(0.3)
+        let group = DispatchGroup()
+
+        func spawn(_ body: @escaping () -> Void) {
+            group.enter()
+            DispatchQueue.global().async { body(); group.leave() }
+        }
+
+        spawn { var i = 0; while Date() < deadline { m.setGain(Float(i % 10)); m.mute(i % 3 == 0); i += 1 } }
+        spawn { while Date() < deadline { if m.canReceive(from: src) { m.handleFrame(frame, from: src) } } }
+        spawn { while Date() < deadline { _ = m.shouldRun } }
+        // Fire stop() from a distinct thread partway through, mid-write-storm.
+        spawn { Thread.sleep(forTimeInterval: 0.15); m.stop() }
+
+        group.wait()
+        m.stop()
+        Thread.sleep(forTimeInterval: 0.05)
+        // ThreadSanitizer is the race detector here (see
+        // testConcurrentControlPlaneStressIsRaceFree). Without the sanitizer we
+        // can still assert the lock-backed run flag round-trips correctly.
+        XCTAssertFalse(m.shouldRun)
+        m.start(); XCTAssertTrue(m.shouldRun)
+        m.stop();  XCTAssertFalse(m.shouldRun)
+    }
+
     func testReferenceOutReceivesMixedFrame() {
         let m = Mixer(targetFrameMs: 10, sampleRate: 48000)
         let sink = MockSink()
