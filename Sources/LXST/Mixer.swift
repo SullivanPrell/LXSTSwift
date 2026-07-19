@@ -43,7 +43,9 @@ public final class Mixer: Source, Sink {
 
     private var incomingFrames: [ObjectIdentifier: [AudioFrame]] = [:]
     private var sourceMaxFrames: [ObjectIdentifier: Int] = [:]
-    private let mixerLock = NSLock()
+    /// Guards BOTH `incomingFrames` and `sourceMaxFrames` — they are read together
+    /// in canReceive/handleFrame, so a single consistent lock avoids the
+    /// mixed-lock data race (a Swift Dictionary read racing a write can crash).
     private let insertLock = NSLock()
     private var mixerThread: Thread?
 
@@ -81,14 +83,15 @@ public final class Mixer: Source, Sink {
 
     /// Python: `set_source_max_frames(source, max_frames)`
     public func setSourceMaxFrames(_ maxFrames: Int, for source: any Source) {
-        mixerLock.lock()
+        insertLock.lock()
         sourceMaxFrames[ObjectIdentifier(source)] = maxFrames
-        mixerLock.unlock()
+        insertLock.unlock()
     }
 
     /// Python: `can_receive(from_source)` — returns false when the queue is full.
     public func canReceive(from source: any Source) -> Bool {
         let key = ObjectIdentifier(source)
+        insertLock.lock(); defer { insertLock.unlock() }
         let limit = sourceMaxFrames[key] ?? Self.maxFrames
         let count = incomingFrames[key]?.count ?? 0
         return count < limit
@@ -100,9 +103,9 @@ public final class Mixer: Source, Sink {
     public func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
         guard let source else { return }
         let key = ObjectIdentifier(source)
-        let limit = sourceMaxFrames[key] ?? Self.maxFrames
 
         insertLock.lock()
+        let limit = sourceMaxFrames[key] ?? Self.maxFrames
         if incomingFrames[key] == nil { incomingFrames[key] = [] }
         if (incomingFrames[key]?.count ?? 0) < limit {
             incomingFrames[key]?.append(frame)

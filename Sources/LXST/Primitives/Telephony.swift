@@ -318,7 +318,6 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     private var transmitPipeline: Pipeline?
 
     private var transmitCodec: (any Codec)?
-    private var receiveCodec:  (any Codec)?
     private var targetFrameTimeMs: Double = 60
     /// Receive-mixer per-source frame buffer depth for the active profile.
     /// Python: `target_buffer_frames`. Default matches the default profile.
@@ -599,15 +598,20 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     @discardableResult
     public func answer(identity: Identity) -> Bool {
         callHandlerLock.lock()
-        defer { callHandlerLock.unlock() }
-        guard let call = activeCall else { return false }
-        guard call.remoteIdentity?.hash == identity.hash else { return false }
+        guard let call = activeCall, call.remoteIdentity?.hash == identity.hash else {
+            callHandlerLock.unlock()
+            return false
+        }
 
         call.answered = true
         call.establishedAt = Date().timeIntervalSince1970   // Python: active_call.established_at = time.time()
         openPipelines(for: identity)
         startPipelines()
-        establishedCallback?(identity)
+        let cb = establishedCallback
+        callHandlerLock.unlock()
+        // Fire the app callback OUTSIDE callHandlerLock (it may re-enter the
+        // Telephone, e.g. hangup(), which takes the same non-recursive lock).
+        cb?(identity)
         return true
     }
 
@@ -722,7 +726,13 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// Handle incoming signalling packets from the active call link.
     /// Python: `Telephone.signalling_received(signals, source)`
     override public func signallingReceived(_ signals: [Int], from source: (any Source)?) {
-        guard let call = activeCall else { return }
+        // activeCall is mutated under callHandlerLock by call/answer/hangup on
+        // other threads — snapshot the reference under the lock, then operate on
+        // the local (this handler runs on the link receive thread).
+        callHandlerLock.lock()
+        let callSnapshot = activeCall
+        callHandlerLock.unlock()
+        guard let call = callSnapshot else { return }
 
         for signal in signals {
             // Incoming, not-yet-answered calls ignore status codes but still accept
@@ -923,7 +933,6 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     private func selectCallProfile(_ profile: TelephonyProfile) {
         activeCall?.profile = profile
         transmitCodec = profile.codec
-        receiveCodec  = NullCodec()
         targetFrameTimeMs = Double(profile.frameTimeMs)
         targetBufferFrames = profile.bufferFrames
     }
@@ -1071,12 +1080,6 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         tMixer.start()
         input.start()
         transmitPipeline?.start()
-    }
-
-    private func enableDialTone() {
-        receiveMixer?.start()
-        dialTone?.gain = 0.04
-        if dialTone?.shouldRun == false { dialTone?.start() }
     }
 
     private func disableDialTone() {

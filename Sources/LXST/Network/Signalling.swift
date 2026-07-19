@@ -112,8 +112,10 @@ open class SignallingReceiver {
 
     private static func intValue(from value: MsgPack.Value) -> Int? {
         switch value {
-        case .int(let n):  return Int(n)
-        case .uint(let n): return Int(n)
+        case .int(let n):  return Int(exactly: n)
+        // `Int(n)` traps for a wire-parsed UInt64 above Int.max; Int(exactly:)
+        // returns nil so an out-of-range signalling value is ignored, not fatal.
+        case .uint(let n): return Int(exactly: n)
         default:           return nil
         }
     }
