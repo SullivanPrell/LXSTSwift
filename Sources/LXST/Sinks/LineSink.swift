@@ -42,7 +42,33 @@ public final class LineSink: LocalSink {
     }
 
     public override func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
+        adoptDeviceChannelMapIfChanged()
         player?.play(frame)
+    }
+
+    /// Recover when the underlying device re-negotiates its channel map while a
+    /// stream is running — a Bluetooth headset switching profile, or a USB
+    /// interface being re-plugged, will do this.
+    ///
+    /// Python (LXST 0.5.0, commit 621d496) simply re-reads
+    /// `self.backend.device.channels` in its playback loop and adopts it, so the
+    /// per-frame `frame[:, 0:self.channels]` truncation stays correct. Swift has
+    /// no such truncation: the channel count is baked into the `AudioPlayer` at
+    /// `startPlayback`. So adopting the new count here also means rebuilding the
+    /// player, otherwise the sink would keep pushing frames at the stale
+    /// geometry and playback would stay broken — the outcome the upstream fix
+    /// exists to prevent.
+    private func adoptDeviceChannelMapIfChanged() {
+        guard let backend else { return }
+        let deviceChannels = backend.channelCount
+        guard deviceChannels > 0, deviceChannels != (channels ?? deviceChannels) else { return }
+
+        Reticulum.log("Underlying device for LineSink re-configured channel map mid-stream (from \(channels.map(String.init) ?? "nil") to \(deviceChannels))",
+                      level: .warning)
+        channels = deviceChannels
+        player?.flush()
+        backend.stopPlayback()
+        player = try? backend.startPlayback(sampleRate: sampleRate, channelCount: deviceChannels)
     }
 
     public override func start() {
