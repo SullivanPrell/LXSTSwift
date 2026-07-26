@@ -19,6 +19,22 @@ public enum OpusProfile: UInt8, CaseIterable {
     case audioHigh   = 0x07   // Python: PROFILE_AUDIO_HIGH
     case audioMax    = 0x08   // Python: PROFILE_AUDIO_MAX
 
+    /// Human-readable profile name, for UI and log output.
+    /// Mirrors Python's `Opus.profile_name(profile)` (LXST 0.5.0, commit 7ba2b82).
+    public var displayName: String {
+        switch self {
+        case .voiceLow:    return "Voice, Low"
+        case .voiceMedium: return "Voice, Medium"
+        case .voiceHigh:   return "Voice, High"
+        case .voiceMax:    return "Voice, Max"
+        case .audioMin:    return "Audio, Min"
+        case .audioLow:    return "Audio, Low"
+        case .audioMedium: return "Audio, Medium"
+        case .audioHigh:   return "Audio, High"
+        case .audioMax:    return "Audio, Max"
+        }
+    }
+
     // MARK: - Profile properties (Python: Opus.profile_channels/samplerate/bitrate_ceiling)
 
     /// Number of output channels. Python: `Opus.profile_channels(profile)`
