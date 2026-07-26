@@ -60,11 +60,21 @@ final class LXST050ParityTests: XCTestCase {
         private(set) var playbackStarts: [Int] = []
         private(set) var stopCount = 0
 
+        /// Makes the next startPlayback after the initial one throw, standing in
+        /// for AVAudioEngine refusing to start during an in-flight route change.
+        var failNextStartAfterFirst = false
+
         init(channelCount: Int) { self.channelCount = channelCount }
+
+        struct StartFailure: Error {}
 
         func startCapture(framesPerBuffer: Int, handler: @escaping (AudioFrame) -> Void) throws {}
         func stopCapture() {}
         func startPlayback(sampleRate: Double, channelCount: Int) throws -> any AudioPlayer {
+            if failNextStartAfterFirst, !playbackStarts.isEmpty {
+                failNextStartAfterFirst = false
+                throw StartFailure()
+            }
             playbackStarts.append(channelCount)
             return NoopPlayer()
         }
@@ -79,8 +89,11 @@ final class LXST050ParityTests: XCTestCase {
     func testLineSinkAdoptsDeviceChannelMapChange() {
         let backend = RemappingBackend(channelCount: 1)
         let sink = LineSink(backend: backend)
-        sink.channels = 1
+        // Deliberately NOT setting sink.channels: production code never does,
+        // and hand-setting it was what made the earlier version of this test
+        // pass against a recovery path that could not fire in a real call.
         sink.start()
+        XCTAssertEqual(sink.channels, 1, "start() must adopt the device's channel map")
         XCTAssertEqual(backend.playbackStarts, [1], "playback starts at the initial channel count")
 
         // Device re-negotiates to stereo mid-stream.
@@ -94,10 +107,29 @@ final class LXST050ParityTests: XCTestCase {
         XCTAssertEqual(backend.stopCount, 1)
     }
 
+    /// A failed restart must not leave the sink permanently silent.
+    func testLineSinkKeepsPlayingWhenRestartFails() {
+        let backend = RemappingBackend(channelCount: 1)
+        backend.failNextStartAfterFirst = true
+        let sink = LineSink(backend: backend)
+        sink.start()
+
+        backend.channelCount = 2
+        sink.handleFrame(AudioFrame(samples: [0], channelCount: 1, sampleRate: 48000), from: nil)
+
+        XCTAssertEqual(sink.channels, 1,
+                       "a failed rebuild must not commit the new channel count, or the retry is skipped forever")
+        XCTAssertNotNil(sink.currentPlayerForTesting,
+                        "a failed rebuild must fall back to a player at the old geometry, not go silent")
+
+        // The next frame retries and succeeds.
+        sink.handleFrame(AudioFrame(samples: [0], channelCount: 1, sampleRate: 48000), from: nil)
+        XCTAssertEqual(sink.channels, 2, "the retry must succeed once the backend recovers")
+    }
+
     func testLineSinkDoesNotRestartWhenChannelMapIsStable() {
         let backend = RemappingBackend(channelCount: 2)
         let sink = LineSink(backend: backend)
-        sink.channels = 2
         sink.start()
 
         for _ in 0..<5 {
