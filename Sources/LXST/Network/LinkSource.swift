@@ -24,6 +24,34 @@ public final class LinkSource: RemoteSource {
         }
     }
 
+    // MARK: - Receive-path codec construction
+
+    /// Build the codec for a wire header byte, already wired to the sink the stream will be
+    /// played through. Returns nil for a header byte no codec claims.
+    ///
+    /// The sink is attached **here**, not by the caller, because `decode` configures itself from
+    /// it — Opus takes its output rate and channel count from the sink (Python `Opus.py:170,174`)
+    /// and Codec2 resamples its fixed 8 kHz output to the sink's rate (`Codec2.py:115-117`). A
+    /// codec that reaches its first frame with no sink attached decodes at its own default rate,
+    /// which on this path is always 8 kHz whatever the sender chose (`bugs/017`). One function
+    /// decides "new receive codec ⇒ attached sink", so a later codec type cannot be added
+    /// without it.
+    static func makeReceiveCodec(for headerByte: UInt8,
+                                 sink: (any Sink)?,
+                                 source: (any Source)?) -> (any Codec)? {
+        let newCodec: any Codec
+        switch headerByte {
+        case CODEC_NULL:   newCodec = NullCodec()
+        case CODEC_RAW:    newCodec = RawCodec()
+        case CODEC_OPUS:   newCodec = OpusCodec()
+        case CODEC_CODEC2: newCodec = Codec2Codec()
+        default: return nil
+        }
+        newCodec.sink   = sink
+        newCodec.source = source
+        return newCodec
+    }
+
     // MARK: - Packet decoding
 
     private func receive(data: Data) {
@@ -45,21 +73,10 @@ public final class LinkSource: RemoteSource {
             let payload    = Data(frameBytes.dropFirst())
 
             // Dynamic codec switching: replace codec if type changed
-            if let newCodecType = codecType(for: headerByte) {
-                if codec == nil || type(of: codec!).headerByte != headerByte {
-                    // Instantiate the right codec type
-                    let newCodec: any Codec
-                    switch headerByte {
-                    case CODEC_NULL:   newCodec = NullCodec()
-                    case CODEC_RAW:    newCodec = RawCodec()
-                    case CODEC_OPUS:   newCodec = OpusCodec()
-                    case CODEC_CODEC2: newCodec = Codec2Codec()
-                    default: return
-                    }
-                    _ = newCodecType  // suppress unused warning
+            if codec == nil || type(of: codec!).headerByte != headerByte {
+                if let newCodec = LinkSource.makeReceiveCodec(for: headerByte,
+                                                              sink: sink, source: self) {
                     codec = newCodec
-                    codec?.sink = sink
-                    codec?.source = self
                     if let pipe = pipeline { pipe.codec = newCodec }
                 }
             }
