@@ -63,6 +63,34 @@ func assertDecoded(_ frame: AudioFrame,
     }
 }
 
+/// Assert that a converted frame carries signal across its whole length.
+///
+/// A sample-count assertion alone is satisfied by padding: `bugs/018`'s worked example is "3200
+/// real samples at the head, 16000 samples of silence", which has exactly the right length and
+/// exactly the right declared rate. Comparing the tail's energy to the head's is what separates
+/// a resample from a pad; it needs no second decode, which matters because libcodec2's synthesis
+/// uses randomised phase for unvoiced frames and is not reproducible sample-for-sample.
+func assertEnergyIsSpreadAcrossTheFrame(_ frame: AudioFrame,
+                                        file: StaticString = #filePath,
+                                        line: UInt = #line) {
+    func rms(_ slice: ArraySlice<Float>) -> Float {
+        guard !slice.isEmpty else { return 0 }
+        return (slice.reduce(0) { $0 + $1 * $1 } / Float(slice.count)).squareRoot()
+    }
+    let quarter = frame.samples.count / 4
+    guard quarter > 0 else { return XCTFail("frame too short to inspect", file: file, line: line) }
+
+    let head = rms(frame.samples[0 ..< quarter])
+    let tail = rms(frame.samples[(frame.samples.count - quarter)...])
+    XCTAssertGreaterThan(head, 0.01, "the source signal must carry real energy", file: file, line: line)
+    XCTAssertGreaterThan(tail, head * 0.25,
+                         """
+                         the last quarter is near-silent (rms \(tail) against the first \
+                         quarter's \(head)) — the frame was padded to length, not converted.
+                         """,
+                         file: file, line: line)
+}
+
 // MARK: - Test double
 
 /// A sink that carries nothing but a rate and a channel count.

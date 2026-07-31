@@ -203,17 +203,54 @@ final class CodecTests: XCTestCase {
                        "First byte of encoded data must be the mode header byte (0x05 for 2400)")
     }
 
+    /// Codec2 is fixed at 8 kHz, so the reference converts on the way out
+    /// (`Codec2.py:115-117`). `bugs/018`: this test used to run with `codec.sink` nil and assert
+    /// the *native* 320 samples, so the missing conversion — and the relabelling that stood in
+    /// for it — was unobservable.
     func testCodec2EncodeDecodeRoundTripPreservesFrameLength() throws {
         let c = Codec2Codec(mode: .codec2_2400)
+        let sink = RateSink(sampleRate: 48000, channels: 1)
+        c.sink = sink
         // One 40 ms frame @ 8 kHz = 320 samples
         let samples = [Float](repeating: 0.2, count: 320)
         let frame   = AudioFrame(samples: samples, channelCount: 1, sampleRate: 8000)
         let encoded = try c.encode(frame)
         let decoded = try c.decode(encoded)
-        // Decoded frame should have the same number of samples
-        XCTAssertEqual(decoded.sampleCount, 320,
-                       "Codec2 decode must produce the same number of samples as input (40 ms @ 8 kHz)")
-        XCTAssertEqual(decoded.channelCount, 1)
+
+        assertDecoded(decoded, playableBy: sink,
+                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 40)
+    }
+
+    /// The conversion has to be a conversion, not a pad. `bugs/018`'s worked example at
+    /// `bandwidthUltraLow` is "3200 real samples at the head, 16000 samples of silence", which
+    /// satisfies any assertion that only counts samples.
+    func testCodec2DecodeFillsTheWholeFrameNotJustItsHead() throws {
+        let c = Codec2Codec(mode: .codec2_3200)
+        let sink = RateSink(sampleRate: 48000, channels: 1)
+        c.sink = sink
+
+        // 400 ms of a 400 Hz tone at 8 kHz — a signal codec2 can actually model.
+        let n = 3200
+        let samples = (0..<n).map { Float(sin(2 * .pi * 400 * Double($0) / 8000)) * 0.5 }
+        let frame = AudioFrame(samples: samples, channelCount: 1, sampleRate: 8000)
+        let decoded = try c.decode(try c.encode(frame))
+
+        assertDecoded(decoded, playableBy: sink,
+                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 400)
+        assertEnergyIsSpreadAcrossTheFrame(decoded)
+    }
+
+    /// A sink at the codec's own rate must not be resampled — the reference gates the conversion
+    /// on `self.sink.samplerate != self.OUTPUT_RATE` (`Codec2.py:116`).
+    func testCodec2DecodeAtTheCodecsOwnRateIsUnconverted() throws {
+        let c = Codec2Codec(mode: .codec2_2400)
+        c.sink = RateSink(sampleRate: CODEC2_OUTPUT_RATE, channels: 1)
+        let frame = AudioFrame(samples: [Float](repeating: 0.2, count: 320),
+                               channelCount: 1, sampleRate: 8000)
+        let decoded = try c.decode(try c.encode(frame))
+
+        XCTAssertEqual(decoded.sampleCount, 320, "an 8 kHz sink gets codec2's native output")
+        XCTAssertEqual(decoded.sampleRate, CODEC2_OUTPUT_RATE)
     }
 
     func testCodec2AllModesEncodeWithoutError() throws {

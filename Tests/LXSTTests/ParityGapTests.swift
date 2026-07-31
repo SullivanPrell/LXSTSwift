@@ -138,6 +138,14 @@ final class ParityGapTests: XCTestCase {
     // decoded as garbage or, when its length wasn't a multiple of the receiver's
     // bytes-per-frame, threw `invalidFrame`.
 
+    // Every test below runs the receiver with a 48 kHz sink attached, the rate a real playback
+    // path uses. Sink-less, codec2's 8 kHz was simultaneously the decode rate and the reported
+    // rate, so these asserted 320 samples against the one rate in play and could not observe
+    // `bugs/018` — the missing 8 kHz → sink conversion — at all. The mode-adoption property they
+    // exist for is unchanged; only the rate they are measured at is.
+
+    private func playbackSink() -> RateSink { RateSink(sampleRate: 48000, channels: 1) }
+
     /// A receiver at the DEFAULT mode (2400) must decode a frame the sender
     /// encoded at a *different* mode (3200 — a different bytes-per-frame), by
     /// reading the wire header and adopting that mode.
@@ -150,16 +158,20 @@ final class ParityGapTests: XCTestCase {
                        "sanity: wire header announces mode 3200 (0x06)")
 
         let receiver = Codec2Codec()   // default .codec2_2400
+        let sink     = playbackSink()
+        receiver.sink = sink
         let decoded  = try receiver.decode(wire)
 
         XCTAssertEqual(receiver.mode, .codec2_3200,
                        "decode must adopt the wire header's mode (Python: set_mode)")
         // Adopting mode 3200 (160 samples/frame) for two frames' worth of bytes
-        // must recover the original 320-sample frame. The pre-fix decoder threw.
-        XCTAssertEqual(decoded.sampleCount, 320,
-                       "decode at the adopted mode must recover the original frame length")
-        let reference = try Codec2Codec(mode: .codec2_3200).decode(wire)
-        XCTAssertEqual(decoded.sampleCount, reference.sampleCount,
+        // must recover the original 40 ms. The pre-fix decoder threw.
+        assertDecoded(decoded, playableBy: sink,
+                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 40)
+
+        let native = Codec2Codec(mode: .codec2_3200)
+        native.sink = sink
+        XCTAssertEqual(decoded.sampleCount, try native.decode(wire).sampleCount,
                        "sample count must match a native mode-3200 decode")
     }
 
@@ -173,14 +185,18 @@ final class ParityGapTests: XCTestCase {
         let wire   = try sender.encode(frame)
 
         let receiver = Codec2Codec()   // default .codec2_2400
+        let sink     = playbackSink()
+        receiver.sink = sink
         let decoded  = try receiver.decode(wire)
 
         XCTAssertEqual(receiver.mode, .codec2_700c,
                        "decode must adopt mode 700C from the wire header")
-        XCTAssertEqual(decoded.sampleCount, 320,
-                       "700C is 320 samples/frame; one frame must recover 320 samples")
-        let reference = try Codec2Codec(mode: .codec2_700c).decode(wire)
-        XCTAssertEqual(decoded.sampleCount, reference.sampleCount,
+        assertDecoded(decoded, playableBy: sink,
+                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 40)
+
+        let native = Codec2Codec(mode: .codec2_700c)
+        native.sink = sink
+        XCTAssertEqual(decoded.sampleCount, try native.decode(wire).sampleCount,
                        "sample count must match a native mode-700C decode")
     }
 
@@ -193,10 +209,13 @@ final class ParityGapTests: XCTestCase {
         let wire  = try c.encode(frame)
 
         let receiver = Codec2Codec(mode: .codec2_2400)
+        let sink     = playbackSink()
+        receiver.sink = sink
         let decoded  = try receiver.decode(wire)
         XCTAssertEqual(receiver.mode, .codec2_2400,
                        "same-mode decode must leave the mode unchanged")
-        XCTAssertEqual(decoded.sampleCount, 320)
+        assertDecoded(decoded, playableBy: sink,
+                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 40)
     }
 
     /// An unrecognised header byte keeps the current mode and decodes the rest,
@@ -212,10 +231,13 @@ final class ParityGapTests: XCTestCase {
         wire[wire.startIndex] = 0x07   // unknown header
 
         let receiver = Codec2Codec(mode: .codec2_2400)
+        let sink     = playbackSink()
+        receiver.sink = sink
         let decoded  = try receiver.decode(wire)
         XCTAssertEqual(receiver.mode, .codec2_2400,
                        "unknown header must leave the current mode unchanged")
-        XCTAssertEqual(decoded.sampleCount, 320)
+        assertDecoded(decoded, playableBy: sink,
+                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 40)
     }
 
     // MARK: - get_backend() module-level function
