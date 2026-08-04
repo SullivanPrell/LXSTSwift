@@ -80,13 +80,19 @@ func assertEnergyIsSpreadAcrossTheFrame(_ frame: AudioFrame,
     let quarter = frame.samples.count / 4
     guard quarter > 0 else { return XCTFail("frame too short to inspect", file: file, line: line) }
 
-    let head = rms(frame.samples[0 ..< quarter])
+    // Measured against the LOUDEST quarter, not the first: a codec with encoder lookahead —
+    // Opus has about 6.5 ms of it — leaves the head of a short frame genuinely near-silent, so
+    // comparing the tail to the head would fail on correct output.
+    let loudest = (0..<4).map { q in
+        rms(frame.samples[(q * quarter) ..< min((q + 1) * quarter, frame.samples.count)])
+    }.max() ?? 0
     let tail = rms(frame.samples[(frame.samples.count - quarter)...])
-    XCTAssertGreaterThan(head, 0.01, "the source signal must carry real energy", file: file, line: line)
-    XCTAssertGreaterThan(tail, head * 0.25,
+    XCTAssertGreaterThan(loudest, 0.01, "the source signal must carry real energy",
+                         file: file, line: line)
+    XCTAssertGreaterThan(tail, loudest * 0.25,
                          """
-                         the last quarter is near-silent (rms \(tail) against the first \
-                         quarter's \(head)) — the frame was padded to length, not converted.
+                         the last quarter is near-silent (rms \(tail) against the loudest \
+                         quarter's \(loudest)) — the frame was padded to length, not converted.
                          """,
                          file: file, line: line)
 }
