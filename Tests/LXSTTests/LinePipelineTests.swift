@@ -132,8 +132,9 @@ final class LineSourceBackendTests: XCTestCase {
     func testLineSourceAppliesGainToFrame() {
         let backend = MockAudioBackend()
         let sink = MockSink()
-        // gain = 20 dB → linear multiplier = 10.0 (20/20 formula in deliver())
-        let src = LineSource(sink: sink, gain: 20.0, backend: backend)
+        // gain = 10 dB → linear multiplier 10**(10/10) = 10.0
+        // (Python power-dB convention, Sources.py:180)
+        let src = LineSource(sink: sink, gain: 10.0, backend: backend)
         src.start()
 
         let frame = AudioFrame(samples: [0.5, -0.5], channelCount: 1, sampleRate: 48000)
@@ -141,7 +142,7 @@ final class LineSourceBackendTests: XCTestCase {
 
         XCTAssertEqual(sink.received.count, 1)
         let received = sink.received[0]
-        // gain of +20 dB → 10x amplitude
+        // gain of +10 dB → 10x amplitude
         XCTAssertEqual(received.samples[0], 5.0, accuracy: 0.01,
                        "Gain must be applied to captured frames")
         src.stop()

@@ -51,23 +51,11 @@ final class ParityGapTests: XCTestCase {
         XCTAssertEqual(LineSource.maxFrames, 128, "Python: LineSource.MAX_FRAMES = 128")
     }
 
-    // MARK: - LineSource.linear_gain static method
-    // Python: @staticmethod linear_gain(gain_db): return 10**(gain_db/10)
-
-    func testLineSourceLinearGainZeroDB() {
-        XCTAssertEqual(LineSource.linearGain(0.0), 1.0, accuracy: 0.001,
-                       "0 dB → linear gain = 1.0")
-    }
-
-    func testLineSourceLinearGain10dB() {
-        let expected = pow(10.0, 10.0 / 10.0)   // = 10.0
-        XCTAssertEqual(LineSource.linearGain(10.0), Float(expected), accuracy: 0.001)
-    }
-
-    func testLineSourceLinearGainMinus10dB() {
-        let expected = pow(10.0, -10.0 / 10.0)  // = 0.1
-        XCTAssertEqual(LineSource.linearGain(-10.0), Float(expected), accuracy: 0.001)
-    }
+    // NOTE: LineSource.linear_gain parity (Python: Sources.py:180, 10**(gain_db/10))
+    // is asserted through the LIVE paths in PowerDBGainParityTests. Helper-only
+    // tests of linearGain used to live here and passed for months while every
+    // production gain site inlined the wrong 10^(dB/20) formula — do not re-add
+    // tests that exercise the conversion helper in isolation.
 
     // MARK: - Loopback.canReceive (Python: Loopback.can_receive delegates to sink)
 

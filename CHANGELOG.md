@@ -3,6 +3,27 @@
 All notable changes to LXSTSwift are documented here. This project follows
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixed
+
+- **All three live dB→linear gain sites used the amplitude convention
+  `10^(dB/20)`; Python uses the power-dB formula `10^(dB/10)` at every gain
+  site** (`Sources.py:180`, `Mixer.py:102`, `Filters.py:187-188` — nonstandard,
+  but authoritative for parity). The Python-matching helper
+  `LineSource.linearGain` existed but was dead code: its only callers were
+  helper-only tests, while `LineSource.deliver`, the `Mixer` mix loop and
+  `AGC.handleFrame` each inlined their own `pow(10, dB/20)`. Consequence: the
+  AGC in the default call transmit chain (`AGC(targetLevel: -15)`,
+  Telephony.swift:993 / Python Telephony.py:711) normalized transmitted mic
+  audio to RMS `10^(-0.75)` ≈ 0.178 instead of Python's `10^(-1.5)` ≈ 0.0316 —
+  ~5.6x louder payload audio by default — and any nonzero configured gain
+  applied the square root of Python's multiplier (10 dB → ×3.16 instead of
+  ×10). All conversions now route through a single internal seam
+  (`DBGain.linear`), so the convention cannot drift per-site again; new tests
+  drive frames through the live paths against hardcoded Python-derived sample
+  values. Wire format untouched — payload sample values only.
+
 ## [1.2.0] — LXST 0.5.0 parity and LineSink channel-map recovery
 
 Catches the port up to Python LXST 0.5.0.

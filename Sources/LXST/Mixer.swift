@@ -188,8 +188,10 @@ public final class Mixer: Source, Sink {
 
             guard hasSamples else { continue }
 
-            // Apply gain and clamp
-            let gainLinear = pow(10.0, Float(gain) / 20.0)
+            // Apply gain and clamp. Python: `next_frame*self._mixing_gain` with
+            // `_mixing_gain = 10**(self.gain/10)` (Mixer.py:102,:113-114 — the
+            // power-dB seam, see DBGain).
+            let gainLinear = DBGain.linear(gain)
             for i in 0..<mixed.count {
                 mixed[i] = max(-1.0, min(1.0, mixed[i] * gainLinear))
             }
