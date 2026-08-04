@@ -118,8 +118,10 @@ public final class AGC: Filter {
     public func handleFrame(_ frame: AudioFrame) -> AudioFrame {
         guard !frame.samples.isEmpty else { return frame }
 
-        let targetLinear  = Float(pow(10.0, targetLevel / 20.0))
-        let maxGainLinear = Float(pow(10.0, maxGain / 20.0))
+        // Python: `target_linear`/`max_gain_linear = 10 ** (x / 10)`
+        // (Filters.py:187-188 — the power-dB seam, see DBGain).
+        let targetLinear  = Float(DBGain.linear(targetLevel))
+        let maxGainLinear = Float(DBGain.linear(maxGain))
         let sr            = Float(frame.sampleRate)
         let attackCoeff   = Float(exp(-1.0 / (attackTime * Double(sr))))
         let releaseCoeff  = Float(exp(-1.0 / (releaseTime * Double(sr))))

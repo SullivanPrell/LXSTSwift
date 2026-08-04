@@ -194,11 +194,53 @@ public final class Codec2Codec: Codec {
             allSamples.append(contentsOf: pcm16.map { Float($0) / 32768.0 })
         }
 
-        let sinkRate = (sink as? LocalSink)?.sampleRate ?? CODEC2_OUTPUT_RATE
-        return AudioFrame(samples: allSamples, channelCount: 1, sampleRate: sinkRate)
+        // Codec2 is 8 kHz in and out, so a sink at any other rate needs the samples converted —
+        // Python: `Codec2.py:115-117`, gated on the sink existing and its rate differing.
+        //
+        // `bugs/018`: there was no conversion here at all. The 8 kHz samples were handed on
+        // carrying the sink's rate as a *label*, which at `bandwidthUltraLow` meant 3200 real
+        // samples at the head of a 19200-sample mixer frame and 16000 samples of silence after
+        // it — on every one of the three Codec2 profiles, while the call reported ESTABLISHED.
+        //
+        // Note the sink is read through the protocol, not `as? LocalSink`: the receive path's
+        // sink is a `Mixer`, which conforms to `Sink` directly, so the narrowing this replaces
+        // meant the sink's rate was never consulted in a real call. Python type-checks nothing.
+        guard let sinkRate = sink?.sampleRate, sinkRate != CODEC2_OUTPUT_RATE else {
+            return AudioFrame(samples: allSamples, channelCount: 1, sampleRate: CODEC2_OUTPUT_RATE)
+        }
+        return AudioFrame(samples: Self.resampleMono(allSamples,
+                                                     from: CODEC2_OUTPUT_RATE, to: sinkRate),
+                          channelCount: 1,
+                          sampleRate: sinkRate)
     }
 
     // MARK: - Helpers
+
+    /// Linear resample of a mono Float32 buffer.
+    ///
+    /// The one resampler in this file, used by both directions: encode's conversion down to
+    /// 8 kHz and decode's conversion up to the sink's rate. Decode had no conversion at all
+    /// (`bugs/018`) partly because the encode side's was buried inside `toInt16Mono` and so was
+    /// not reusable — a shape that let the two directions differ silently.
+    private static func resampleMono(_ samples: [Float],
+                                     from srcRate: Double,
+                                     to dstRate: Double) -> [Float] {
+        guard srcRate != dstRate, !samples.isEmpty else { return samples }
+        let ratio = dstRate / srcRate
+        // Round rather than truncate: 8 kHz → 44.1 kHz is not exactly representable, and
+        // truncation loses a sample on rates that should land whole.
+        let outLen = Int((Double(samples.count) * ratio).rounded())
+        var out = [Float](repeating: 0, count: outLen)
+        for i in 0..<outLen {
+            let srcF   = Double(i) / ratio
+            let srcIdx = Int(srcF)
+            let frac   = Float(srcF - Double(srcIdx))
+            let a      = srcIdx < samples.count ? samples[srcIdx] : 0
+            let b      = srcIdx + 1 < samples.count ? samples[srcIdx + 1] : a
+            out[i] = a + frac * (b - a)
+        }
+        return out
+    }
 
     /// Resample and convert AudioFrame → mono Int16 at `targetRate` Hz.
     private func toInt16Mono(frame: AudioFrame, targetRate: Double) -> [Int16] {
@@ -211,21 +253,7 @@ public final class Codec2Codec: Codec {
             mono[i] = sum / Float(ch)
         }
 
-        // Naive linear resampling if needed
-        if frame.sampleRate != targetRate {
-            let ratio  = targetRate / frame.sampleRate
-            let outLen = Int(Double(mono.count) * ratio)
-            var resampled = [Float](repeating: 0, count: outLen)
-            for i in 0..<outLen {
-                let srcF   = Double(i) / ratio
-                let srcIdx = Int(srcF)
-                let frac   = Float(srcF - Double(srcIdx))
-                let a      = srcIdx < mono.count ? mono[srcIdx] : 0
-                let b      = srcIdx + 1 < mono.count ? mono[srcIdx + 1] : a
-                resampled[i] = a + frac * (b - a)
-            }
-            mono = resampled
-        }
+        mono = Self.resampleMono(mono, from: frame.sampleRate, to: targetRate)
 
         // Convert Float32 → Int16
         return mono.map { Int16(max(-32768, min(32767, $0 * 32768.0))) }

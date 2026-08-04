@@ -14,8 +14,9 @@ public final class LineSource: LocalSource {
 
     /// Convert dB gain to linear multiplier.
     /// Python: `@staticmethod linear_gain(gain_db): return 10**(gain_db/10)`
+    /// (Sources.py:180 — the power-dB seam, see DBGain).
     public static func linearGain(_ gainDB: Float) -> Float {
-        Float(pow(10.0, Double(gainDB) / 10.0))
+        DBGain.linear(gainDB)
     }
 
     public var filters: [any Filter] = []
@@ -72,7 +73,9 @@ public final class LineSource: LocalSource {
         var processed = frame
         for f in filters { processed = f.handleFrame(processed) }
         if gain != 0 {
-            let g = Float(pow(10.0, Double(gain) / 20.0))
+            // Python: `frame_samples *= self.__gain` where
+            // `__gain = self.linear_gain(self.gain)` (Sources.py:199,:270).
+            let g = Self.linearGain(gain)
             processed = AudioFrame(samples: processed.samples.map { $0 * g },
                                    channelCount: processed.channelCount,
                                    sampleRate: processed.sampleRate)
