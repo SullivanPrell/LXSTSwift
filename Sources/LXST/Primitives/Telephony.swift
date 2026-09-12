@@ -783,7 +783,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     }
 
     call.answered = true
-    call.establishedAt = Date().timeIntervalSince1970  // Python: active_call.established_at = time.time()
+    // Python: active_call.established_at = time.time()
+    call.establishedAt = Date().timeIntervalSince1970
     openPipelines(for: identity)
     startPipelines()
     let cb = establishedCallback
@@ -992,7 +993,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
           disableDialTone()
           callerPipelineOpenLock.unlock()
           callStatus = .established
-          call.establishedAt = Date().timeIntervalSince1970  // Python: active_call.established_at = time.time()
+          // Python: active_call.established_at = time.time()
+          call.establishedAt = Date().timeIntervalSince1970
           establishedCallback?(call.remoteIdentity)
         }
 
@@ -1140,7 +1142,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
   /// behavior is identical; only the lock discipline around it changed.
   private func prepareDiallingPipelinesLocked() {
     selectCallProfile(activeCall?.profile ?? .qualityMedium)
-    selectCallMode(activeCall?.callMode)  // Python: self.__select_call_mode(self.active_call.call_mode)
+    // Python: self.__select_call_mode(self.active_call.call_mode)
+    selectCallMode(activeCall?.callMode)
     if audioOutput == nil {
       audioOutput = LineSink(device: speakerDevice, backend: makeAudioBackend?())
     }

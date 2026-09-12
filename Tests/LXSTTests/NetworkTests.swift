@@ -138,7 +138,8 @@ final class NetworkTests: XCTestCase {
   /// The old code forced it through UInt8, so 0x13F
   /// wrapped to 0x3F and the profile signal was lost.
   func testSignallingRoundTripProfileComposite() {
-    let composite = Int(signallingPreferredProfile) + Int(TelephonyProfile.qualityHigh.rawValue)  // 0x14F
+    // 0x14F
+    let composite = Int(signallingPreferredProfile) + Int(TelephonyProfile.qualityHigh.rawValue)
     XCTAssertGreaterThan(composite, 0xFF, "Composite must exceed a single byte")
     let data = SignallingReceiver.encodeSignals([composite])
     let decoded = SignallingReceiver.decodeSignals(data)

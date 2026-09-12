@@ -35,6 +35,8 @@ public protocol Sink: AnyObject {
 
 // MARK: - Default implementations
 
+// The members below are default implementations of documented protocol requirements.
+// swift-format-ignore: AllPublicDeclarationsHaveDocumentation
 extension Sink {
   public func start() {}
   public func stop() {}

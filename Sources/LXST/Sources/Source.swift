@@ -31,6 +31,8 @@ public protocol Source: AnyObject {
   func release()
 }
 
+// The members below are default implementations of documented protocol requirements.
+// swift-format-ignore: AllPublicDeclarationsHaveDocumentation
 extension Source {
   public func release() {
     stop()
