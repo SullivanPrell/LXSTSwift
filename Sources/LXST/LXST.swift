@@ -31,15 +31,15 @@ public let fieldFrames: UInt8 = 0x01
 
 /// Codec header byte for the Null (pass-through) codec.
 /// Python: `LXST.Codecs.NULL = 0xFF`
-public let codecNull:   UInt8 = 0xFF
+public let codecNull: UInt8 = 0xFF
 
 /// Codec header byte for the Raw PCM codec.
 /// Python: `LXST.Codecs.RAW = 0x00`
-public let codecRaw:    UInt8 = 0x00
+public let codecRaw: UInt8 = 0x00
 
 /// Codec header byte for the Opus codec.
 /// Python: `LXST.Codecs.OPUS = 0x01`
-public let codecOpus:   UInt8 = 0x01
+public let codecOpus: UInt8 = 0x01
 
 /// Codec header byte for the Codec2 codec.
 /// Python: `LXST.Codecs.CODEC2 = 0x02`
@@ -52,11 +52,11 @@ public let codecCodec2: UInt8 = 0x02
 /// Python: `LXST.Sources.get_backend()` / `LXST.Sinks.get_backend()`
 /// On Apple platforms returns `AVAudioEngineBackend`; elsewhere returns nil.
 public func getBackend() -> (any AudioBackend)? {
-#if canImport(AVFAudio)
-    return AVAudioEngineBackend()
-#else
-    return nil
-#endif
+  #if canImport(AVFAudio)
+  return AVAudioEngineBackend()
+  #else
+  return nil
+  #endif
 }
 
 // MARK: - Codec type dispatch
@@ -64,17 +64,17 @@ public func getBackend() -> (any AudioBackend)? {
 /// Returns the wire header byte for a codec type.
 /// Python: `LXST.Codecs.codec_header_byte(codec_type)`
 public func codecHeaderByte(for codecType: any Codec.Type) -> UInt8 {
-    return codecType.headerByte
+  codecType.headerByte
 }
 
 /// Returns the codec type for a given header byte, or nil if unknown.
 /// Python: `LXST.Codecs.codec_type(header_byte)`
 public func codecType(for headerByte: UInt8) -> (any Codec.Type)? {
-    switch headerByte {
-    case codecNull:   return NullCodec.self
-    case codecRaw:    return RawCodec.self
-    case codecOpus:   return OpusCodec.self
-    case codecCodec2: return Codec2Codec.self
-    default:           return nil
-    }
+  switch headerByte {
+  case codecNull: return NullCodec.self
+  case codecRaw: return RawCodec.self
+  case codecOpus: return OpusCodec.self
+  case codecCodec2: return Codec2Codec.self
+  default: return nil
+  }
 }

@@ -15,7 +15,7 @@ import Foundation
 /// A destination that can receive LXST packets—either an RNS Link or Destination.
 /// Python: `type(self.destination) == RNS.Link` check in `Packetizer.handle_frame`
 public protocol LXSTDestination: AnyObject {}
-extension Link:        LXSTDestination {}
+extension Link: LXSTDestination {}
 extension Destination: LXSTDestination {}
 
 // MARK: - Packetizer
@@ -30,85 +30,92 @@ extension Destination: LXSTDestination {}
 /// Python: `LXST.Network.Packetizer`
 public final class Packetizer: RemoteSink {
 
-    /// The destination to send packets to (RNS.Link or RNS.Destination).
-    public var destination: (any LXSTDestination)?
+  /// The destination to send packets to (RNS.Link or RNS.Destination).
+  public var destination: (any LXSTDestination)?
 
-    /// The upstream source, used to look up the active codec type.
-    /// Python: `Packetizer.source`
-    public weak var source: (any Source)?
+  /// The upstream source, used to look up the active codec type.
+  /// Python: `Packetizer.source`
+  public weak var source: (any Source)?
 
-    /// True after a transmit failure. Python: `transmit_failure`
-    public private(set) var transmitFailure: Bool = false
+  /// True after a transmit failure. Python: `transmit_failure`
+  public private(set) var transmitFailure: Bool = false
 
-    /// When squelched, `handleFrame` drops frames instead of transmitting them—used
-    /// by half-duplex call mode to gate the local transmit path.
-    /// Python: `Packetizer.squelched`
-    public private(set) var squelched: Bool = false
+  /// When squelched, `handleFrame` drops frames instead of transmitting them—used
+  /// by half-duplex call mode to gate the local transmit path.
+  /// Python: `Packetizer.squelched`
+  public private(set) var squelched: Bool = false
 
-    /// Called on transmit failure. Python: `failure_callback`
-    public var onFailure: (() -> Void)?
+  /// Called on transmit failure. Python: `failure_callback`
+  public var onFailure: (() -> Void)?
 
-    /// Creates a packetizer sending to `destination`.
-    ///
-    /// Python: `def __init__(self, destination, failure_callback=None)`
-    public init(destination: (any LXSTDestination)? = nil,
-                onFailure: (() -> Void)? = nil) {
-        self.destination = destination
-        self.onFailure   = onFailure
+  /// Creates a packetizer sending to `destination`.
+  ///
+  /// Python: `def __init__(self, destination, failure_callback=None)`
+  public init(
+    destination: (any LXSTDestination)? = nil,
+    onFailure: (() -> Void)? = nil
+  ) {
+    self.destination = destination
+    self.onFailure = onFailure
+  }
+
+  // MARK: - Sink: encode and transmit
+
+  /// Squelch the transmit path—subsequent frames are dropped until unsquelched.
+  /// Python: `Packetizer.squelch()`
+  public func squelch() { squelched = true }
+
+  /// Resume transmitting frames. Python: `Packetizer.unsquelch()`
+  public func unsquelch() { squelched = false }
+
+  /// Packetizes `frame` and sends it to the destination.
+  ///
+  /// Python: `Packetizer.handle_frame(frame, source=None)`
+  public override func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
+    guard let dest = destination else { return }
+    // Half-duplex: drop the frame while squelched (Python: `if self.squelched: return`).
+    if squelched { return }
+
+    // Determine codec from the source
+    let codec = source?.codec ?? self.source?.codec
+    let headerByte = codec.map { type(of: $0).headerByte } ?? codecNull
+
+    do {
+      let encoded =
+        try codec?.encode(frame)
+        ?? {
+          // Null codec: serialise as float32
+          var d = Data(capacity: frame.samples.count * 4)
+          for var v in frame.samples { d.append(Data(bytes: &v, count: 4)) }
+          return d
+        }()
+
+      // Prepend codec header byte
+      var frameBytes = Data([headerByte])
+      frameBytes.append(encoded)
+
+      // Msgpack: {fieldFrames: frameBytes}
+      let packetData = MsgPack.encode(
+        .map([
+          (.int(Int64(fieldFrames)), .bytes(frameBytes))
+        ]))
+
+      if let link = dest as? Link {
+        guard link.status == .active else { return }
+        try link.send(packetData)
+      } else if dest is Destination {
+        // Destination sending requires an injected Transport—not yet wired
+        return
+      } else {
+        return
+      }
+
+    } catch {
+      transmitFailure = true
+      onFailure?()
     }
+  }
 
-    // MARK: - Sink: encode and transmit
-
-    /// Squelch the transmit path—subsequent frames are dropped until unsquelched.
-    /// Python: `Packetizer.squelch()`
-    public func squelch()   { squelched = true }
-
-    /// Resume transmitting frames. Python: `Packetizer.unsquelch()`
-    public func unsquelch() { squelched = false }
-
-    /// Packetizes `frame` and sends it to the destination.
-    ///
-    /// Python: `Packetizer.handle_frame(frame, source=None)`
-    public override func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
-        guard let dest = destination else { return }
-        // Half-duplex: drop the frame while squelched (Python: `if self.squelched: return`).
-        if squelched { return }
-
-        // Determine codec from the source
-        let codec = source?.codec ?? self.source?.codec
-        let headerByte = codec.map { type(of: $0).headerByte } ?? codecNull
-
-        do {
-            let encoded = try codec?.encode(frame) ?? {
-                // Null codec: serialise as float32
-                var d = Data(capacity: frame.samples.count * 4)
-                for var v in frame.samples { d.append(Data(bytes: &v, count: 4)) }
-                return d
-            }()
-
-            // Prepend codec header byte
-            var frameBytes = Data([headerByte])
-            frameBytes.append(encoded)
-
-            // Msgpack: {fieldFrames: frameBytes}
-            let packetData = MsgPack.encode(.map([
-                (.int(Int64(fieldFrames)), .bytes(frameBytes))
-            ]))
-
-            if let link = dest as? Link {
-                guard link.status == .active else { return }
-                try link.send(packetData)
-            } else if dest is Destination {
-                // Destination sending requires an injected Transport—not yet wired
-                return
-            } else { return }
-
-        } catch {
-            transmitFailure = true
-            onFailure?()
-        }
-    }
-
-    public override func start() {}
-    public override func stop()  {}
+  public override func start() {}
+  public override func stop() {}
 }

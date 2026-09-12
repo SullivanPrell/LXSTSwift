@@ -25,6 +25,6 @@ import Foundation
 /// inlined their own `pow(10, dB/20)` and independently drifted to the
 /// amplitude convention while a Python-matching helper sat unused.
 enum DBGain {
-    static func linear(_ gainDB: Double) -> Double { pow(10.0, gainDB / 10.0) }
-    static func linear(_ gainDB: Float)  -> Float  { Float(linear(Double(gainDB))) }
+  static func linear(_ gainDB: Double) -> Double { pow(10.0, gainDB / 10.0) }
+  static func linear(_ gainDB: Float) -> Float { Float(linear(Double(gainDB))) }
 }

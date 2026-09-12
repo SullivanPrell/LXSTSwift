@@ -8,103 +8,107 @@
 // SPDX-License-Identifier: LicenseRef-Reticulum
 //===----------------------------------------------------------------------===//
 
+import COpus
+import Foundation
+
 #if canImport(AVFAudio)
 import AVFAudio
 #endif
-import Foundation
-import COpus
 
 // MARK: - Opus profile
 
 /// Opus codec profile, matching Python `Opus.PROFILE_*` raw values exactly.
 /// Python: `LXST.Codecs.Opus`
 public enum OpusProfile: UInt8, CaseIterable {
-    case voiceLow    = 0x00   // Python: PROFILE_VOICE_LOW
-    case voiceMedium = 0x01   // Python: PROFILE_VOICE_MEDIUM
-    case voiceHigh   = 0x02   // Python: PROFILE_VOICE_HIGH
-    case voiceMax    = 0x03   // Python: PROFILE_VOICE_MAX
-    case audioMin    = 0x04   // Python: PROFILE_AUDIO_MIN
-    case audioLow    = 0x05   // Python: PROFILE_AUDIO_LOW
-    case audioMedium = 0x06   // Python: PROFILE_AUDIO_MEDIUM
-    case audioHigh   = 0x07   // Python: PROFILE_AUDIO_HIGH
-    case audioMax    = 0x08   // Python: PROFILE_AUDIO_MAX
+  case voiceLow = 0x00  // Python: PROFILE_VOICE_LOW
+  case voiceMedium = 0x01  // Python: PROFILE_VOICE_MEDIUM
+  case voiceHigh = 0x02  // Python: PROFILE_VOICE_HIGH
+  case voiceMax = 0x03  // Python: PROFILE_VOICE_MAX
+  case audioMin = 0x04  // Python: PROFILE_AUDIO_MIN
+  case audioLow = 0x05  // Python: PROFILE_AUDIO_LOW
+  case audioMedium = 0x06  // Python: PROFILE_AUDIO_MEDIUM
+  case audioHigh = 0x07  // Python: PROFILE_AUDIO_HIGH
+  case audioMax = 0x08  // Python: PROFILE_AUDIO_MAX
 
-    /// Human-readable profile name, for UI and log output.
-    ///
-    /// Mirrors Python's `Opus.profile_name(profile)` (LXST 0.5.0, commit 7ba2b82).
-    public var displayName: String {
-        switch self {
-        case .voiceLow:    return "Voice, Low"
-        case .voiceMedium: return "Voice, Medium"
-        case .voiceHigh:   return "Voice, High"
-        case .voiceMax:    return "Voice, Max"
-        case .audioMin:    return "Audio, Min"
-        case .audioLow:    return "Audio, Low"
-        case .audioMedium: return "Audio, Medium"
-        case .audioHigh:   return "Audio, High"
-        case .audioMax:    return "Audio, Max"
-        }
+  /// Human-readable profile name, for UI and log output.
+  ///
+  /// Mirrors Python's `Opus.profile_name(profile)` (LXST 0.5.0, commit 7ba2b82).
+  public var displayName: String {
+    switch self {
+    case .voiceLow: return "Voice, Low"
+    case .voiceMedium: return "Voice, Medium"
+    case .voiceHigh: return "Voice, High"
+    case .voiceMax: return "Voice, Max"
+    case .audioMin: return "Audio, Min"
+    case .audioLow: return "Audio, Low"
+    case .audioMedium: return "Audio, Medium"
+    case .audioHigh: return "Audio, High"
+    case .audioMax: return "Audio, Max"
     }
+  }
 
-    // MARK: - Profile properties (Python: Opus.profile_channels/samplerate/bitrate_ceiling)
+  // MARK: - Profile properties (Python: Opus.profile_channels/samplerate/bitrate_ceiling)
 
-    /// Number of output channels. Python: `Opus.profile_channels(profile)`
-    public var channels: Int {
-        switch self {
-        case .voiceLow, .voiceMedium, .voiceHigh,
-             .audioMin, .audioLow:    return 1
-        case .voiceMax, .audioMedium,
-             .audioHigh, .audioMax:   return 2
-        }
+  /// Number of output channels. Python: `Opus.profile_channels(profile)`
+  public var channels: Int {
+    switch self {
+    case .voiceLow, .voiceMedium, .voiceHigh,
+      .audioMin, .audioLow:
+      return 1
+    case .voiceMax, .audioMedium,
+      .audioHigh, .audioMax:
+      return 2
     }
+  }
 
-    /// Output sample rate in Hz.
-    ///
-    /// Python: `Opus.profile_samplerate(profile)`
-    public var sampleRate: Double {
-        switch self {
-        case .voiceLow, .audioMin:      return 8000
-        case .audioLow:                 return 12000
-        case .voiceMedium, .audioMedium: return 24000
-        case .voiceHigh, .voiceMax,
-             .audioHigh, .audioMax:     return 48000
-        }
+  /// Output sample rate in Hz.
+  ///
+  /// Python: `Opus.profile_samplerate(profile)`
+  public var sampleRate: Double {
+    switch self {
+    case .voiceLow, .audioMin: return 8000
+    case .audioLow: return 12000
+    case .voiceMedium, .audioMedium: return 24000
+    case .voiceHigh, .voiceMax,
+      .audioHigh, .audioMax:
+      return 48000
     }
+  }
 
-    /// Bitrate ceiling in bits/second. Python: `Opus.profile_bitrate_ceiling(profile)`
-    public var bitrateCeiling: Int {
-        switch self {
-        case .voiceLow:    return 6_000
-        case .voiceMedium: return 8_000
-        case .voiceHigh:   return 16_000
-        case .voiceMax:    return 32_000
-        case .audioMin:    return 8_000
-        case .audioLow:    return 14_000
-        case .audioMedium: return 28_000
-        case .audioHigh:   return 56_000
-        case .audioMax:    return 128_000
-        }
+  /// Bitrate ceiling in bits/second. Python: `Opus.profile_bitrate_ceiling(profile)`
+  public var bitrateCeiling: Int {
+    switch self {
+    case .voiceLow: return 6_000
+    case .voiceMedium: return 8_000
+    case .voiceHigh: return 16_000
+    case .voiceMax: return 32_000
+    case .audioMin: return 8_000
+    case .audioLow: return 14_000
+    case .audioMedium: return 28_000
+    case .audioHigh: return 56_000
+    case .audioMax: return 128_000
     }
+  }
 
-    /// Whether this is a "voip" (true) or "audio" (false) application type.
-    /// Python: `Opus.profile_application(profile)` → "voip" / "audio"
-    public var isVoip: Bool {
-        switch self {
-        case .voiceLow, .voiceMedium, .voiceHigh, .voiceMax: return true
-        default: return false
-        }
+  /// Whether this is a "voip" (true) or "audio" (false) application type.
+  /// Python: `Opus.profile_application(profile)` → "voip" / "audio"
+  public var isVoip: Bool {
+    switch self {
+    case .voiceLow, .voiceMedium, .voiceHigh, .voiceMax: return true
+    default: return false
     }
+  }
 
-    /// Libopus application constant for this profile.
-    internal var cApplication: Int32 {
-        isVoip ? OPUS_APPLICATION_VOIP : OPUS_APPLICATION_AUDIO
-    }
+  /// Libopus application constant for this profile.
+  internal var cApplication: Int32 {
+    isVoip ? OPUS_APPLICATION_VOIP : OPUS_APPLICATION_AUDIO
+  }
 
-    /// Maximum bytes per frame for this profile at a given duration.
-    /// Python: `Opus.max_bytes_per_frame(bitrate_ceiling, frame_duration_ms)`
-    public func maxBytesPerFrame(frameDurationMs: Double) -> Int {
-        Int(ceil(Double(bitrateCeiling) / 8.0 * (frameDurationMs / 1000.0)))
-    }
+  /// Maximum bytes per frame for this profile at a given duration.
+  /// Python: `Opus.max_bytes_per_frame(bitrate_ceiling, frame_duration_ms)`
+  public func maxBytesPerFrame(frameDurationMs: Double) -> Int {
+    Int(ceil(Double(bitrateCeiling) / 8.0 * (frameDurationMs / 1000.0)))
+  }
 }
 
 // MARK: - Opus codec constants (Python class-level)
@@ -131,315 +135,332 @@ public let opusValidFrameMs: [Double] = [2.5, 5, 10, 20, 40, 60]
 /// `opus_encode_float()` to produce a real Opus bitstream.
 /// Decode: calls `opus_decode_float()` and returns an AudioFrame.
 public final class OpusCodec: Codec {
-    /// Codec identifier carried in the frame header.
-    public static let headerByte: UInt8 = codecOpus
+  /// Codec identifier carried in the frame header.
+  public static let headerByte: UInt8 = codecOpus
 
-    /// Sample rate this codec prefers to be fed, in Hz.
-    public var preferredSampleRate: Double? { profile.sampleRate }
-    /// Shortest frame this codec encodes, in milliseconds.
-    public var frameQuantaMs:       Double? { opusFrameQuantaMs }
-    /// Longest frame this codec encodes, in milliseconds.
-    public var frameMaxMs:          Double? { opusFrameMaxMs }
-    /// Frame durations this codec accepts, in milliseconds.
-    public var validFrameMs:        [Double] { opusValidFrameMs }
-    /// Output channel count.
-    ///
-    /// Python: `Opus.channels`—`decode` overwrites it from the sink
-    /// (`Opus.py:169-172`), so this is the *decode* side's value; `inputChannels` is the encode
-    /// side's, exactly as Python keeps `channels` and `input_channels` apart.
-    public var channels: Int? {
-        get { storedChannels }
-        set {
-            guard newValue != storedChannels else { return }
-            storedChannels = newValue
-            invalidateState()
-        }
+  /// Sample rate this codec prefers to be fed, in Hz.
+  public var preferredSampleRate: Double? { profile.sampleRate }
+  /// Shortest frame this codec encodes, in milliseconds.
+  public var frameQuantaMs: Double? { opusFrameQuantaMs }
+  /// Longest frame this codec encodes, in milliseconds.
+  public var frameMaxMs: Double? { opusFrameMaxMs }
+  /// Frame durations this codec accepts, in milliseconds.
+  public var validFrameMs: [Double] { opusValidFrameMs }
+  /// Output channel count.
+  ///
+  /// Python: `Opus.channels`—`decode` overwrites it from the sink
+  /// (`Opus.py:169-172`), so this is the *decode* side's value; `inputChannels` is the encode
+  /// side's, exactly as Python keeps `channels` and `input_channels` apart.
+  public var channels: Int? {
+    get { storedChannels }
+    set {
+      guard newValue != storedChannels else { return }
+      storedChannels = newValue
+      invalidateState()
     }
-    private var storedChannels: Int?
+  }
+  private var storedChannels: Int?
 
-    /// Python: `Opus.input_channels`—what `encode` shapes its input to.
-    ///
-    /// Kept separate from
-    /// `channels` so a decode on the same instance cannot silently re-shape a later encode.
-    private var inputChannels: Int
+  /// Python: `Opus.input_channels`—what `encode` shapes its input to.
+  ///
+  /// Kept separate from
+  /// `channels` so a decode on the same instance cannot silently re-shape a later encode.
+  private var inputChannels: Int
 
-    /// Python: `Opus.output_channels = 2`, set once in `__init__` and never updated.
-    ///
-    /// It is only
-    /// consulted when the sink declares no channel count (`Opus.py:171`), where the reference's
-    /// expression `output_channels if output_channels > channels else channels` reduces to 2 for
-    /// every profile.
-    private static let sinklessOutputChannels = 2
+  /// Python: `Opus.output_channels = 2`, set once in `__init__` and never updated.
+  ///
+  /// It is only
+  /// consulted when the sink declares no channel count (`Opus.py:171`), where the reference's
+  /// expression `output_channels if output_channels > channels else channels` reduces to 2 for
+  /// every profile.
+  private static let sinklessOutputChannels = 2
 
-    /// Source feeding this codec.
-    public weak var source: (any Source)? = nil
-    /// Sink frames are handed to.
-    public var sink:      (any Sink)?   = nil
+  /// Source feeding this codec.
+  public weak var source: (any Source)? = nil
+  /// Sink frames are handed to.
+  public var sink: (any Sink)? = nil
 
-    /// Opus profile currently in use.
-    public private(set) var profile: OpusProfile
-    /// Sample rate decoded frames carry, in Hz.
-    public private(set) var outputSampleRate: Double
-    /// Highest bitrate the encoder may use, in bits per second.
-    public private(set) var bitrateCeiling: Int
+  /// Opus profile currently in use.
+  public private(set) var profile: OpusProfile
+  /// Sample rate decoded frames carry, in Hz.
+  public private(set) var outputSampleRate: Double
+  /// Highest bitrate the encoder may use, in bits per second.
+  public private(set) var bitrateCeiling: Int
 
-    private var encoder: OpaquePointer?
-    private var decoder: OpaquePointer?
-    /// The configuration the live decoder was created with.
-    ///
-    /// Python tracks the same thing with
-    /// `decoder_configured`; here it is the values themselves, because the sink can change.
-    private var decoderRate:     Double?
-    private var decoderChannels: Int?
-    private let lock = NSLock()
+  private var encoder: OpaquePointer?
+  private var decoder: OpaquePointer?
+  /// The configuration the live decoder was created with.
+  ///
+  /// Python tracks the same thing with
+  /// `decoder_configured`; here it is the values themselves, because the sink can change.
+  private var decoderRate: Double?
+  private var decoderChannels: Int?
+  private let lock = NSLock()
 
-    /// Creates a codec encoding at `profile`.
-    ///
-    /// Python: `def __init__(self, profile=PROFILE_VOICE_LOW)`
-    public init(profile: OpusProfile = .voiceLow) {
-        self.profile          = profile
-        self.storedChannels        = profile.channels
-        self.inputChannels    = profile.channels
-        self.outputSampleRate = profile.sampleRate
-        self.bitrateCeiling   = profile.bitrateCeiling
+  /// Creates a codec encoding at `profile`.
+  ///
+  /// Python: `def __init__(self, profile=PROFILE_VOICE_LOW)`
+  public init(profile: OpusProfile = .voiceLow) {
+    self.profile = profile
+    self.storedChannels = profile.channels
+    self.inputChannels = profile.channels
+    self.outputSampleRate = profile.sampleRate
+    self.bitrateCeiling = profile.bitrateCeiling
+  }
+
+  deinit {
+    if let enc = encoder { opus_encoder_destroy(enc) }
+    if let dec = decoder { opus_decoder_destroy(dec) }
+  }
+
+  /// Change the active profile.
+  ///
+  /// Invalidates any cached encoder/decoder state.
+  /// Python: `Opus.set_profile(profile)`
+  public func setProfile(_ newProfile: OpusProfile) {
+    guard newProfile != profile else { return }
+    profile = newProfile
+    // Python `set_profile` sets both `channels` and `input_channels` from the profile.
+    storedChannels = newProfile.channels
+    inputChannels = newProfile.channels
+    outputSampleRate = newProfile.sampleRate
+    bitrateCeiling = newProfile.bitrateCeiling
+    invalidateState()
+  }
+
+  private func invalidateState() {
+    lock.lock()
+    defer { lock.unlock() }
+    if let enc = encoder {
+      opus_encoder_destroy(enc)
+      encoder = nil
+    }
+    destroyDecoderLocked()
+  }
+
+  /// Caller must hold `lock`.
+  private func destroyDecoderLocked() {
+    if let dec = decoder {
+      opus_decoder_destroy(dec)
+      decoder = nil
+    }
+    decoderRate = nil
+    decoderChannels = nil
+  }
+
+  // MARK: - Lazy encoder setup
+
+  private func ensureEncoder() throws {
+    guard encoder == nil else { return }
+    let ch = Int32(inputChannels)
+    let fs = Int32(profile.sampleRate)
+    var err: Int32 = 0
+    guard let enc = opus_encoder_create(fs, ch, profile.cApplication, &err),
+      err == OPUS_OK
+    else {
+      throw CodecError.encoderNotConfigured
+    }
+    // Note: opus_encoder_ctl is variadic and not callable from Swift.
+    // libopus uses auto-bitrate, which produces valid Opus output.
+    // Bitrate ceiling is used for frame-size planning (maxBytesPerFrame) only.
+    encoder = enc
+  }
+
+  // MARK: - Decoder setup—configured from the sink, not from the profile
+
+  /// libopus decodes to one of five fixed rates; `opus_decoder_create` rejects anything else.
+  private static let nativeDecodeRates: [Double] = [8000, 12000, 16000, 24000, 48000]
+
+  /// The rate to run the decoder at to serve a sink at `rate`.
+  ///
+  /// For the five rates
+  /// libopus supports this is the sink's rate itself and nothing further happens; for any
+  /// other—hardware reporting 44.1 kHz is routine (`AudioBackend.swift:56` adopts the device
+  /// format)—decode at the next rate up and convert, rather than hand the sink samples it
+  /// cannot play. The reference has no equivalent because `set_sampling_frequency` simply
+  /// raises there; refusing to decode is not a better answer than converting.
+  private static func nativeDecodeRate(for rate: Double) -> Double {
+    if nativeDecodeRates.contains(rate) { return rate }
+    return nativeDecodeRates.first { $0 >= rate } ?? 48000
+  }
+
+  /// The rate the sink plays at, and so the rate `decode` must return.
+  ///
+  /// Python: `Opus.py:174`—`self.opus_decoder.set_sampling_frequency(self.sink.samplerate)`.
+  ///
+  /// Python has no fallback: `decode` raises `AttributeError` when `sink` is None, because a
+  /// decoding pipeline always has one. Falling back to the profile's rate keeps a sink-less
+  /// `decode` working, and is unreachable from any receive path—`LinkSource` assigns the sink
+  /// to the codec it builds before the first frame is decoded.
+  private var decodeTargetRate: Double { sink?.sampleRate ?? profile.sampleRate }
+
+  /// Python: `Opus.py:169-172`—the sink's channel count where it declares one, else the
+  /// fixed `output_channels`.
+  private var decodeTargetChannels: Int {
+    sink?.channels ?? Self.sinklessOutputChannels
+  }
+
+  /// Create or re-create the decoder for the current sink.
+  ///
+  /// Caller must hold `lock`.
+  ///
+  /// `bugs/017`: this used to short-circuit on `decoder == nil` alone and take its rate from
+  /// `profile.sampleRate`, so on the receive path—where nothing calls `setProfile`—every
+  /// call decoded at the 8 kHz default whatever the sender sent and whatever the sink runs at.
+  private func configureDecoder() throws -> (rate: Double, channels: Int) {
+    let ch = decodeTargetChannels
+    let rate = Self.nativeDecodeRate(for: decodeTargetRate)
+
+    if decoder != nil, decoderRate == rate, decoderChannels == ch {
+      return (rate, ch)
+    }
+    destroyDecoderLocked()
+
+    var err: Int32 = 0
+    guard let dec = opus_decoder_create(Int32(rate), Int32(ch), &err),
+      err == OPUS_OK
+    else {
+      throw CodecError.decoderNotConfigured
+    }
+    decoder = dec
+    decoderRate = rate
+    decoderChannels = ch
+    // Python: `self.channels = output_channels` (Opus.py:172). Assigned to the backing store
+    // rather than through the setter, which would take `lock` again to invalidate.
+    storedChannels = ch
+    return (rate, ch)
+  }
+
+  // MARK: - Encode
+
+  /// Encode an AudioFrame to a real Opus bitstream.
+  ///
+  /// Resamples to the profile's sample rate if needed, then calls `opus_encode_float()`.
+  public func encode(_ frame: AudioFrame) throws -> Data {
+    lock.lock()
+    defer { lock.unlock() }
+    try ensureEncoder()
+    guard let enc = encoder else { throw CodecError.encoderNotConfigured }
+
+    let targetRate = profile.sampleRate
+    let targetCh = inputChannels  // Python: `self.input_channels`, not `self.channels`
+
+    // Resample and mix to target channel count / rate
+    let pcm = resample(frame: frame, toRate: targetRate, toChannels: targetCh)
+
+    // Compute max output bytes: use profile bitrate ceiling + generous buffer
+    let frameDurationMs = Double(pcm.count / targetCh) / targetRate * 1000.0
+    let maxBytes = max(profile.maxBytesPerFrame(frameDurationMs: frameDurationMs) * 4, 4096)
+    var outBuf = [UInt8](repeating: 0, count: maxBytes)
+
+    let n = Int(pcm.count / targetCh)  // samples per channel
+    let encoded = pcm.withUnsafeBufferPointer { ptr -> Int32 in
+      guard let base = ptr.baseAddress else { return 0 }
+      return opus_encode_float(enc, base, Int32(n), &outBuf, Int32(maxBytes))
+    }
+    guard encoded > 0 else { throw CodecError.invalidFrame }
+    return Data(outBuf.prefix(Int(encoded)))
+  }
+
+  // MARK: - Decode
+
+  /// Decode Opus bitstream bytes to an AudioFrame at the sink's rate.
+  public func decode(_ data: Data) throws -> AudioFrame {
+    lock.lock()
+    defer { lock.unlock() }
+    guard !data.isEmpty else { throw CodecError.invalidFrame }
+    let (rate, ch) = try configureDecoder()
+    guard let dec = decoder else { throw CodecError.decoderNotConfigured }
+
+    // Max output: 60 ms at the decoder's rate, sized from that rate rather than the
+    // profile's—an 8 kHz profile serving a 48 kHz sink needs six times the room, and
+    // `opus_decode_float` returns OPUS_BUFFER_TOO_SMALL rather than truncating.
+    let maxSamplesPerCh = Int(rate * opusFrameMaxMs / 1000.0) + 64
+    let maxTotal = maxSamplesPerCh * ch
+    var pcm = [Float](repeating: 0, count: maxTotal)
+
+    let decoded = data.withUnsafeBytes { ptr -> Int32 in
+      guard let base = ptr.bindMemory(to: UInt8.self).baseAddress else { return 0 }
+      return opus_decode_float(
+        dec, base, Int32(data.count), &pcm,
+        Int32(maxSamplesPerCh), 0)
+    }
+    guard decoded > 0 else { throw CodecError.invalidFrame }
+
+    let samples = Array(pcm.prefix(Int(decoded) * ch))
+    let frame = AudioFrame(samples: samples, channelCount: ch, sampleRate: rate)
+
+    // Only reachable for a sink at a rate libopus cannot decode to directly.
+    let target = decodeTargetRate
+    guard rate != target else { return frame }
+    return AudioFrame(
+      samples: resample(frame: frame, toRate: target, toChannels: ch),
+      channelCount: ch, sampleRate: target)
+  }
+
+  // MARK: - Private helpers
+
+  /// Resample + channel-adapt an AudioFrame to the target rate and channel count.
+  private func resample(frame: AudioFrame, toRate targetRate: Double, toChannels targetCh: Int)
+    -> [Float]
+  {
+    let srcCh = frame.channelCount
+    let srcN = frame.sampleCount  // samples per channel
+    let srcRate = frame.sampleRate
+
+    // Step 1: channel conversion
+    var mono: [Float]
+    if srcCh == targetCh {
+      mono = frame.samples
+    } else if targetCh == 1 {
+      // Mix down to mono
+      mono = [Float](repeating: 0, count: srcN)
+      for i in 0..<srcN {
+        var sum: Float = 0
+        for c in 0..<srcCh { sum += frame.samples[i * srcCh + c] }
+        mono[i] = sum / Float(srcCh)
+      }
+    } else {
+      // Upmix mono to stereo (duplicate channel)
+      var stereo = [Float](repeating: 0, count: srcN * targetCh)
+      let srcMono =
+        srcCh > 1
+        ? {
+          var m = [Float](repeating: 0, count: srcN)
+          for i in 0..<srcN {
+            var sum: Float = 0
+            for c in 0..<srcCh { sum += frame.samples[i * srcCh + c] }
+            m[i] = sum / Float(srcCh)
+          }
+          return m
+        }() : frame.samples
+      for i in 0..<srcN {
+        for c in 0..<targetCh { stereo[i * targetCh + c] = srcMono[i] }
+      }
+      mono = stereo
     }
 
-    deinit {
-        if let enc = encoder { opus_encoder_destroy(enc) }
-        if let dec = decoder { opus_decoder_destroy(dec) }
+    // Step 2: sample-rate conversion (naive linear if needed)
+    guard srcRate != targetRate else { return mono }
+
+    let ratio = targetRate / srcRate
+    // Round (not truncate) to avoid off-by-one samples after resampling
+    // (for example, 882 @ 44.1 kHz → 48 kHz: 882 × 1.0884 = 959.97 → 960, not 959).
+    // opus_encode_float rejects any count that isn't an exact Opus frame size.
+    let outN = Int((Double(srcN) * ratio).rounded())
+    let outSize = outN * targetCh
+    var out = [Float](repeating: 0, count: outSize)
+
+    for i in 0..<outN {
+      let srcF = Double(i) / ratio
+      let srcIdx = Int(srcF)
+      let frac = Float(srcF - Double(srcIdx))
+      for c in 0..<targetCh {
+        let a = srcIdx < srcN ? mono[srcIdx * targetCh + c] : 0
+        let b = (srcIdx + 1) < srcN ? mono[(srcIdx + 1) * targetCh + c] : a
+        out[i * targetCh + c] = a + frac * (b - a)
+      }
     }
-
-    /// Change the active profile.
-    ///
-    /// Invalidates any cached encoder/decoder state.
-    /// Python: `Opus.set_profile(profile)`
-    public func setProfile(_ newProfile: OpusProfile) {
-        guard newProfile != profile else { return }
-        profile          = newProfile
-        // Python `set_profile` sets both `channels` and `input_channels` from the profile.
-        storedChannels        = newProfile.channels
-        inputChannels    = newProfile.channels
-        outputSampleRate = newProfile.sampleRate
-        bitrateCeiling   = newProfile.bitrateCeiling
-        invalidateState()
-    }
-
-    private func invalidateState() {
-        lock.lock(); defer { lock.unlock() }
-        if let enc = encoder { opus_encoder_destroy(enc); encoder = nil }
-        destroyDecoderLocked()
-    }
-
-    /// Caller must hold `lock`.
-    private func destroyDecoderLocked() {
-        if let dec = decoder { opus_decoder_destroy(dec); decoder = nil }
-        decoderRate     = nil
-        decoderChannels = nil
-    }
-
-    // MARK: - Lazy encoder setup
-
-    private func ensureEncoder() throws {
-        guard encoder == nil else { return }
-        let ch = Int32(inputChannels)
-        let fs = Int32(profile.sampleRate)
-        var err: Int32 = 0
-        guard let enc = opus_encoder_create(fs, ch, profile.cApplication, &err),
-              err == OPUS_OK else {
-            throw CodecError.encoderNotConfigured
-        }
-        // Note: opus_encoder_ctl is variadic and not callable from Swift.
-        // libopus uses auto-bitrate, which produces valid Opus output.
-        // Bitrate ceiling is used for frame-size planning (maxBytesPerFrame) only.
-        encoder = enc
-    }
-
-    // MARK: - Decoder setup—configured from the sink, not from the profile
-
-    /// libopus decodes to one of five fixed rates; `opus_decoder_create` rejects anything else.
-    private static let nativeDecodeRates: [Double] = [8000, 12000, 16000, 24000, 48000]
-
-    /// The rate to run the decoder at to serve a sink at `rate`.
-    ///
-    /// For the five rates
-    /// libopus supports this is the sink's rate itself and nothing further happens; for any
-    /// other—hardware reporting 44.1 kHz is routine (`AudioBackend.swift:56` adopts the device
-    /// format)—decode at the next rate up and convert, rather than hand the sink samples it
-    /// cannot play. The reference has no equivalent because `set_sampling_frequency` simply
-    /// raises there; refusing to decode is not a better answer than converting.
-    private static func nativeDecodeRate(for rate: Double) -> Double {
-        if nativeDecodeRates.contains(rate) { return rate }
-        return nativeDecodeRates.first { $0 >= rate } ?? 48000
-    }
-
-    /// The rate the sink plays at, and so the rate `decode` must return.
-    ///
-    /// Python: `Opus.py:174`—`self.opus_decoder.set_sampling_frequency(self.sink.samplerate)`.
-    ///
-    /// Python has no fallback: `decode` raises `AttributeError` when `sink` is None, because a
-    /// decoding pipeline always has one. Falling back to the profile's rate keeps a sink-less
-    /// `decode` working, and is unreachable from any receive path—`LinkSource` assigns the sink
-    /// to the codec it builds before the first frame is decoded.
-    private var decodeTargetRate: Double { sink?.sampleRate ?? profile.sampleRate }
-
-    /// Python: `Opus.py:169-172`—the sink's channel count where it declares one, else the
-    /// fixed `output_channels`.
-    private var decodeTargetChannels: Int {
-        sink?.channels ?? Self.sinklessOutputChannels
-    }
-
-    /// Create or re-create the decoder for the current sink.
-    ///
-    /// Caller must hold `lock`.
-    ///
-    /// `bugs/017`: this used to short-circuit on `decoder == nil` alone and take its rate from
-    /// `profile.sampleRate`, so on the receive path—where nothing calls `setProfile`—every
-    /// call decoded at the 8 kHz default whatever the sender sent and whatever the sink runs at.
-    private func configureDecoder() throws -> (rate: Double, channels: Int) {
-        let ch   = decodeTargetChannels
-        let rate = Self.nativeDecodeRate(for: decodeTargetRate)
-
-        if decoder != nil, decoderRate == rate, decoderChannels == ch {
-            return (rate, ch)
-        }
-        destroyDecoderLocked()
-
-        var err: Int32 = 0
-        guard let dec = opus_decoder_create(Int32(rate), Int32(ch), &err),
-              err == OPUS_OK else {
-            throw CodecError.decoderNotConfigured
-        }
-        decoder         = dec
-        decoderRate     = rate
-        decoderChannels = ch
-        // Python: `self.channels = output_channels` (Opus.py:172). Assigned to the backing store
-        // rather than through the setter, which would take `lock` again to invalidate.
-        storedChannels = ch
-        return (rate, ch)
-    }
-
-    // MARK: - Encode
-
-    /// Encode an AudioFrame to a real Opus bitstream.
-    ///
-    /// Resamples to the profile's sample rate if needed, then calls `opus_encode_float()`.
-    public func encode(_ frame: AudioFrame) throws -> Data {
-        lock.lock(); defer { lock.unlock() }
-        try ensureEncoder()
-        guard let enc = encoder else { throw CodecError.encoderNotConfigured }
-
-        let targetRate = profile.sampleRate
-        let targetCh   = inputChannels   // Python: `self.input_channels`, not `self.channels`
-
-        // Resample and mix to target channel count / rate
-        let pcm = resample(frame: frame, toRate: targetRate, toChannels: targetCh)
-
-        // Compute max output bytes: use profile bitrate ceiling + generous buffer
-        let frameDurationMs = Double(pcm.count / targetCh) / targetRate * 1000.0
-        let maxBytes = max(profile.maxBytesPerFrame(frameDurationMs: frameDurationMs) * 4, 4096)
-        var outBuf = [UInt8](repeating: 0, count: maxBytes)
-
-        let n = Int(pcm.count / targetCh)   // samples per channel
-        let encoded = pcm.withUnsafeBufferPointer { ptr -> Int32 in
-            guard let base = ptr.baseAddress else { return 0 }
-            return opus_encode_float(enc, base, Int32(n), &outBuf, Int32(maxBytes))
-        }
-        guard encoded > 0 else { throw CodecError.invalidFrame }
-        return Data(outBuf.prefix(Int(encoded)))
-    }
-
-    // MARK: - Decode
-
-    /// Decode Opus bitstream bytes to an AudioFrame at the sink's rate.
-    public func decode(_ data: Data) throws -> AudioFrame {
-        lock.lock(); defer { lock.unlock() }
-        guard !data.isEmpty else { throw CodecError.invalidFrame }
-        let (rate, ch) = try configureDecoder()
-        guard let dec = decoder else { throw CodecError.decoderNotConfigured }
-
-        // Max output: 60 ms at the decoder's rate, sized from that rate rather than the
-        // profile's—an 8 kHz profile serving a 48 kHz sink needs six times the room, and
-        // `opus_decode_float` returns OPUS_BUFFER_TOO_SMALL rather than truncating.
-        let maxSamplesPerCh = Int(rate * opusFrameMaxMs / 1000.0) + 64
-        let maxTotal = maxSamplesPerCh * ch
-        var pcm = [Float](repeating: 0, count: maxTotal)
-
-        let decoded = data.withUnsafeBytes { ptr -> Int32 in
-            guard let base = ptr.bindMemory(to: UInt8.self).baseAddress else { return 0 }
-            return opus_decode_float(dec, base, Int32(data.count), &pcm,
-                                     Int32(maxSamplesPerCh), 0)
-        }
-        guard decoded > 0 else { throw CodecError.invalidFrame }
-
-        let samples = Array(pcm.prefix(Int(decoded) * ch))
-        let frame = AudioFrame(samples: samples, channelCount: ch, sampleRate: rate)
-
-        // Only reachable for a sink at a rate libopus cannot decode to directly.
-        let target = decodeTargetRate
-        guard rate != target else { return frame }
-        return AudioFrame(samples: resample(frame: frame, toRate: target, toChannels: ch),
-                          channelCount: ch, sampleRate: target)
-    }
-
-    // MARK: - Private helpers
-
-    /// Resample + channel-adapt an AudioFrame to the target rate and channel count.
-    private func resample(frame: AudioFrame, toRate targetRate: Double, toChannels targetCh: Int) -> [Float] {
-        let srcCh  = frame.channelCount
-        let srcN   = frame.sampleCount   // samples per channel
-        let srcRate = frame.sampleRate
-
-        // Step 1: channel conversion
-        var mono: [Float]
-        if srcCh == targetCh {
-            mono = frame.samples
-        } else if targetCh == 1 {
-            // Mix down to mono
-            mono = [Float](repeating: 0, count: srcN)
-            for i in 0..<srcN {
-                var sum: Float = 0
-                for c in 0..<srcCh { sum += frame.samples[i * srcCh + c] }
-                mono[i] = sum / Float(srcCh)
-            }
-        } else {
-            // Upmix mono to stereo (duplicate channel)
-            var stereo = [Float](repeating: 0, count: srcN * targetCh)
-            let srcMono = srcCh > 1 ? {
-                var m = [Float](repeating: 0, count: srcN)
-                for i in 0..<srcN {
-                    var sum: Float = 0
-                    for c in 0..<srcCh { sum += frame.samples[i * srcCh + c] }
-                    m[i] = sum / Float(srcCh)
-                }
-                return m
-            }() : frame.samples
-            for i in 0..<srcN {
-                for c in 0..<targetCh { stereo[i * targetCh + c] = srcMono[i] }
-            }
-            mono = stereo
-        }
-
-        // Step 2: sample-rate conversion (naive linear if needed)
-        guard srcRate != targetRate else { return mono }
-
-        let ratio   = targetRate / srcRate
-        // Round (not truncate) to avoid off-by-one samples after resampling
-        // (for example, 882 @ 44.1 kHz → 48 kHz: 882 × 1.0884 = 959.97 → 960, not 959).
-        // opus_encode_float rejects any count that isn't an exact Opus frame size.
-        let outN    = Int((Double(srcN) * ratio).rounded())
-        let outSize = outN * targetCh
-        var out = [Float](repeating: 0, count: outSize)
-
-        for i in 0..<outN {
-            let srcF   = Double(i) / ratio
-            let srcIdx = Int(srcF)
-            let frac   = Float(srcF - Double(srcIdx))
-            for c in 0..<targetCh {
-                let a = srcIdx < srcN ? mono[srcIdx * targetCh + c] : 0
-                let b = (srcIdx + 1) < srcN ? mono[(srcIdx + 1) * targetCh + c] : a
-                out[i * targetCh + c] = a + frac * (b - a)
-            }
-        }
-        return out
-    }
+    return out
+  }
 }

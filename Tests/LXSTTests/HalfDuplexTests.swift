@@ -9,6 +9,7 @@
 //===----------------------------------------------------------------------===//
 
 import XCTest
+
 @testable import LXST
 
 /// Tests for the half-duplex telephony mode + combined signalling ported from
@@ -21,113 +22,123 @@ import XCTest
 /// values must round-trip byte-for-byte.
 final class HalfDuplexTests: XCTestCase {
 
-    // MARK: - Signalling.PREFERRED_MODE constant
+  // MARK: - Signalling.PREFERRED_MODE constant
 
-    func testPreferredModeConstant() {
-        XCTAssertEqual(signallingPreferredMode, 0xF0,
-                       "Python: Signalling.PREFERRED_MODE = 0xF0")
+  func testPreferredModeConstant() {
+    XCTAssertEqual(
+      signallingPreferredMode, 0xF0,
+      "Python: Signalling.PREFERRED_MODE = 0xF0")
+  }
+
+  /// Mode composites (0xF1/0xF2) must sit strictly below PREFERRED_PROFILE
+  /// (0xFF) so the receive handler can distinguish them from profile composites.
+  func testModeCompositesBelowProfileMarker() {
+    XCTAssertLessThan(
+      Int(signallingPreferredMode) + Int(CallMode.halfDuplex.rawValue),
+      Int(signallingPreferredProfile),
+      "Mode composites must be < PREFERRED_PROFILE to avoid overlap")
+  }
+
+  // MARK: - CallMode enum (Python: Profiles.MODE_*)
+
+  func testCallModeRawValues() {
+    XCTAssertEqual(CallMode.fullDuplex.rawValue, 0x01, "Python: MODE_FULL_DUPLEX = 0x01")
+    XCTAssertEqual(CallMode.halfDuplex.rawValue, 0x02, "Python: MODE_HALF_DUPLEX = 0x02")
+  }
+
+  func testCallModeDefaultIsFullDuplex() {
+    XCTAssertEqual(
+      CallMode.defaultMode, .fullDuplex,
+      "Python: Profiles.DEFAULT_MODE = MODE_FULL_DUPLEX")
+  }
+
+  func testCallModeAvailableOrder() {
+    XCTAssertEqual(
+      CallMode.available, [.fullDuplex, .halfDuplex],
+      "Python: Profiles.available_modes() = [FULL, HALF]")
+  }
+
+  func testCallModeNames() {
+    XCTAssertEqual(CallMode.fullDuplex.name, "Full Duplex")
+    XCTAssertEqual(CallMode.halfDuplex.name, "Half Duplex")
+  }
+
+  func testCallModeAbbreviations() {
+    // Python preserves the "abbrevation" typo; the abbreviations themselves are FDX/HDX.
+    XCTAssertEqual(CallMode.fullDuplex.abbreviation, "FDX")
+    XCTAssertEqual(CallMode.halfDuplex.abbreviation, "HDX")
+  }
+
+  // MARK: - Combined signalling wire round-trip (Python: 61c2c2b)
+
+  /// A combined `[PREFERRED_PROFILE+profile, PREFERRED_MODE+mode]` list must
+  /// encode into one fieldSignalling array and decode back to the same two
+  /// composite ints—exactly what a Python 0.5.0 caller emits at ringing.
+  func testCombinedProfileAndModeSignalRoundTrip() {
+    let profileComposite =
+      Int(signallingPreferredProfile) + Int(TelephonyProfile.qualityHigh.rawValue)
+    let modeComposite = Int(signallingPreferredMode) + Int(CallMode.halfDuplex.rawValue)
+    let data = SignallingReceiver.encodeSignals([profileComposite, modeComposite])
+    let decoded = SignallingReceiver.decodeSignals(data)
+    XCTAssertEqual(
+      decoded, [profileComposite, modeComposite],
+      "Combined profile+mode signalling must round-trip as a 2-element list")
+  }
+
+  /// The decoded mode composite must map back to the correct CallMode.
+  func testModeCompositeDecodesToMode() {
+    for mode in CallMode.available {
+      let composite = Int(signallingPreferredMode) + Int(mode.rawValue)
+      let data = SignallingReceiver.encodeSignals([composite])
+      guard let decoded = SignallingReceiver.decodeSignals(data)?.first else {
+        return XCTFail("mode composite failed to decode")
+      }
+      let modeRaw = decoded - Int(signallingPreferredMode)
+      XCTAssertEqual(
+        CallMode(rawValue: UInt8(modeRaw)), mode,
+        "PREFERRED_MODE composite must decode back to \(mode)")
     }
+  }
 
-    /// Mode composites (0xF1/0xF2) must sit strictly below PREFERRED_PROFILE
-    /// (0xFF) so the receive handler can distinguish them from profile composites.
-    func testModeCompositesBelowProfileMarker() {
-        XCTAssertLessThan(Int(signallingPreferredMode) + Int(CallMode.halfDuplex.rawValue),
-                          Int(signallingPreferredProfile),
-                          "Mode composites must be < PREFERRED_PROFILE to avoid overlap")
-    }
+  // MARK: - SignallingReceiver.signal list overload (Python: 61c2c2b)
 
-    // MARK: - CallMode enum (Python: Profiles.MODE_*)
+  /// The list-accepting `signal(_:to:)` overload must encode the whole list
+  /// into a single fieldSignalling array (not one packet per code).
+  func testSignalListOverloadEncodesAllCodes() {
+    let signals = [
+      0x04, Int(signallingPreferredProfile) + 0x40,
+      Int(signallingPreferredMode) + Int(CallMode.halfDuplex.rawValue),
+    ]
+    let data = SignallingReceiver.encodeSignals(signals)
+    XCTAssertEqual(
+      SignallingReceiver.decodeSignals(data), signals,
+      "signal([...]) must carry every code in one packet")
+  }
 
-    func testCallModeRawValues() {
-        XCTAssertEqual(CallMode.fullDuplex.rawValue, 0x01, "Python: MODE_FULL_DUPLEX = 0x01")
-        XCTAssertEqual(CallMode.halfDuplex.rawValue, 0x02, "Python: MODE_HALF_DUPLEX = 0x02")
-    }
+  // MARK: - Packetizer squelch (Python: 1b77f0b)
 
-    func testCallModeDefaultIsFullDuplex() {
-        XCTAssertEqual(CallMode.defaultMode, .fullDuplex,
-                       "Python: Profiles.DEFAULT_MODE = MODE_FULL_DUPLEX")
-    }
+  func testPacketizerSquelchedDefaultsFalse() {
+    let pkt = Packetizer()
+    XCTAssertFalse(pkt.squelched, "Packetizer must start unsquelched")
+  }
 
-    func testCallModeAvailableOrder() {
-        XCTAssertEqual(CallMode.available, [.fullDuplex, .halfDuplex],
-                       "Python: Profiles.available_modes() = [FULL, HALF]")
-    }
+  func testPacketizerSquelchSetsFlag() {
+    let pkt = Packetizer()
+    pkt.squelch()
+    XCTAssertTrue(pkt.squelched, "squelch() must set squelched = true")
+  }
 
-    func testCallModeNames() {
-        XCTAssertEqual(CallMode.fullDuplex.name, "Full Duplex")
-        XCTAssertEqual(CallMode.halfDuplex.name, "Half Duplex")
-    }
+  func testPacketizerUnsquelchClearsFlag() {
+    let pkt = Packetizer()
+    pkt.squelch()
+    pkt.unsquelch()
+    XCTAssertFalse(pkt.squelched, "unsquelch() must set squelched = false")
+  }
 
-    func testCallModeAbbreviations() {
-        // Python preserves the "abbrevation" typo; the abbreviations themselves are FDX/HDX.
-        XCTAssertEqual(CallMode.fullDuplex.abbreviation, "FDX")
-        XCTAssertEqual(CallMode.halfDuplex.abbreviation, "HDX")
-    }
+  // MARK: - Telephone mode state
 
-    // MARK: - Combined signalling wire round-trip (Python: 61c2c2b)
-
-    /// A combined `[PREFERRED_PROFILE+profile, PREFERRED_MODE+mode]` list must
-    /// encode into one fieldSignalling array and decode back to the same two
-    /// composite ints—exactly what a Python 0.5.0 caller emits at ringing.
-    func testCombinedProfileAndModeSignalRoundTrip() {
-        let profileComposite = Int(signallingPreferredProfile) + Int(TelephonyProfile.qualityHigh.rawValue)
-        let modeComposite    = Int(signallingPreferredMode) + Int(CallMode.halfDuplex.rawValue)
-        let data = SignallingReceiver.encodeSignals([profileComposite, modeComposite])
-        let decoded = SignallingReceiver.decodeSignals(data)
-        XCTAssertEqual(decoded, [profileComposite, modeComposite],
-                       "Combined profile+mode signalling must round-trip as a 2-element list")
-    }
-
-    /// The decoded mode composite must map back to the correct CallMode.
-    func testModeCompositeDecodesToMode() {
-        for mode in CallMode.available {
-            let composite = Int(signallingPreferredMode) + Int(mode.rawValue)
-            let data = SignallingReceiver.encodeSignals([composite])
-            guard let decoded = SignallingReceiver.decodeSignals(data)?.first else {
-                return XCTFail("mode composite failed to decode")
-            }
-            let modeRaw = decoded - Int(signallingPreferredMode)
-            XCTAssertEqual(CallMode(rawValue: UInt8(modeRaw)), mode,
-                           "PREFERRED_MODE composite must decode back to \(mode)")
-        }
-    }
-
-    // MARK: - SignallingReceiver.signal list overload (Python: 61c2c2b)
-
-    /// The list-accepting `signal(_:to:)` overload must encode the whole list
-    /// into a single fieldSignalling array (not one packet per code).
-    func testSignalListOverloadEncodesAllCodes() {
-        let signals = [0x04, Int(signallingPreferredProfile) + 0x40,
-                       Int(signallingPreferredMode) + Int(CallMode.halfDuplex.rawValue)]
-        let data = SignallingReceiver.encodeSignals(signals)
-        XCTAssertEqual(SignallingReceiver.decodeSignals(data), signals,
-                       "signal([...]) must carry every code in one packet")
-    }
-
-    // MARK: - Packetizer squelch (Python: 1b77f0b)
-
-    func testPacketizerSquelchedDefaultsFalse() {
-        let pkt = Packetizer()
-        XCTAssertFalse(pkt.squelched, "Packetizer must start unsquelched")
-    }
-
-    func testPacketizerSquelchSetsFlag() {
-        let pkt = Packetizer()
-        pkt.squelch()
-        XCTAssertTrue(pkt.squelched, "squelch() must set squelched = true")
-    }
-
-    func testPacketizerUnsquelchClearsFlag() {
-        let pkt = Packetizer()
-        pkt.squelch()
-        pkt.unsquelch()
-        XCTAssertFalse(pkt.squelched, "unsquelch() must set squelched = false")
-    }
-
-    // MARK: - Telephone mode state
-
-    func testTelephoneActiveModeNilWhenIdle() {
-        let phone = Telephone(identity: Identity(), transport: Transport())
-        XCTAssertNil(phone.activeMode, "active_mode must be nil with no active call")
-    }
+  func testTelephoneActiveModeNilWhenIdle() {
+    let phone = Telephone(identity: Identity(), transport: Transport())
+    XCTAssertNil(phone.activeMode, "active_mode must be nil with no active call")
+  }
 }

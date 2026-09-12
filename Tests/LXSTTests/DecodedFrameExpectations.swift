@@ -9,6 +9,7 @@
 //===----------------------------------------------------------------------===//
 
 import XCTest
+
 @testable import LXST
 
 // MARK: - The post-condition shared by `bugs/017` and `bugs/018`
@@ -35,44 +36,50 @@ import XCTest
 ///   - durationMs: the duration the encoded payload represents, known independently of both rates
 ///   - file:       the file the assertion is reported against
 ///   - line:       the line the assertion is reported against
-func assertDecoded(_ frame: AudioFrame,
-                   playableBy sink: any Sink,
-                   codecRate: Double,
-                   durationMs: Double,
-                   file: StaticString = #filePath,
-                   line: UInt = #line) {
-    XCTAssertNotEqual(sink.sampleRate, codecRate,
-                      """
-                      this assertion cannot observe anything when the sink's rate equals the \
-                      codec's — that is the construction that hid bugs/017 and bugs/018. Attach \
-                      a sink at a differing rate.
-                      """,
-                      file: file, line: line)
+func assertDecoded(
+  _ frame: AudioFrame,
+  playableBy sink: any Sink,
+  codecRate: Double,
+  durationMs: Double,
+  file: StaticString = #filePath,
+  line: UInt = #line
+) {
+  XCTAssertNotEqual(
+    sink.sampleRate, codecRate,
+    """
+    this assertion cannot observe anything when the sink's rate equals the \
+    codec's — that is the construction that hid bugs/017 and bugs/018. Attach \
+    a sink at a differing rate.
+    """,
+    file: file, line: line)
 
-    // Computed from the sink's rate and the payload's duration, so a decoder that returns the
-    // codec's own sample count cannot satisfy it—and a decoder that returns the codec's
-    // samples carrying the sink's rate as a *label* cannot either.
-    let expected = Int((sink.sampleRate * durationMs / 1000).rounded())
-    XCTAssertEqual(Double(frame.sampleCount), Double(expected), accuracy: 1,
-                   """
-                   \(durationMs) ms at the sink's \(sink.sampleRate) Hz is \(expected) samples \
-                   per channel; the frame carries \(frame.sampleCount). \
-                   \(Int((codecRate * durationMs / 1000).rounded())) would be the codec's own \
-                   rate, i.e. no conversion happened.
-                   """,
-                   file: file, line: line)
+  // Computed from the sink's rate and the payload's duration, so a decoder that returns the
+  // codec's own sample count cannot satisfy it—and a decoder that returns the codec's
+  // samples carrying the sink's rate as a *label* cannot either.
+  let expected = Int((sink.sampleRate * durationMs / 1000).rounded())
+  XCTAssertEqual(
+    Double(frame.sampleCount), Double(expected), accuracy: 1,
+    """
+    \(durationMs) ms at the sink's \(sink.sampleRate) Hz is \(expected) samples \
+    per channel; the frame carries \(frame.sampleCount). \
+    \(Int((codecRate * durationMs / 1000).rounded())) would be the codec's own \
+    rate, i.e. no conversion happened.
+    """,
+    file: file, line: line)
 
-    XCTAssertEqual(frame.sampleRate, sink.sampleRate,
-                   "a frame handed to a \(sink.sampleRate) Hz sink must declare that rate",
-                   file: file, line: line)
+  XCTAssertEqual(
+    frame.sampleRate, sink.sampleRate,
+    "a frame handed to a \(sink.sampleRate) Hz sink must declare that rate",
+    file: file, line: line)
 
-    // Python gates the channel adaptation the same way (`Opus.py:169`—`if self.sink and
-    // self.sink.channels`), so a sink that declares nothing imposes nothing.
-    if let sinkChannels = sink.channels {
-        XCTAssertEqual(frame.channelCount, sinkChannels,
-                       "a frame handed to a \(sinkChannels)-channel sink must carry that many",
-                       file: file, line: line)
-    }
+  // Python gates the channel adaptation the same way (`Opus.py:169`—`if self.sink and
+  // self.sink.channels`), so a sink that declares nothing imposes nothing.
+  if let sinkChannels = sink.channels {
+    XCTAssertEqual(
+      frame.channelCount, sinkChannels,
+      "a frame handed to a \(sinkChannels)-channel sink must carry that many",
+      file: file, line: line)
+  }
 }
 
 /// Assert that a converted frame carries signal across its whole length.
@@ -82,31 +89,36 @@ func assertDecoded(_ frame: AudioFrame,
 /// exactly the right declared rate. Comparing the tail's energy to the head's is what separates
 /// a resample from a pad; it needs no second decode, which matters because libcodec2's synthesis
 /// uses randomised phase for unvoiced frames and is not reproducible sample-for-sample.
-func assertEnergyIsSpreadAcrossTheFrame(_ frame: AudioFrame,
-                                        file: StaticString = #filePath,
-                                        line: UInt = #line) {
-    func rms(_ slice: ArraySlice<Float>) -> Float {
-        guard !slice.isEmpty else { return 0 }
-        return (slice.reduce(0) { $0 + $1 * $1 } / Float(slice.count)).squareRoot()
-    }
-    let quarter = frame.samples.count / 4
-    guard quarter > 0 else { return XCTFail("frame too short to inspect", file: file, line: line) }
+func assertEnergyIsSpreadAcrossTheFrame(
+  _ frame: AudioFrame,
+  file: StaticString = #filePath,
+  line: UInt = #line
+) {
+  func rms(_ slice: ArraySlice<Float>) -> Float {
+    guard !slice.isEmpty else { return 0 }
+    return (slice.reduce(0) { $0 + $1 * $1 } / Float(slice.count)).squareRoot()
+  }
+  let quarter = frame.samples.count / 4
+  guard quarter > 0 else { return XCTFail("frame too short to inspect", file: file, line: line) }
 
-    // Measured against the LOUDEST quarter, not the first: a codec with encoder lookahead—Opus
-    // has about 6.5 ms of it—leaves the head of a short frame genuinely near-silent, so
-    // comparing the tail to the head would fail on correct output.
-    let loudest = (0..<4).map { q in
-        rms(frame.samples[(q * quarter) ..< min((q + 1) * quarter, frame.samples.count)])
+  // Measured against the LOUDEST quarter, not the first: a codec with encoder lookahead—Opus
+  // has about 6.5 ms of it—leaves the head of a short frame genuinely near-silent, so
+  // comparing the tail to the head would fail on correct output.
+  let loudest =
+    (0..<4).map { q in
+      rms(frame.samples[(q * quarter)..<min((q + 1) * quarter, frame.samples.count)])
     }.max() ?? 0
-    let tail = rms(frame.samples[(frame.samples.count - quarter)...])
-    XCTAssertGreaterThan(loudest, 0.01, "the source signal must carry real energy",
-                         file: file, line: line)
-    XCTAssertGreaterThan(tail, loudest * 0.25,
-                         """
-                         the last quarter is near-silent (rms \(tail) against the loudest \
-                         quarter's \(loudest)) — the frame was padded to length, not converted.
-                         """,
-                         file: file, line: line)
+  let tail = rms(frame.samples[(frame.samples.count - quarter)...])
+  XCTAssertGreaterThan(
+    loudest, 0.01, "the source signal must carry real energy",
+    file: file, line: line)
+  XCTAssertGreaterThan(
+    tail, loudest * 0.25,
+    """
+    the last quarter is near-silent (rms \(tail) against the loudest \
+    quarter's \(loudest)) — the frame was padded to length, not converted.
+    """,
+    file: file, line: line)
 }
 
 // MARK: - Test double
@@ -119,14 +131,14 @@ func assertEnergyIsSpreadAcrossTheFrame(_ frame: AudioFrame,
 /// the pre-fix `(sink as? LocalSink)?.sampleRate` narrowing in both codecs and so would never
 /// exercise the configuration a real call actually uses.
 final class RateSink: Sink {
-    let channels:   Int?
-    let sampleRate: Double
-    private(set) var received: [AudioFrame] = []
+  let channels: Int?
+  let sampleRate: Double
+  private(set) var received: [AudioFrame] = []
 
-    init(sampleRate: Double, channels: Int? = nil) {
-        self.sampleRate = sampleRate
-        self.channels   = channels
-    }
+  init(sampleRate: Double, channels: Int? = nil) {
+    self.sampleRate = sampleRate
+    self.channels = channels
+  }
 
-    func handleFrame(_ frame: AudioFrame, from source: (any Source)?) { received.append(frame) }
+  func handleFrame(_ frame: AudioFrame, from source: (any Source)?) { received.append(frame) }
 }

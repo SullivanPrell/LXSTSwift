@@ -24,19 +24,19 @@ public let lxstTelephonyPrimitive = "telephony"
 /// Python: `LXST.Primitives.Telephony.Signalling` class constants.
 /// Values are sent as raw UInt8 in signalling packets.
 public enum SignallingStatus: UInt8, Equatable, CaseIterable {
-    case busy        = 0x00   // Python: STATUS_BUSY
-    case rejected    = 0x01   // Python: STATUS_REJECTED
-    case calling     = 0x02   // Python: STATUS_CALLING
-    case available   = 0x03   // Python: STATUS_AVAILABLE
-    case ringing     = 0x04   // Python: STATUS_RINGING
-    case connecting  = 0x05   // Python: STATUS_CONNECTING
-    case established = 0x06   // Python: STATUS_ESTABLISHED
+  case busy = 0x00  // Python: STATUS_BUSY
+  case rejected = 0x01  // Python: STATUS_REJECTED
+  case calling = 0x02  // Python: STATUS_CALLING
+  case available = 0x03  // Python: STATUS_AVAILABLE
+  case ringing = 0x04  // Python: STATUS_RINGING
+  case connecting = 0x05  // Python: STATUS_CONNECTING
+  case established = 0x06  // Python: STATUS_ESTABLISHED
 
-    /// Statuses that automatically update `Telephone.callStatus` when received.
-    /// Python: `Signalling.AUTO_STATUS_CODES = [CALLING, AVAILABLE, RINGING, CONNECTING, ESTABLISHED]`
-    public static let autoStatusCodes: [SignallingStatus] = [
-        .calling, .available, .ringing, .connecting, .established
-    ]
+  /// Statuses that automatically update `Telephone.callStatus` when received.
+  /// Python: `Signalling.AUTO_STATUS_CODES = [CALLING, AVAILABLE, RINGING, CONNECTING, ESTABLISHED]`
+  public static let autoStatusCodes: [SignallingStatus] = [
+    .calling, .available, .ringing, .connecting, .established,
+  ]
 }
 
 /// Marker byte added to `TelephonyProfile.rawValue` to signal a preferred codec profile.
@@ -59,38 +59,38 @@ public let signallingPreferredMode: UInt8 = 0xF0
 /// packetizer is squelched, so audio only flows one way at a time.
 /// Python: `Profiles.MODE_FULL_DUPLEX` / `Profiles.MODE_HALF_DUPLEX`.
 public enum CallMode: UInt8, CaseIterable {
-    case fullDuplex = 0x01   // Python: MODE_FULL_DUPLEX
-    case halfDuplex = 0x02   // Python: MODE_HALF_DUPLEX
+  case fullDuplex = 0x01  // Python: MODE_FULL_DUPLEX
+  case halfDuplex = 0x02  // Python: MODE_HALF_DUPLEX
 
-    /// Call mode used when none is negotiated.
-    ///
-    /// Python: `Profiles.DEFAULT_MODE = MODE_FULL_DUPLEX`
-    public static let defaultMode: CallMode = .fullDuplex
+  /// Call mode used when none is negotiated.
+  ///
+  /// Python: `Profiles.DEFAULT_MODE = MODE_FULL_DUPLEX`
+  public static let defaultMode: CallMode = .fullDuplex
 
-    /// Call modes this implementation offers.
-    ///
-    /// Python: `Profiles.available_modes()`
-    public static var available: [CallMode] { [.fullDuplex, .halfDuplex] }
+  /// Call modes this implementation offers.
+  ///
+  /// Python: `Profiles.available_modes()`
+  public static var available: [CallMode] { [.fullDuplex, .halfDuplex] }
 
-    /// Human-readable name of the mode.
-    ///
-    /// Python: `Profiles.mode_name(profile)`
-    public var name: String {
-        switch self {
-        case .fullDuplex: return "Full Duplex"
-        case .halfDuplex: return "Half Duplex"
-        }
+  /// Human-readable name of the mode.
+  ///
+  /// Python: `Profiles.mode_name(profile)`
+  public var name: String {
+    switch self {
+    case .fullDuplex: return "Full Duplex"
+    case .halfDuplex: return "Half Duplex"
     }
+  }
 
-    /// Short form of the mode name.
-    ///
-    /// Python: `Profiles.mode_abbrevation(profile)`—note: typo in Python preserved
-    public var abbreviation: String {
-        switch self {
-        case .fullDuplex: return "FDX"
-        case .halfDuplex: return "HDX"
-        }
+  /// Short form of the mode name.
+  ///
+  /// Python: `Profiles.mode_abbrevation(profile)`—note: typo in Python preserved
+  public var abbreviation: String {
+    switch self {
+    case .fullDuplex: return "FDX"
+    case .halfDuplex: return "HDX"
     }
+  }
 }
 
 // MARK: - AllowedCallers
@@ -98,122 +98,124 @@ public enum CallMode: UInt8, CaseIterable {
 /// Controls which callers a `Telephone` accepts.
 /// Python: `Telephone.ALLOW_ALL = 0xFF`, `Telephone.ALLOW_NONE = 0xFE`
 public enum AllowedCallers: UInt8 {
-    case allowAll  = 0xFF   // Python: ALLOW_ALL
-    case allowNone = 0xFE   // Python: ALLOW_NONE
+  case allowAll = 0xFF  // Python: ALLOW_ALL
+  case allowNone = 0xFE  // Python: ALLOW_NONE
 }
 
 // MARK: - TelephonyProfile
 
 /// Voice call quality/bandwidth profile, matching Python `Profiles` class raw values.
 public enum TelephonyProfile: UInt8, CaseIterable {
-    case bandwidthUltraLow = 0x10   // Python: BANDWIDTH_ULTRA_LOW
-    case bandwidthVeryLow  = 0x20   // Python: BANDWIDTH_VERY_LOW
-    case bandwidthLow      = 0x30   // Python: BANDWIDTH_LOW
-    case qualityMedium     = 0x40   // Python: QUALITY_MEDIUM  ← DEFAULT
-    case qualityHigh       = 0x50   // Python: QUALITY_HIGH
-    case qualityMax        = 0x60   // Python: QUALITY_MAX
-    case latencyUltraLow   = 0x70   // Python: LATENCY_ULTRA_LOW
-    case latencyLow        = 0x80   // Python: LATENCY_LOW
+  case bandwidthUltraLow = 0x10  // Python: BANDWIDTH_ULTRA_LOW
+  case bandwidthVeryLow = 0x20  // Python: BANDWIDTH_VERY_LOW
+  case bandwidthLow = 0x30  // Python: BANDWIDTH_LOW
+  case qualityMedium = 0x40  // Python: QUALITY_MEDIUM  ← DEFAULT
+  case qualityHigh = 0x50  // Python: QUALITY_HIGH
+  case qualityMax = 0x60  // Python: QUALITY_MAX
+  case latencyUltraLow = 0x70  // Python: LATENCY_ULTRA_LOW
+  case latencyLow = 0x80  // Python: LATENCY_LOW
 
-    /// Profile used when none is negotiated.
-    public static let defaultProfile: TelephonyProfile = .qualityMedium
+  /// Profile used when none is negotiated.
+  public static let defaultProfile: TelephonyProfile = .qualityMedium
 
-    /// Profiles this implementation offers, in quality order.
-    ///
-    /// Python: `available_profiles()`—ordered list
-    public static var available: [TelephonyProfile] {
-        [.bandwidthUltraLow, .bandwidthVeryLow, .bandwidthLow,
-         .qualityMedium, .qualityHigh, .qualityMax,
-         .latencyLow, .latencyUltraLow]
+  /// Profiles this implementation offers, in quality order.
+  ///
+  /// Python: `available_profiles()`—ordered list
+  public static var available: [TelephonyProfile] {
+    [
+      .bandwidthUltraLow, .bandwidthVeryLow, .bandwidthLow,
+      .qualityMedium, .qualityHigh, .qualityMax,
+      .latencyLow, .latencyUltraLow,
+    ]
+  }
+
+  /// Position of this profile in the available list.
+  public var index: Int { Self.available.firstIndex(of: self) ?? 0 }
+
+  /// Human-readable name of the profile.
+  ///
+  /// Python: `profile_name(profile)`
+  public var name: String {
+    switch self {
+    case .bandwidthUltraLow: return "Ultra Low Bandwidth"
+    case .bandwidthVeryLow: return "Very Low Bandwidth"
+    case .bandwidthLow: return "Low Bandwidth"
+    case .qualityMedium: return "Medium Quality"
+    case .qualityHigh: return "High Quality"
+    case .qualityMax: return "Super High Quality"
+    case .latencyLow: return "Low Latency"
+    case .latencyUltraLow: return "Ultra Low Latency"
     }
+  }
 
-    /// Position of this profile in the available list.
-    public var index: Int { Self.available.firstIndex(of: self) ?? 0 }
-
-    /// Human-readable name of the profile.
-    ///
-    /// Python: `profile_name(profile)`
-    public var name: String {
-        switch self {
-        case .bandwidthUltraLow: return "Ultra Low Bandwidth"
-        case .bandwidthVeryLow:  return "Very Low Bandwidth"
-        case .bandwidthLow:      return "Low Bandwidth"
-        case .qualityMedium:     return "Medium Quality"
-        case .qualityHigh:       return "High Quality"
-        case .qualityMax:        return "Super High Quality"
-        case .latencyLow:        return "Low Latency"
-        case .latencyUltraLow:   return "Ultra Low Latency"
-        }
+  /// Short form of the profile name.
+  ///
+  /// Python: `profile_abbrevation(profile)`—note: typo in Python preserved
+  public var abbreviation: String {
+    switch self {
+    case .bandwidthUltraLow: return "ULBW"
+    case .bandwidthVeryLow: return "VLBW"
+    case .bandwidthLow: return "LBW"
+    case .qualityMedium: return "MQ"
+    case .qualityHigh: return "HQ"
+    case .qualityMax: return "SHQ"
+    case .latencyLow: return "LL"
+    case .latencyUltraLow: return "ULL"
     }
+  }
 
-    /// Short form of the profile name.
-    ///
-    /// Python: `profile_abbrevation(profile)`—note: typo in Python preserved
-    public var abbreviation: String {
-        switch self {
-        case .bandwidthUltraLow: return "ULBW"
-        case .bandwidthVeryLow:  return "VLBW"
-        case .bandwidthLow:      return "LBW"
-        case .qualityMedium:     return "MQ"
-        case .qualityHigh:       return "HQ"
-        case .qualityMax:        return "SHQ"
-        case .latencyLow:        return "LL"
-        case .latencyUltraLow:   return "ULL"
-        }
+  /// Frame duration this profile encodes, in milliseconds.
+  ///
+  /// Python: `get_frame_time(profile)` in ms
+  public var frameTimeMs: Int {
+    switch self {
+    case .bandwidthUltraLow: return 400
+    case .bandwidthVeryLow: return 320
+    case .bandwidthLow: return 200
+    case .qualityMedium: return 60
+    case .qualityHigh: return 60
+    case .qualityMax: return 60
+    case .latencyLow: return 20
+    case .latencyUltraLow: return 10
     }
+  }
 
-    /// Frame duration this profile encodes, in milliseconds.
-    ///
-    /// Python: `get_frame_time(profile)` in ms
-    public var frameTimeMs: Int {
-        switch self {
-        case .bandwidthUltraLow: return 400
-        case .bandwidthVeryLow:  return 320
-        case .bandwidthLow:      return 200
-        case .qualityMedium:     return 60
-        case .qualityHigh:       return 60
-        case .qualityMax:        return 60
-        case .latencyLow:        return 20
-        case .latencyUltraLow:   return 10
-        }
+  /// Number of frames to buffer on the receive mixer's audio source for this
+  /// profile—larger for higher-quality profiles, smaller for low-latency.
+  /// Python: `Profiles.get_buffer_frames(profile)`
+  public var bufferFrames: Int {
+    switch self {
+    case .bandwidthUltraLow, .bandwidthVeryLow, .bandwidthLow: return 2
+    case .qualityMedium, .qualityHigh, .qualityMax: return 5
+    case .latencyLow: return 3
+    case .latencyUltraLow: return 2
     }
+  }
 
-    /// Number of frames to buffer on the receive mixer's audio source for this
-    /// profile—larger for higher-quality profiles, smaller for low-latency.
-    /// Python: `Profiles.get_buffer_frames(profile)`
-    public var bufferFrames: Int {
-        switch self {
-        case .bandwidthUltraLow, .bandwidthVeryLow, .bandwidthLow: return 2
-        case .qualityMedium, .qualityHigh, .qualityMax:            return 5
-        case .latencyLow:                                          return 3
-        case .latencyUltraLow:                                     return 2
-        }
+  /// Returns a fresh codec configured for this profile.
+  ///
+  /// Python: `get_codec(profile)`—returns a fresh codec instance
+  public var codec: any Codec {
+    switch self {
+    case .bandwidthUltraLow: return Codec2Codec(mode: .mode700C)
+    case .bandwidthVeryLow: return Codec2Codec(mode: .mode1600)
+    case .bandwidthLow: return Codec2Codec(mode: .mode3200)
+    case .qualityMedium: return OpusCodec(profile: .voiceMedium)
+    case .qualityHigh: return OpusCodec(profile: .voiceHigh)
+    case .qualityMax: return OpusCodec(profile: .voiceMax)
+    case .latencyLow: return OpusCodec(profile: .voiceMedium)
+    case .latencyUltraLow: return OpusCodec(profile: .voiceMedium)
     }
+  }
 
-    /// Returns a fresh codec configured for this profile.
-    ///
-    /// Python: `get_codec(profile)`—returns a fresh codec instance
-    public var codec: any Codec {
-        switch self {
-        case .bandwidthUltraLow: return Codec2Codec(mode: .mode700C)
-        case .bandwidthVeryLow:  return Codec2Codec(mode: .mode1600)
-        case .bandwidthLow:      return Codec2Codec(mode: .mode3200)
-        case .qualityMedium:     return OpusCodec(profile: .voiceMedium)
-        case .qualityHigh:       return OpusCodec(profile: .voiceHigh)
-        case .qualityMax:        return OpusCodec(profile: .voiceMax)
-        case .latencyLow:        return OpusCodec(profile: .voiceMedium)
-        case .latencyUltraLow:   return OpusCodec(profile: .voiceMedium)
-        }
-    }
-
-    /// Returns the profile after `profile`, wrapping at the end.
-    ///
-    /// Python: `next_profile(profile)`—wraps around
-    public static func next(after profile: TelephonyProfile) -> TelephonyProfile {
-        let list = Self.available
-        guard let idx = list.firstIndex(of: profile) else { return profile }
-        return list[(idx + 1) % list.count]
-    }
+  /// Returns the profile after `profile`, wrapping at the end.
+  ///
+  /// Python: `next_profile(profile)`—wraps around
+  public static func next(after profile: TelephonyProfile) -> TelephonyProfile {
+    let list = Self.available
+    guard let idx = list.firstIndex(of: profile) else { return profile }
+    return list[(idx + 1) % list.count]
+  }
 }
 
 // MARK: - ActiveCall (internal link state)
@@ -221,46 +223,46 @@ public enum TelephonyProfile: UInt8, CaseIterable {
 /// Carries per-call state attached to an active RNS Link.
 /// Python: attached as attributes directly on the `link` object.
 public final class ActiveCall {
-    /// Link carrying the call.
-    public let link: Link
-    /// Whether the call was placed by the far end.
-    public var isIncoming:   Bool = false
-    /// Whether the call was placed locally.
-    public var isOutgoing:   Bool = false
-    /// Whether the call is being torn down.
-    public var isTerminating: Bool = false
-    /// Whether the call rang out unanswered.
-    public var ringTimeout:  Bool = false
-    /// Whether the call has been answered.
-    public var answered:     Bool = false
-    /// Profile negotiated for the call.
-    public var profile: TelephonyProfile?
-    /// Duplex mode for this call (nil until selected). Python: `link.call_mode`
-    public var callMode: CallMode?
-    /// When the call reached ESTABLISHED (nil until then). Python: `link.established_at`
-    public var establishedAt: TimeInterval?
-    /// Packetizer sending captured audio.
-    public var packetizer: Packetizer?
-    /// Source receiving audio from the link.
-    public var audioSource: LinkSource?
-    /// Filters applied to captured audio.
-    public var filters: [any Filter] = []
-    /// The echo suppressor in this call's mic filter chain, if echo
-    /// cancellation is enabled.
-    ///
-    /// Its reference input is the receive mixer's
-    /// played-out signal. Python: `link.echo_suppressor`.
-    public var echoSuppressor: EchoSuppressor?
+  /// Link carrying the call.
+  public let link: Link
+  /// Whether the call was placed by the far end.
+  public var isIncoming: Bool = false
+  /// Whether the call was placed locally.
+  public var isOutgoing: Bool = false
+  /// Whether the call is being torn down.
+  public var isTerminating: Bool = false
+  /// Whether the call rang out unanswered.
+  public var ringTimeout: Bool = false
+  /// Whether the call has been answered.
+  public var answered: Bool = false
+  /// Profile negotiated for the call.
+  public var profile: TelephonyProfile?
+  /// Duplex mode for this call (nil until selected). Python: `link.call_mode`
+  public var callMode: CallMode?
+  /// When the call reached ESTABLISHED (nil until then). Python: `link.established_at`
+  public var establishedAt: TimeInterval?
+  /// Packetizer sending captured audio.
+  public var packetizer: Packetizer?
+  /// Source receiving audio from the link.
+  public var audioSource: LinkSource?
+  /// Filters applied to captured audio.
+  public var filters: [any Filter] = []
+  /// The echo suppressor in this call's mic filter chain, if echo
+  /// cancellation is enabled.
+  ///
+  /// Its reference input is the receive mixer's
+  /// played-out signal. Python: `link.echo_suppressor`.
+  public var echoSuppressor: EchoSuppressor?
 
-    /// Creates a call over `link`.
-    public init(link: Link) { self.link = link }
+  /// Creates a call over `link`.
+  public init(link: Link) { self.link = link }
 
-    /// Identity of the far end, once identified.
-    public var remoteIdentity: Identity? { link.remoteIdentity }
-    /// Status of the underlying link.
-    public var status: Link.Status { link.status }
-    /// Identifier of the underlying link.
-    public var hash: Data? { link.linkID }
+  /// Identity of the far end, once identified.
+  public var remoteIdentity: Identity? { link.remoteIdentity }
+  /// Status of the underlying link.
+  public var status: Link.Status { link.status }
+  /// Identifier of the underlying link.
+  public var hash: Data? { link.linkID }
 }
 
 // MARK: - Telephone
@@ -272,1075 +274,1133 @@ public final class ActiveCall {
 /// (Note: Python uses `Telephone`; the earlier stub here was named `TelephonyCall`)
 public final class Telephone: SignallingReceiver, SignallingHandler {
 
-    // MARK: - Class constants
+  // MARK: - Class constants
 
-    /// How long an incoming call rings before timing out, in seconds.
-    ///
-    /// Python: `Telephone.RING_TIME = 60`
-    public static let ringTime: TimeInterval = 60
-    /// How long an outgoing call waits to be answered, in seconds.
-    ///
-    /// Python: `Telephone.WAIT_TIME = 70`
-    public static let waitTime: TimeInterval = 70
-    /// How long link establishment is allowed, in seconds.
-    ///
-    /// Python: `Telephone.CONNECT_TIME = 5`
-    public static let connectTime: TimeInterval = 5
-    /// Dial tone frequency in Hz.
-    ///
-    /// Python: `Telephone.DIAL_TONE_FREQUENCY = 382`
-    public static let dialToneFrequency: Double = 382
-    /// Dial tone fade length, in milliseconds.
-    ///
-    /// Python: `Telephone.DIAL_TONE_EASE_MS = 3.14159`
-    public static let dialToneEaseMs: Double = 3.14159
-    /// Interval between maintenance passes, in seconds.
-    ///
-    /// Python: `Telephone.JOB_INTERVAL = 5`
-    public static let jobInterval: TimeInterval = 5
-    /// Shortest interval between announces, in seconds.
-    ///
-    /// Python: `Telephone.ANNOUNCE_INTERVAL_MIN = 60*5`
-    public static let announceIntervalMin: TimeInterval = 300
-    /// Default interval between announces, in seconds.
-    ///
-    /// Python: `Telephone.ANNOUNCE_INTERVAL = 60*60*3`
-    public static let announceInterval: TimeInterval = 10800
-    /// Sentinel admitting every caller.
-    ///
-    /// Python: `Telephone.ALLOW_ALL = 0xFF`
-    public static let allowAll: UInt8 = 0xFF
-    /// Sentinel admitting no caller.
-    ///
-    /// Python: `Telephone.ALLOW_NONE = 0xFE`
-    public static let allowNone: UInt8 = 0xFE
+  /// How long an incoming call rings before timing out, in seconds.
+  ///
+  /// Python: `Telephone.RING_TIME = 60`
+  public static let ringTime: TimeInterval = 60
+  /// How long an outgoing call waits to be answered, in seconds.
+  ///
+  /// Python: `Telephone.WAIT_TIME = 70`
+  public static let waitTime: TimeInterval = 70
+  /// How long link establishment is allowed, in seconds.
+  ///
+  /// Python: `Telephone.CONNECT_TIME = 5`
+  public static let connectTime: TimeInterval = 5
+  /// Dial tone frequency in Hz.
+  ///
+  /// Python: `Telephone.DIAL_TONE_FREQUENCY = 382`
+  public static let dialToneFrequency: Double = 382
+  /// Dial tone fade length, in milliseconds.
+  ///
+  /// Python: `Telephone.DIAL_TONE_EASE_MS = 3.14159`
+  public static let dialToneEaseMs: Double = 3.14159
+  /// Interval between maintenance passes, in seconds.
+  ///
+  /// Python: `Telephone.JOB_INTERVAL = 5`
+  public static let jobInterval: TimeInterval = 5
+  /// Shortest interval between announces, in seconds.
+  ///
+  /// Python: `Telephone.ANNOUNCE_INTERVAL_MIN = 60*5`
+  public static let announceIntervalMin: TimeInterval = 300
+  /// Default interval between announces, in seconds.
+  ///
+  /// Python: `Telephone.ANNOUNCE_INTERVAL = 60*60*3`
+  public static let announceInterval: TimeInterval = 10800
+  /// Sentinel admitting every caller.
+  ///
+  /// Python: `Telephone.ALLOW_ALL = 0xFF`
+  public static let allowAll: UInt8 = 0xFF
+  /// Sentinel admitting no caller.
+  ///
+  /// Python: `Telephone.ALLOW_NONE = 0xFE`
+  public static let allowNone: UInt8 = 0xFE
 
-    // MARK: - State
+  // MARK: - State
 
-    /// Identity the telephone answers as.
-    public let identity:  Identity
-    /// Transport the telephone runs on.
-    public let transport: Transport
-    /// Destination incoming calls arrive at.
-    public private(set) var destination: Destination?
+  /// Identity the telephone answers as.
+  public let identity: Identity
+  /// Transport the telephone runs on.
+  public let transport: Transport
+  /// Destination incoming calls arrive at.
+  public private(set) var destination: Destination?
 
-    /// Current signalling state. Python: `call_status`
-    public private(set) var callStatus: SignallingStatus = .available
+  /// Current signalling state. Python: `call_status`
+  public private(set) var callStatus: SignallingStatus = .available
 
-    /// The active call link wrapper (nil when idle). Python: `active_call`
-    public private(set) var activeCall: ActiveCall?
+  /// The active call link wrapper (nil when idle). Python: `active_call`
+  public private(set) var activeCall: ActiveCall?
 
-    /// Incoming links that have established but whose caller has not yet
-    /// identified.
-    ///
-    /// They sit in AVAILABLE state until the remote identifies (or
-    /// the link closes). Mirrors Python's `self.links` dict—an incoming link
-    /// is only promoted to `activeCall` once the caller is identified and
-    /// allowed. Keyed by link id.
-    private var pendingIncomingLinks: [Data: Link] = [:]
+  /// Incoming links that have established but whose caller has not yet
+  /// identified.
+  ///
+  /// They sit in AVAILABLE state until the remote identifies (or
+  /// the link closes). Mirrors Python's `self.links` dict—an incoming link
+  /// is only promoted to `activeCall` once the caller is identified and
+  /// allowed. Keyed by link id.
+  private var pendingIncomingLinks: [Data: Link] = [:]
 
-    /// Who is allowed to call. Python: `allowed`
-    public private(set) var allowed: AllowedCallers = .allowAll
+  /// Who is allowed to call. Python: `allowed`
+  public private(set) var allowed: AllowedCallers = .allowAll
 
-    /// Explicitly blocked callers (identity hash list). Python: `blocked`
-    public var blocked: [Data]? = nil
+  /// Explicitly blocked callers (identity hash list). Python: `blocked`
+  public var blocked: [Data]? = nil
 
-    /// Announce interval in seconds. Python: `announce_interval`
-    public private(set) var announceIntervalSetting: TimeInterval = Telephone.announceInterval
+  /// Announce interval in seconds. Python: `announce_interval`
+  public private(set) var announceIntervalSetting: TimeInterval = Telephone.announceInterval
 
-    /// Timestamp of last announce. Python: `last_announce`
-    public private(set) var lastAnnounce: TimeInterval = 0
+  /// Timestamp of last announce. Python: `last_announce`
+  public private(set) var lastAnnounce: TimeInterval = 0
 
-    /// External busy flag (set by app to mark phone as busy for non-call reasons).
-    /// Python: `_external_busy`
-    public private(set) var externalBusy: Bool = false
+  /// External busy flag (set by app to mark phone as busy for non-call reasons).
+  /// Python: `_external_busy`
+  public private(set) var externalBusy: Bool = false
 
-    // Gain
-    /// Gain applied to received audio, in decibels.
-    public private(set) var receiveGain:  Float = 0.0
-    /// Gain applied to transmitted audio, in decibels.
-    public private(set) var transmitGain: Float = 0.0
+  // Gain
+  /// Gain applied to received audio, in decibels.
+  public private(set) var receiveGain: Float = 0.0
+  /// Gain applied to transmitted audio, in decibels.
+  public private(set) var transmitGain: Float = 0.0
 
-    // Mute state (persists when no active call so they can be applied on answer)
-    private var receiveIsMuted:  Bool = false
-    private var transmitIsMuted: Bool = false
+  // Mute state (persists when no active call so they can be applied on answer)
+  private var receiveIsMuted: Bool = false
+  private var transmitIsMuted: Bool = false
 
-    // Mic filter chain toggles. Python: use_agc / use_bandpass / use_echo_cancellation.
-    /// Whether automatic gain control is applied.
-    public var useAGC: Bool = true
-    /// Whether the voice band-pass filter is applied.
-    public var useBandpass: Bool = true
-    /// Whether echo suppression is applied.
-    public var useEchoCancellation: Bool = true
+  // Mic filter chain toggles. Python: use_agc / use_bandpass / use_echo_cancellation.
+  /// Whether automatic gain control is applied.
+  public var useAGC: Bool = true
+  /// Whether the voice band-pass filter is applied.
+  public var useBandpass: Bool = true
+  /// Whether echo suppression is applied.
+  public var useEchoCancellation: Bool = true
 
-    // Audio device selection
-    /// Device call audio is played on.
-    public var speakerDevice:    String? = nil
-    /// Device call audio is captured from.
-    public var microphoneDevice: String? = nil
-    /// Device the ringtone is played on.
-    public var ringerDevice:     String? = nil
+  // Audio device selection
+  /// Device call audio is played on.
+  public var speakerDevice: String? = nil
+  /// Device call audio is captured from.
+  public var microphoneDevice: String? = nil
+  /// Device the ringtone is played on.
+  public var ringerDevice: String? = nil
 
-    /// Factory for the platform audio backend used by the call's capture
-    /// (`LineSource`) and playback (`LineSink`). `Telephone` itself is
-    /// platform-agnostic; a host app injects this to wire real mic/speaker I/O
-    /// (for example, `{ AVAudioEngineBackend() }`).
-    ///
-    /// Each call returns a fresh instance
-    /// because a backend owns a single engine, and capture + playback run on
-    /// separate ones. When `nil`, the call still completes signalling but moves
-    /// no audio (used by tests).
-    public var makeAudioBackend: (() -> any AudioBackend)?
+  /// Factory for the platform audio backend used by the call's capture
+  /// (`LineSource`) and playback (`LineSink`). `Telephone` itself is
+  /// platform-agnostic; a host app injects this to wire real mic/speaker I/O
+  /// (for example, `{ AVAudioEngineBackend() }`).
+  ///
+  /// Each call returns a fresh instance
+  /// because a backend owns a single engine, and capture + playback run on
+  /// separate ones. When `nil`, the call still completes signalling but moves
+  /// no audio (used by tests).
+  public var makeAudioBackend: (() -> any AudioBackend)?
 
-    // Ring/busy tone settings
-    /// File played while an incoming call rings.
-    public var ringtone: URL? = nil
-    /// How long the busy tone plays, in seconds.
-    public var busyToneSeconds: Double = 4.25
-    /// Whether playback runs in low-latency mode.
-    public var lowLatencyOutput: Bool = false
+  // Ring/busy tone settings
+  /// File played while an incoming call rings.
+  public var ringtone: URL? = nil
+  /// How long the busy tone plays, in seconds.
+  public var busyToneSeconds: Double = 4.25
+  /// Whether playback runs in low-latency mode.
+  public var lowLatencyOutput: Bool = false
 
-    // Audio pipelines (internal)
-    private var receiveMixer:     Mixer?
-    private var transmitMixer:    Mixer?
-    private var audioInput:       LineSource?
-    private var audioOutput:      LineSink?
-    private var dialTone:         ToneSource?
-    private var receivePipeline:  Pipeline?
-    private var transmitPipeline: Pipeline?
+  // Audio pipelines (internal)
+  private var receiveMixer: Mixer?
+  private var transmitMixer: Mixer?
+  private var audioInput: LineSource?
+  private var audioOutput: LineSink?
+  private var dialTone: ToneSource?
+  private var receivePipeline: Pipeline?
+  private var transmitPipeline: Pipeline?
 
-    private var transmitCodec: (any Codec)?
-    private var targetFrameTimeMs: Double = 60
-    /// Receive-mixer per-source frame buffer depth for the active profile.
-    ///
-    /// Python: `target_buffer_frames`. Default matches the default profile.
-    private var targetBufferFrames: Int = TelephonyProfile.defaultProfile.bufferFrames
+  private var transmitCodec: (any Codec)?
+  private var targetFrameTimeMs: Double = 60
+  /// Receive-mixer per-source frame buffer depth for the active profile.
+  ///
+  /// Python: `target_buffer_frames`. Default matches the default profile.
+  private var targetBufferFrames: Int = TelephonyProfile.defaultProfile.bufferFrames
 
-    // Thread safety
-    private let callHandlerLock          = NSLock()
-    private let pipelineLock             = NSLock()
-    private let callerPipelineOpenLock   = NSLock()
-    private let ringerLock               = NSLock()
+  // Thread safety
+  private let callHandlerLock = NSLock()
+  private let pipelineLock = NSLock()
+  private let callerPipelineOpenLock = NSLock()
+  private let ringerLock = NSLock()
 
-    // Callbacks
-    private var ringingCallback:     ((Identity?) -> Void)?
-    private var establishedCallback: ((Identity?) -> Void)?
-    private var endedCallback:       ((Identity?) -> Void)?
-    private var busyCallback:        ((Identity?) -> Void)?
-    private var rejectedCallback:    ((Identity?) -> Void)?
+  // Callbacks
+  private var ringingCallback: ((Identity?) -> Void)?
+  private var establishedCallback: ((Identity?) -> Void)?
+  private var endedCallback: ((Identity?) -> Void)?
+  private var busyCallback: ((Identity?) -> Void)?
+  private var rejectedCallback: ((Identity?) -> Void)?
 
-    // MARK: - Init
+  // MARK: - Init
 
-    /// Creates a telephone answering as `identity`.
-    ///
-    /// Python: `Telephone.__init__(identity, ring_time, wait_time, auto_answer, allowed, receive_gain, transmit_gain)`
-    public init(identity: Identity,
-                transport: Transport,
-                ringTime: TimeInterval = Telephone.ringTime,
-                waitTime: TimeInterval = Telephone.waitTime,
-                autoAnswer: Bool? = nil,
-                allowed: AllowedCallers = .allowAll,
-                receiveGain: Float = 0.0,
-                transmitGain: Float = 0.0) {
-        self.identity      = identity
-        self.transport     = transport
-        self.allowed       = allowed
-        self.receiveGain   = receiveGain
-        self.transmitGain  = transmitGain
-        super.init()
+  /// Creates a telephone answering as `identity`.
+  ///
+  /// Python: `Telephone.__init__(identity, ring_time, wait_time, auto_answer, allowed, receive_gain, transmit_gain)`
+  public init(
+    identity: Identity,
+    transport: Transport,
+    ringTime: TimeInterval = Telephone.ringTime,
+    waitTime: TimeInterval = Telephone.waitTime,
+    autoAnswer: Bool? = nil,
+    allowed: AllowedCallers = .allowAll,
+    receiveGain: Float = 0.0,
+    transmitGain: Float = 0.0
+  ) {
+    self.identity = identity
+    self.transport = transport
+    self.allowed = allowed
+    self.receiveGain = receiveGain
+    self.transmitGain = transmitGain
+    super.init()
 
-        // Create local delivery destination
-        if let dest = try? Destination(identity: identity,
-                                       direction: .in, kind: .single,
-                                       appName: appName,
-                                       aspects: [lxstTelephonyPrimitive]) {
-            dest.setProofStrategy(.proveNone)
-            dest.onLinkEstablished = { [weak self] link in
-                self?.incomingLinkEstablished(link)
-            }
-            self.destination = dest
-            transport.register(destination: dest)
+    // Create local delivery destination
+    if let dest = try? Destination(
+      identity: identity,
+      direction: .in, kind: .single,
+      appName: appName,
+      aspects: [lxstTelephonyPrimitive])
+    {
+      dest.setProofStrategy(.proveNone)
+      dest.onLinkEstablished = { [weak self] link in
+        self?.incomingLinkEstablished(link)
+      }
+      self.destination = dest
+      transport.register(destination: dest)
+    }
+  }
+
+  deinit {
+    hangup()
+    if let d = destination { transport.deregister(destination: d) }
+  }
+
+  // MARK: - Announce
+
+  /// Announce this telephone's presence on the network.
+  /// Python: `Telephone.announce(attached_interface=None)`
+  public func announce(attachedInterface: (any Interface)? = nil) {
+    guard let dest = destination else { return }
+    if let iface = attachedInterface {
+      try? dest.announce(attachedInterface: iface)
+    } else {
+      try? dest.announce()
+    }
+    lastAnnounce = Date().timeIntervalSince1970
+  }
+
+  // MARK: - Configuration
+
+  /// Sets which callers are admitted.
+  ///
+  /// Python: `set_allowed(allowed)`—AllowedCallers enum or list
+  public func setAllowed(_ allowed: AllowedCallers) { self.allowed = allowed }
+
+  /// Sets the callers that are refused.
+  ///
+  /// Python: `set_blocked(blocked)`
+  public func setBlocked(_ blocked: [Data]?) { self.blocked = blocked }
+
+  /// Sets the interval between announces.
+  ///
+  /// Python: `set_announce_interval(announce_interval)`
+  public func setAnnounceInterval(_ interval: TimeInterval) {
+    announceIntervalSetting = max(interval, Telephone.announceIntervalMin)
+  }
+
+  /// Marks the telephone busy for reasons outside this instance.
+  ///
+  /// Python: `set_busy(busy)`
+  public func setExternalBusy(_ busy: Bool) { externalBusy = busy }
+
+  // MARK: - Callbacks
+
+  /// Sets the callback fired when a call starts ringing.
+  ///
+  /// Python: `set_ringing_callback(callback)`
+  public func setRingingCallback(_ cb: @escaping (Identity?) -> Void) {
+    ringingCallback = cb
+  }
+  /// Sets the callback fired when a call is established.
+  ///
+  /// Python: `set_established_callback(callback)`
+  public func setEstablishedCallback(_ cb: @escaping (Identity?) -> Void) {
+    establishedCallback = cb
+  }
+  /// Sets the callback fired when a call ends.
+  ///
+  /// Python: `set_ended_callback(callback)`
+  public func setEndedCallback(_ cb: @escaping (Identity?) -> Void) {
+    endedCallback = cb
+  }
+  /// Sets the callback fired when the far end is busy.
+  ///
+  /// Python: `set_busy_callback(callback)`
+  public func setBusyCallback(_ cb: @escaping (Identity?) -> Void) {
+    busyCallback = cb
+  }
+  /// Sets the callback fired when a call is rejected.
+  ///
+  /// Python: `set_rejected_callback(callback)`
+  public func setRejectedCallback(_ cb: @escaping (Identity?) -> Void) {
+    rejectedCallback = cb
+  }
+
+  // MARK: - Gain
+
+  /// Sets the gain applied to received audio.
+  ///
+  /// Python: `set_receive_gain(gain=0.0)`
+  public func setReceiveGain(_ gain: Float = 0.0) {
+    // receiveGain is read by the pipeline-build methods under pipelineLock, so
+    // write it (and snapshot the mixer) under the same lock; the Mixer call is
+    // a callout and stays outside.
+    pipelineLock.lock()
+    receiveGain = gain
+    let m = receiveMixer
+    pipelineLock.unlock()
+    m?.setGain(gain)
+  }
+
+  /// Sets the gain applied to transmitted audio.
+  ///
+  /// Python: `set_transmit_gain(gain=0.0)`
+  public func setTransmitGain(_ gain: Float = 0.0) {
+    pipelineLock.lock()
+    transmitGain = gain
+    let m = transmitMixer
+    pipelineLock.unlock()
+    m?.setGain(gain)
+  }
+
+  // MARK: - Mute
+
+  /// Mutes received audio, or unmutes it when `mute` is false.
+  ///
+  /// Python: `mute_receive(mute=True)`
+  public func muteReceive(_ mute: Bool = true) {
+    pipelineLock.lock()
+    receiveIsMuted = mute
+    let m = receiveMixer
+    pipelineLock.unlock()
+    m?.mute(mute)
+  }
+  /// Unmutes received audio, or mutes it when `unmute` is false.
+  ///
+  /// Python: `unmute_receive(unmute=True)`
+  public func unmuteReceive(_ unmute: Bool = true) {
+    pipelineLock.lock()
+    receiveIsMuted = !unmute
+    let m = receiveMixer
+    pipelineLock.unlock()
+    m?.unmute(unmute)
+  }
+  /// Mutes transmitted audio, or unmutes it when `mute` is false.
+  ///
+  /// Python: `mute_transmit(mute=True)`
+  public func muteTransmit(_ mute: Bool = true) {
+    pipelineLock.lock()
+    transmitIsMuted = mute
+    let m = transmitMixer
+    pipelineLock.unlock()
+    m?.mute(mute)
+  }
+  /// Unmutes transmitted audio, or mutes it when `unmute` is false.
+  ///
+  /// Python: `unmute_transmit(unmute=True)`
+  public func unmuteTransmit(_ unmute: Bool = true) {
+    pipelineLock.lock()
+    transmitIsMuted = !unmute
+    let m = transmitMixer
+    pipelineLock.unlock()
+    m?.unmute(unmute)
+  }
+
+  // MARK: - Computed properties
+
+  /// Whether a call is in progress or the telephone is marked busy.
+  ///
+  /// Python: `busy` property
+  public var busy: Bool {
+    callStatus != .available || externalBusy
+  }
+
+  /// Profile of the call in progress, if any.
+  ///
+  /// Python: `active_profile` property
+  public var activeProfile: TelephonyProfile? { activeCall?.profile }
+
+  /// Mode of the call in progress, if any.
+  ///
+  /// Python: `active_mode` property
+  public var activeMode: CallMode? { activeCall?.callMode }
+
+  /// Whether received audio is muted.
+  ///
+  /// Python: `receive_muted` property
+  public var receiveMuted: Bool {
+    pipelineLock.lock()
+    let m = receiveMixer
+    let fallback = receiveIsMuted
+    pipelineLock.unlock()
+    return m?.muted ?? fallback
+  }
+
+  /// Whether transmitted audio is muted.
+  ///
+  /// Python: `transmit_muted` property
+  public var transmitMuted: Bool {
+    pipelineLock.lock()
+    let m = transmitMixer
+    let fallback = transmitIsMuted
+    pipelineLock.unlock()
+    return m?.muted ?? fallback
+  }
+
+  // MARK: - Signalling
+
+  /// Send one or more raw signal values on `link`, updating `callStatus` for
+  /// each auto-status code, then transmit them in a single packet.
+  ///
+  /// Python: `Telephone.signal(signals, link)` →
+  /// ```
+  /// if type(signals) != list: signals = [signals]
+  /// for signal in signals:
+  ///     if signal in Signalling.AUTO_STATUS_CODES: self.call_status = signal
+  /// super().signal(signals, link)
+  /// ```
+  /// Values are `Int` (not `UInt8`) so composites like `PREFERRED_PROFILE +
+  /// profile` (for example, `0x13F`) round-trip intact. A combined
+  /// `[PREFERRED_PROFILE+profile, PREFERRED_MODE+mode]` list rides in one packet.
+  public func sendSignal(_ signals: [Int], on link: Link) {
+    for signal in signals {
+      if signal >= 0, signal <= 0xFF,
+        let status = SignallingStatus(rawValue: UInt8(signal)),
+        SignallingStatus.autoStatusCodes.contains(status)
+      {
+        callStatus = status
+      }
+    }
+    // Inherited SignallingReceiver.signal—encodes {fieldSignalling: signals}
+    // and sends it over the link (encrypted with the link key, routed by transport).
+    self.signal(signals, to: link)
+  }
+
+  /// Convenience single-signal overload.
+  ///
+  /// The value is an `Int` (not `UInt8`) so the composite
+  /// `PREFERRED_PROFILE + profile` (for example, `0x13F`) round-trips intact.
+  public func sendSignal(_ signal: Int, on link: Link) {
+    sendSignal([signal], on: link)
+  }
+
+  /// Convenience overload for sending a `SignallingStatus` code.
+  public func sendSignal(_ status: SignallingStatus, on link: Link) {
+    sendSignal(Int(status.rawValue), on: link)
+  }
+
+  // MARK: - Transmit squelch (half-duplex)
+
+  /// Squelch the local transmit path (used by half-duplex mode).
+  /// Python: `Telephone.squelch_transmit(squelch=True)`
+  public func squelchTransmit(_ squelch: Bool = true) {
+    guard let pkt = activeCall?.packetizer else { return }
+    if squelch { pkt.squelch() } else { pkt.unsquelch() }
+  }
+
+  /// Resume the local transmit path. Python: `Telephone.unsquelch_transmit(unsquelch=True)`
+  public func unsquelchTransmit(_ unsquelch: Bool = true) {
+    guard let pkt = activeCall?.packetizer else { return }
+    if unsquelch { pkt.unsquelch() } else { pkt.squelch() }
+  }
+
+  // MARK: - Outgoing call
+
+  /// Initiate an outgoing call to `identity`.
+  /// Python: `Telephone.call(identity, profile=None, mode=None)`
+  public func call(
+    identity: Identity,
+    profile: TelephonyProfile? = nil,
+    mode: CallMode? = nil
+  ) {
+    callHandlerLock.lock()
+    defer { callHandlerLock.unlock() }
+    guard activeCall == nil else { return }
+
+    callStatus = .calling
+    let callDest = try? Destination(
+      identity: identity,
+      direction: .out, kind: .single,
+      appName: appName,
+      aspects: [lxstTelephonyPrimitive])
+    guard let dest = callDest else { return }
+
+    let link = try? Link.initiate(destination: dest, transport: transport)
+    guard let link else {
+      callStatus = .available
+      return
+    }
+
+    let call = ActiveCall(link: link)
+    call.isIncoming = false
+    call.isOutgoing = true
+    call.isTerminating = false
+    call.ringTimeout = false
+    call.establishedAt = nil
+    call.profile = profile ?? TelephonyProfile.defaultProfile
+    call.callMode = mode
+    activeCall = call
+
+    link.onEstablished = { [weak self] l in
+      self?.outgoingLinkEstablished(l)
+    }
+    link.onClosed = { [weak self] l in
+      if self?.activeCall?.link === l { self?.hangup() }
+    }
+
+    // Outgoing call timeout: if the call hasn't reached ESTABLISHED within
+    // `waitTime`, give up. Mirrors Python's `__timeout_outgoing_call_at` /
+    // `__timeout_outgoing_establishment_at` (Swift previously had none, so a
+    // call to an unreachable/unanswering peer hung in CALLING forever).
+    let pendingCall = call
+    DispatchQueue.global().asyncAfter(deadline: .now() + Telephone.waitTime) { [weak self] in
+      guard let self, self.activeCall === pendingCall,
+        self.callStatus.rawValue < SignallingStatus.established.rawValue
+      else { return }
+      self.hangup()
+    }
+  }
+
+  // MARK: - Answer incoming call
+
+  /// Answer an active incoming call from `identity`.
+  /// Python: `Telephone.answer(identity)`
+  @discardableResult
+  public func answer(identity: Identity) -> Bool {
+    callHandlerLock.lock()
+    guard let call = activeCall, call.remoteIdentity?.hash == identity.hash else {
+      callHandlerLock.unlock()
+      return false
+    }
+
+    call.answered = true
+    call.establishedAt = Date().timeIntervalSince1970  // Python: active_call.established_at = time.time()
+    openPipelines(for: identity)
+    startPipelines()
+    let cb = establishedCallback
+    callHandlerLock.unlock()
+    // Fire the app callback OUTSIDE callHandlerLock (it may re-enter the
+    // Telephone, for example, hangup(), which takes the same non-recursive lock).
+    cb?(identity)
+    return true
+  }
+
+  // MARK: - Hangup
+
+  /// End the current call. Python: `Telephone.hangup(reason=None)`
+  public func hangup(reason: SignallingStatus? = nil) {
+    callHandlerLock.lock()
+    let call = activeCall
+    activeCall = nil
+    let remote = call?.remoteIdentity
+    let wasRingingIncoming = (call?.isIncoming ?? false) && callStatus == .ringing
+    let ringTimedOut = call?.ringTimeout ?? false
+    callHandlerLock.unlock()
+
+    // Declining (or losing) an unanswered, still-ringing incoming call
+    // tells the caller it was rejected. Mirrors Python `hangup`'s
+    // STATUS_REJECTED signal. Skipped on ring-timeout (the caller already
+    // sees no answer) and when the link is already gone.
+    if let call, wasRingingIncoming, !ringTimedOut, call.link.status == .active {
+      sendSignal(.rejected, on: call.link)
+    }
+
+    if let link = call?.link, link.status == .active {
+      try? link.teardown()
+    }
+
+    stopPipelines()
+    clearPipelineFields()
+
+    callStatus = .available
+
+    switch reason {
+    case .busy:
+      if let cb = busyCallback { cb(remote) } else { endedCallback?(remote) }
+    case .rejected:
+      if let cb = rejectedCallback { cb(remote) } else { endedCallback?(remote) }
+    default:
+      endedCallback?(remote)
+    }
+  }
+
+  // MARK: - Profile switching
+
+  /// Switch codec profile mid-call.
+  /// Python: `Telephone.switch_profile(profile, from_signalling=False)`
+  public func switchProfile(_ profile: TelephonyProfile, fromSignalling: Bool = false) {
+    guard let call = activeCall, callStatus == .established else { return }
+    guard call.profile != profile else { return }
+    call.profile = profile
+    transmitCodec = profile.codec
+    targetFrameTimeMs = Double(profile.frameTimeMs)
+    targetBufferFrames = profile.bufferFrames
+    if !fromSignalling, let link = activeCall?.link {
+      // Python: self.signal(Signalling.PREFERRED_PROFILE + self.active_call.profile, ...)
+      let composite = Int(signallingPreferredProfile) + Int(profile.rawValue)
+      sendSignal(composite, on: link)
+    }
+    reconfigureTransmitPipeline()
+    // Python: self.receive_mixer.set_source_max_frames(audio_source, target_buffer_frames)
+    if let src = call.audioSource {
+      pipelineLock.lock()
+      let m = receiveMixer
+      pipelineLock.unlock()
+      m?.setSourceMaxFrames(targetBufferFrames, for: src)
+    }
+  }
+
+  // MARK: - Mode switching (half-duplex)
+
+  /// Switch duplex mode mid-call, signalling the peer unless the switch was
+  /// itself triggered by inbound signalling.
+  /// Python: `Telephone.switch_mode(mode=None, from_signalling=False)`
+  public func switchMode(_ mode: CallMode, fromSignalling: Bool = false) {
+    guard let call = activeCall else { return }
+    guard call.callMode != mode else { return }
+    guard CallMode.available.contains(mode) else { return }
+    guard callStatus == .established else { return }
+    call.callMode = mode
+    if !fromSignalling {
+      // Python: self.signal(Signalling.PREFERRED_MODE + self.active_call.call_mode, ...)
+      let composite = Int(signallingPreferredMode) + Int(mode.rawValue)
+      sendSignal(composite, on: call.link)
+    }
+    selectCallMode(mode)
+  }
+
+  /// Apply a duplex mode locally (default to `DEFAULT_MODE` when nil), squelching
+  /// or unsquelching the transmit packetizer to match.
+  /// Python: `Telephone.__select_call_mode(mode=None)`
+  private func selectCallMode(_ mode: CallMode? = nil) {
+    let resolved = mode ?? CallMode.defaultMode
+    activeCall?.callMode = resolved
+    if let pkt = activeCall?.packetizer {
+      switch resolved {
+      case .halfDuplex: pkt.squelch()
+      case .fullDuplex: pkt.unsquelch()
+      }
+    }
+  }
+
+  // MARK: - SignallingReceiver override
+
+  /// Handle incoming signalling packets from the active call link.
+  /// Python: `Telephone.signalling_received(signals, source)`
+  override public func signallingReceived(_ signals: [Int], from source: (any Source)?) {
+    // activeCall is mutated under callHandlerLock by call/answer/hangup on
+    // other threads—snapshot the reference under the lock, then operate on
+    // the local (this handler runs on the link receive thread).
+    callHandlerLock.lock()
+    let callSnapshot = activeCall
+    callHandlerLock.unlock()
+    guard let call = callSnapshot else { return }
+
+    for signal in signals {
+      // Incoming, not-yet-answered calls ignore status codes but still accept
+      // profile- and mode-preference signals (>= PREFERRED_MODE), so the
+      // preferred codec/duplex-mode is recorded while ringing.
+      // Python: first guard of signalling_received (threshold lowered to
+      // PREFERRED_MODE in LXST 0.5.0 to allow mode signalling before answer).
+      if call.isIncoming, !call.answered, signal < Int(signallingPreferredMode) {
+        return
+      }
+
+      // Profile-preference composite signal (Python: signal >= PREFERRED_PROFILE).
+      // PREFERRED_PROFILE (0xFF) + profile (0x10..0x80) exceeds a single byte.
+      // Checked before the mode branch because profile composites (>= 0xFF)
+      // are also >= PREFERRED_MODE (0xF0); mode composites (0xF1/0xF2) are not.
+      if signal >= Int(signallingPreferredProfile) {
+        let profileRaw = signal - Int(signallingPreferredProfile)
+        if profileRaw >= 0, profileRaw <= 0xFF,
+          let profile = TelephonyProfile(rawValue: UInt8(profileRaw))
+        {
+          if callStatus == .established {
+            switchProfile(profile, fromSignalling: true)
+          } else {
+            selectCallProfile(profile)
+          }
         }
-    }
+        continue
+      }
 
-    deinit {
-        hangup()
-        if let d = destination { transport.deregister(destination: d) }
-    }
-
-    // MARK: - Announce
-
-    /// Announce this telephone's presence on the network.
-    /// Python: `Telephone.announce(attached_interface=None)`
-    public func announce(attachedInterface: (any Interface)? = nil) {
-        guard let dest = destination else { return }
-        if let iface = attachedInterface {
-            try? dest.announce(attachedInterface: iface)
-        } else {
-            try? dest.announce()
+      // Mode-preference composite signal (Python: signal >= PREFERRED_MODE).
+      // PREFERRED_MODE (0xF0) + mode (0x01/0x02) = 0xF1/0xF2.
+      if signal >= Int(signallingPreferredMode) {
+        let modeRaw = signal - Int(signallingPreferredMode)
+        if modeRaw >= 0, modeRaw <= 0xFF,
+          let mode = CallMode(rawValue: UInt8(modeRaw))
+        {
+          if callStatus == .established {
+            switchMode(mode, fromSignalling: true)
+          } else {
+            selectCallMode(mode)
+          }
         }
-        lastAnnounce = Date().timeIntervalSince1970
-    }
+        continue
+      }
 
-    // MARK: - Configuration
+      guard signal >= 0, signal <= 0xFF,
+        let status = SignallingStatus(rawValue: UInt8(signal))
+      else { continue }
 
-    /// Sets which callers are admitted.
-    ///
-    /// Python: `set_allowed(allowed)`—AllowedCallers enum or list
-    public func setAllowed(_ allowed: AllowedCallers) { self.allowed = allowed }
+      switch status {
+      case .busy:
+        call.isTerminating = true
+        hangup(reason: .busy)
 
-    /// Sets the callers that are refused.
-    ///
-    /// Python: `set_blocked(blocked)`
-    public func setBlocked(_ blocked: [Data]?) { self.blocked = blocked }
+      case .rejected:
+        hangup(reason: .rejected)
 
-    /// Sets the interval between announces.
-    ///
-    /// Python: `set_announce_interval(announce_interval)`
-    public func setAnnounceInterval(_ interval: TimeInterval) {
-        announceIntervalSetting = max(interval, Telephone.announceIntervalMin)
-    }
+      case .available:
+        callStatus = .available
+        try? call.link.identify(as: identity)
 
-    /// Marks the telephone busy for reasons outside this instance.
-    ///
-    /// Python: `set_busy(busy)`
-    public func setExternalBusy(_ busy: Bool) { externalBusy = busy }
-
-    // MARK: - Callbacks
-
-    /// Sets the callback fired when a call starts ringing.
-    ///
-    /// Python: `set_ringing_callback(callback)`
-    public func setRingingCallback(_ cb: @escaping (Identity?) -> Void) {
-        ringingCallback = cb
-    }
-    /// Sets the callback fired when a call is established.
-    ///
-    /// Python: `set_established_callback(callback)`
-    public func setEstablishedCallback(_ cb: @escaping (Identity?) -> Void) {
-        establishedCallback = cb
-    }
-    /// Sets the callback fired when a call ends.
-    ///
-    /// Python: `set_ended_callback(callback)`
-    public func setEndedCallback(_ cb: @escaping (Identity?) -> Void) {
-        endedCallback = cb
-    }
-    /// Sets the callback fired when the far end is busy.
-    ///
-    /// Python: `set_busy_callback(callback)`
-    public func setBusyCallback(_ cb: @escaping (Identity?) -> Void) {
-        busyCallback = cb
-    }
-    /// Sets the callback fired when a call is rejected.
-    ///
-    /// Python: `set_rejected_callback(callback)`
-    public func setRejectedCallback(_ cb: @escaping (Identity?) -> Void) {
-        rejectedCallback = cb
-    }
-
-    // MARK: - Gain
-
-    /// Sets the gain applied to received audio.
-    ///
-    /// Python: `set_receive_gain(gain=0.0)`
-    public func setReceiveGain(_ gain: Float = 0.0) {
-        // receiveGain is read by the pipeline-build methods under pipelineLock, so
-        // write it (and snapshot the mixer) under the same lock; the Mixer call is
-        // a callout and stays outside.
-        pipelineLock.lock(); receiveGain = gain; let m = receiveMixer; pipelineLock.unlock()
-        m?.setGain(gain)
-    }
-
-    /// Sets the gain applied to transmitted audio.
-    ///
-    /// Python: `set_transmit_gain(gain=0.0)`
-    public func setTransmitGain(_ gain: Float = 0.0) {
-        pipelineLock.lock(); transmitGain = gain; let m = transmitMixer; pipelineLock.unlock()
-        m?.setGain(gain)
-    }
-
-    // MARK: - Mute
-
-    /// Mutes received audio, or unmutes it when `mute` is false.
-    ///
-    /// Python: `mute_receive(mute=True)`
-    public func muteReceive(_ mute: Bool = true) {
-        pipelineLock.lock(); receiveIsMuted = mute; let m = receiveMixer; pipelineLock.unlock()
-        m?.mute(mute)
-    }
-    /// Unmutes received audio, or mutes it when `unmute` is false.
-    ///
-    /// Python: `unmute_receive(unmute=True)`
-    public func unmuteReceive(_ unmute: Bool = true) {
-        pipelineLock.lock(); receiveIsMuted = !unmute; let m = receiveMixer; pipelineLock.unlock()
-        m?.unmute(unmute)
-    }
-    /// Mutes transmitted audio, or unmutes it when `mute` is false.
-    ///
-    /// Python: `mute_transmit(mute=True)`
-    public func muteTransmit(_ mute: Bool = true) {
-        pipelineLock.lock(); transmitIsMuted = mute; let m = transmitMixer; pipelineLock.unlock()
-        m?.mute(mute)
-    }
-    /// Unmutes transmitted audio, or mutes it when `unmute` is false.
-    ///
-    /// Python: `unmute_transmit(unmute=True)`
-    public func unmuteTransmit(_ unmute: Bool = true) {
-        pipelineLock.lock(); transmitIsMuted = !unmute; let m = transmitMixer; pipelineLock.unlock()
-        m?.unmute(unmute)
-    }
-
-    // MARK: - Computed properties
-
-    /// Whether a call is in progress or the telephone is marked busy.
-    ///
-    /// Python: `busy` property
-    public var busy: Bool {
-        callStatus != .available || externalBusy
-    }
-
-    /// Profile of the call in progress, if any.
-    ///
-    /// Python: `active_profile` property
-    public var activeProfile: TelephonyProfile? { activeCall?.profile }
-
-    /// Mode of the call in progress, if any.
-    ///
-    /// Python: `active_mode` property
-    public var activeMode: CallMode? { activeCall?.callMode }
-
-    /// Whether received audio is muted.
-    ///
-    /// Python: `receive_muted` property
-    public var receiveMuted: Bool {
-        pipelineLock.lock(); let m = receiveMixer; let fallback = receiveIsMuted; pipelineLock.unlock()
-        return m?.muted ?? fallback
-    }
-
-    /// Whether transmitted audio is muted.
-    ///
-    /// Python: `transmit_muted` property
-    public var transmitMuted: Bool {
-        pipelineLock.lock(); let m = transmitMixer; let fallback = transmitIsMuted; pipelineLock.unlock()
-        return m?.muted ?? fallback
-    }
-
-    // MARK: - Signalling
-
-    /// Send one or more raw signal values on `link`, updating `callStatus` for
-    /// each auto-status code, then transmit them in a single packet.
-    ///
-    /// Python: `Telephone.signal(signals, link)` →
-    /// ```
-    /// if type(signals) != list: signals = [signals]
-    /// for signal in signals:
-    ///     if signal in Signalling.AUTO_STATUS_CODES: self.call_status = signal
-    /// super().signal(signals, link)
-    /// ```
-    /// Values are `Int` (not `UInt8`) so composites like `PREFERRED_PROFILE +
-    /// profile` (for example, `0x13F`) round-trip intact. A combined
-    /// `[PREFERRED_PROFILE+profile, PREFERRED_MODE+mode]` list rides in one packet.
-    public func sendSignal(_ signals: [Int], on link: Link) {
-        for signal in signals {
-            if signal >= 0, signal <= 0xFF,
-               let status = SignallingStatus(rawValue: UInt8(signal)),
-               SignallingStatus.autoStatusCodes.contains(status) {
-                callStatus = status
-            }
+      case .ringing:
+        callStatus = .ringing
+        prepareDiallingPipelines()  // selects call mode → call.callMode is set below
+        if call.isOutgoing {
+          // Python (combined signalling, LXST 0.5.0):
+          // self.signal([PREFERRED_PROFILE+profile, PREFERRED_MODE+call_mode], ...)
+          let profileComposite =
+            Int(signallingPreferredProfile) + Int((call.profile ?? .qualityMedium).rawValue)
+          let modeComposite =
+            Int(signallingPreferredMode) + Int((call.callMode ?? .defaultMode).rawValue)
+          sendSignal([profileComposite, modeComposite], on: call.link)
         }
-        // Inherited SignallingReceiver.signal—encodes {fieldSignalling: signals}
-        // and sends it over the link (encrypted with the link key, routed by transport).
-        self.signal(signals, to: link)
-    }
 
-    /// Convenience single-signal overload.
-    ///
-    /// The value is an `Int` (not `UInt8`) so the composite
-    /// `PREFERRED_PROFILE + profile` (for example, `0x13F`) round-trips intact.
-    public func sendSignal(_ signal: Int, on link: Link) {
-        sendSignal([signal], on: link)
-    }
+      case .connecting:
+        callStatus = .connecting
+        callerPipelineOpenLock.lock()
+        resetDiallingPipelines()
+        openPipelines(for: call.remoteIdentity ?? identity)
+        callerPipelineOpenLock.unlock()
 
-    /// Convenience overload for sending a `SignallingStatus` code.
-    public func sendSignal(_ status: SignallingStatus, on link: Link) {
-        sendSignal(Int(status.rawValue), on: link)
-    }
+      case .established:
+        if call.isOutgoing {
+          callerPipelineOpenLock.lock()
+          startPipelines()
+          disableDialTone()
+          callerPipelineOpenLock.unlock()
+          callStatus = .established
+          call.establishedAt = Date().timeIntervalSince1970  // Python: active_call.established_at = time.time()
+          establishedCallback?(call.remoteIdentity)
+        }
 
-    // MARK: - Transmit squelch (half-duplex)
-
-    /// Squelch the local transmit path (used by half-duplex mode).
-    /// Python: `Telephone.squelch_transmit(squelch=True)`
-    public func squelchTransmit(_ squelch: Bool = true) {
-        guard let pkt = activeCall?.packetizer else { return }
-        if squelch { pkt.squelch() } else { pkt.unsquelch() }
-    }
-
-    /// Resume the local transmit path. Python: `Telephone.unsquelch_transmit(unsquelch=True)`
-    public func unsquelchTransmit(_ unsquelch: Bool = true) {
-        guard let pkt = activeCall?.packetizer else { return }
-        if unsquelch { pkt.unsquelch() } else { pkt.squelch() }
-    }
-
-    // MARK: - Outgoing call
-
-    /// Initiate an outgoing call to `identity`.
-    /// Python: `Telephone.call(identity, profile=None, mode=None)`
-    public func call(identity: Identity,
-                     profile: TelephonyProfile? = nil,
-                     mode: CallMode? = nil) {
-        callHandlerLock.lock()
-        defer { callHandlerLock.unlock() }
-        guard activeCall == nil else { return }
-
+      case .calling:
         callStatus = .calling
-        let callDest = try? Destination(identity: identity,
-                                        direction: .out, kind: .single,
-                                        appName: appName,
-                                        aspects: [lxstTelephonyPrimitive])
-        guard let dest = callDest else { return }
+      }
+    }
+  }
 
-        let link = try? Link.initiate(destination: dest, transport: transport)
-        guard let link else { callStatus = .available; return }
+  // MARK: - Incoming link
 
-        let call = ActiveCall(link: link)
-        call.isIncoming    = false
-        call.isOutgoing    = true
-        call.isTerminating = false
-        call.ringTimeout   = false
-        call.establishedAt = nil
-        call.profile       = profile ?? TelephonyProfile.defaultProfile
-        call.callMode      = mode
-        activeCall = call
+  /// An incoming call link has established.
+  ///
+  /// Mirrors Python
+  /// `__incoming_link_established`: the link is NOT promoted to `activeCall` and
+  /// does NOT ring yet. A remote-identified callback is registered, the link parked
+  /// in `pendingIncomingLinks`, and AVAILABLE signalled. The caller responds to
+  /// AVAILABLE by identifying, which fires `callerIdentified`, where the
+  /// allow-check and ringing happen.
+  private func incomingLinkEstablished(_ link: Link) {
+    callHandlerLock.lock()
+    let lineBusy = (activeCall != nil) || busy
+    if !lineBusy, let id = link.linkID { pendingIncomingLinks[id] = link }
+    callHandlerLock.unlock()
 
-        link.onEstablished = { [weak self] l in
-            self?.outgoingLinkEstablished(l)
-        }
-        link.onClosed = { [weak self] l in
-            if self?.activeCall?.link === l { self?.hangup() }
-        }
-
-        // Outgoing call timeout: if the call hasn't reached ESTABLISHED within
-        // `waitTime`, give up. Mirrors Python's `__timeout_outgoing_call_at` /
-        // `__timeout_outgoing_establishment_at` (Swift previously had none, so a
-        // call to an unreachable/unanswering peer hung in CALLING forever).
-        let pendingCall = call
-        DispatchQueue.global().asyncAfter(deadline: .now() + Telephone.waitTime) { [weak self] in
-            guard let self, self.activeCall === pendingCall,
-                  self.callStatus.rawValue < SignallingStatus.established.rawValue else { return }
-            self.hangup()
-        }
+    guard !lineBusy else {
+      sendSignal(.busy, on: link)
+      link.onClosed = nil
+      try? link.teardown()
+      return
     }
 
-    // MARK: - Answer incoming call
+    link.onClosed = { [weak self] l in self?.incomingLinkClosed(l) }
+    link.setRemoteIdentifiedCallback { [weak self] l, callerIdentity in
+      self?.callerIdentified(l, identity: callerIdentity)
+    }
+    sendSignal(.available, on: link)
+  }
 
-    /// Answer an active incoming call from `identity`.
-    /// Python: `Telephone.answer(identity)`
-    @discardableResult
-    public func answer(identity: Identity) -> Bool {
-        callHandlerLock.lock()
-        guard let call = activeCall, call.remoteIdentity?.hash == identity.hash else {
-            callHandlerLock.unlock()
-            return false
-        }
+  /// The caller on an incoming link has identified.
+  ///
+  /// Mirrors Python
+  /// `__caller_identified`: re-check busy/allowed (signalling BUSY + tearing
+  /// down if not), otherwise promote the link to `activeCall`, ring, fire the
+  /// ringing callback, and arm the ring timeout.
+  private func callerIdentified(_ link: Link, identity callerIdentity: Identity) {
+    callHandlerLock.lock()
+    if let id = link.linkID { pendingIncomingLinks[id] = nil }
+    let admit = (activeCall == nil) && !busy && isAllowed(callerIdentity)
+    let call: ActiveCall?
+    if admit {
+      let c = ActiveCall(link: link)
+      c.isIncoming = true
+      c.isOutgoing = false
+      c.isTerminating = false
+      c.profile = TelephonyProfile.defaultProfile
+      activeCall = c
+      call = c
+    } else {
+      call = nil
+    }
+    callHandlerLock.unlock()
 
-        call.answered = true
-        call.establishedAt = Date().timeIntervalSince1970   // Python: active_call.established_at = time.time()
-        openPipelines(for: identity)
-        startPipelines()
-        let cb = establishedCallback
-        callHandlerLock.unlock()
-        // Fire the app callback OUTSIDE callHandlerLock (it may re-enter the
-        // Telephone, for example, hangup(), which takes the same non-recursive lock).
-        cb?(identity)
-        return true
+    guard let call else {
+      sendSignal(.busy, on: link)
+      try? link.teardown()
+      return
     }
 
-    // MARK: - Hangup
+    link.onClosed = { [weak self] l in
+      if self?.activeCall?.link === l, !(self?.activeCall?.isTerminating ?? false) {
+        self?.hangup()
+      }
+    }
+    handleSignallingFrom(source: link)
+    prepareDiallingPipelines()
+    sendSignal(.ringing, on: link)
+    ringingCallback?(callerIdentity)
 
-    /// End the current call. Python: `Telephone.hangup(reason=None)`
-    public func hangup(reason: SignallingStatus? = nil) {
-        callHandlerLock.lock()
-        let call = activeCall
-        activeCall = nil
-        let remote = call?.remoteIdentity
-        let wasRingingIncoming = (call?.isIncoming ?? false) && callStatus == .ringing
-        let ringTimedOut = call?.ringTimeout ?? false
-        callHandlerLock.unlock()
+    DispatchQueue.global().asyncAfter(deadline: .now() + Telephone.ringTime) { [weak self] in
+      guard let self, self.activeCall?.link === link,
+        self.activeCall?.answered == false
+      else { return }
+      call.ringTimeout = true
+      self.hangup()
+    }
+  }
 
-        // Declining (or losing) an unanswered, still-ringing incoming call
-        // tells the caller it was rejected. Mirrors Python `hangup`'s
-        // STATUS_REJECTED signal. Skipped on ring-timeout (the caller already
-        // sees no answer) and when the link is already gone.
-        if let call, wasRingingIncoming, !ringTimedOut, call.link.status == .active {
-            sendSignal(.rejected, on: call.link)
-        }
+  /// A parked-or-active incoming link closed before/while ringing.
+  private func incomingLinkClosed(_ link: Link) {
+    callHandlerLock.lock()
+    if let id = link.linkID { pendingIncomingLinks[id] = nil }
+    let isActive = activeCall?.link === link
+    let terminating = activeCall?.isTerminating ?? false
+    callHandlerLock.unlock()
+    if isActive, !terminating { hangup() }
+  }
 
-        if let link = call?.link, link.status == .active {
-            try? link.teardown()
-        }
+  /// Whether `identity` is permitted to call.
+  ///
+  /// Mirrors Python `__is_allowed`.
+  private func isAllowed(_ identity: Identity) -> Bool {
+    if let blocked, blocked.contains(identity.hash) { return false }
+    switch allowed {
+    case .allowAll: return true
+    case .allowNone: return false
+    }
+  }
 
-        stopPipelines()
-        clearPipelineFields()
+  private func outgoingLinkEstablished(_ link: Link) {
+    link.onClosed = { [weak self] l in
+      if self?.activeCall?.link === l { self?.hangup() }
+    }
+    handleSignallingFrom(source: link)
+  }
 
-        callStatus       = .available
+  // MARK: - Pipeline management
 
-        switch reason {
-        case .busy:
-            if let cb = busyCallback     { cb(remote) }
-            else                         { endedCallback?(remote) }
-        case .rejected:
-            if let cb = rejectedCallback { cb(remote) }
-            else                         { endedCallback?(remote) }
-        default:
-            endedCallback?(remote)
-        }
+  private func selectCallProfile(_ profile: TelephonyProfile) {
+    activeCall?.profile = profile
+    transmitCodec = profile.codec
+    targetFrameTimeMs = Double(profile.frameTimeMs)
+    targetBufferFrames = profile.bufferFrames
+  }
+
+  /// Locking wrapper for callers that do NOT already hold `pipelineLock`
+  /// (the `.ringing` and incoming-caller-identified paths).
+  ///
+  /// Callers already
+  /// holding the lock (`openPipelines`, `resetDiallingPipelines`) must call
+  /// `prepareDiallingPipelinesLocked()` directly to avoid re-entering the
+  /// non-recursive lock.
+  private func prepareDiallingPipelines() {
+    pipelineLock.lock()
+    defer { pipelineLock.unlock() }
+    prepareDiallingPipelinesLocked()
+  }
+
+  /// Builds the receive-side dialling pipeline.
+  ///
+  /// Caller MUST hold `pipelineLock`.
+  /// The body is byte-identical to the original `prepareDiallingPipelines`—the
+  /// nil-check-then-assign order (audioOutput → receiveMixer → dialTone →
+  /// receivePipeline) and every constructor argument are unchanged, so audio/wire
+  /// behavior is identical; only the lock discipline around it changed.
+  private func prepareDiallingPipelinesLocked() {
+    selectCallProfile(activeCall?.profile ?? .qualityMedium)
+    selectCallMode(activeCall?.callMode)  // Python: self.__select_call_mode(self.active_call.call_mode)
+    if audioOutput == nil {
+      audioOutput = LineSink(device: speakerDevice, backend: makeAudioBackend?())
+    }
+    if receiveMixer == nil {
+      receiveMixer = Mixer(targetFrameMs: targetFrameTimeMs, gain: receiveGain)
+    }
+    if dialTone == nil {
+      dialTone = ToneSource(
+        frequency: Telephone.dialToneFrequency,
+        gain: 0,
+        easeTimeMs: Telephone.dialToneEaseMs,
+        targetFrameMs: targetFrameTimeMs,
+        codec: NullCodec(),
+        sink: receiveMixer)
+    }
+    if receivePipeline == nil, let mixer = receiveMixer, let output = audioOutput {
+      receivePipeline = try? Pipeline(source: mixer, codec: NullCodec(), sink: output)
+    }
+  }
+
+  private func resetDiallingPipelines() {
+    // Hold pipelineLock across the ENTIRE stop → nil → rebuild sequence so no
+    // other thread observes the half-nil'd fields (closes the torn-state window
+    // that existed between the old unlock() and the follow-up prepare()).
+    pipelineLock.lock()
+    audioOutput?.stop()
+    dialTone?.stop()
+    receivePipeline?.stop()
+    receiveMixer?.stop()
+    audioOutput = nil
+    dialTone = nil
+    receivePipeline = nil
+    receiveMixer = nil
+    prepareDiallingPipelinesLocked()
+    pipelineLock.unlock()
+  }
+
+  private func openPipelines(for identity: Identity) {
+    pipelineLock.lock()
+    defer { pipelineLock.unlock() }
+
+    // Build the mic filter chain: bandpass → AGC → echo suppressor.
+    // Python: filter_chain construction in __open_audio_pipelines.
+    var filters: [any Filter] = []
+    if useBandpass { filters.append(BandPass(lowCut: 250, highCut: 8500)) }
+    if useAGC { filters.append(AGC(targetLevel: -15)) }
+    var suppressor: EchoSuppressor? = nil
+    if useEchoCancellation {
+      let es = EchoSuppressor()
+      suppressor = es
+      filters.append(es)
+    }
+    activeCall?.echoSuppressor = suppressor
+    activeCall?.filters = filters
+    prepareDiallingPipelinesLocked()  // openPipelines already holds pipelineLock
+
+    guard let call = activeCall,
+      let rMixer = receiveMixer,
+      let output = audioOutput
+    else { return }
+
+    // Feed the receive mixer's played-out signal to the echo suppressor as
+    // its reference. Python: self.receive_mixer.reference_outs = [suppressor]
+    if let es = call.echoSuppressor {
+      rMixer.referenceOuts = [es]
     }
 
-    // MARK: - Profile switching
+    let pkt = Packetizer(
+      destination: call.link,
+      onFailure: { [weak self] in
+        self?.hangup()
+      })
+    call.packetizer = pkt
+    // Half-duplex: start with the transmit path squelched.
+    // Python: if self.active_call.call_mode == Profiles.MODE_HALF_DUPLEX: packetizer.squelch()
+    if call.callMode == .halfDuplex { pkt.squelch() }
 
-    /// Switch codec profile mid-call.
-    /// Python: `Telephone.switch_profile(profile, from_signalling=False)`
-    public func switchProfile(_ profile: TelephonyProfile, fromSignalling: Bool = false) {
-        guard let call = activeCall, callStatus == .established else { return }
-        guard call.profile != profile else { return }
-        call.profile = profile
-        transmitCodec = profile.codec
-        targetFrameTimeMs = Double(profile.frameTimeMs)
-        targetBufferFrames = profile.bufferFrames
-        if !fromSignalling, let link = activeCall?.link {
-            // Python: self.signal(Signalling.PREFERRED_PROFILE + self.active_call.profile, ...)
-            let composite = Int(signallingPreferredProfile) + Int(profile.rawValue)
-            sendSignal(composite, on: link)
-        }
-        reconfigureTransmitPipeline()
-        // Python: self.receive_mixer.set_source_max_frames(audio_source, target_buffer_frames)
-        if let src = call.audioSource {
-            pipelineLock.lock(); let m = receiveMixer; pipelineLock.unlock()
-            m?.setSourceMaxFrames(targetBufferFrames, for: src)
-        }
+    let tMixer = Mixer(targetFrameMs: targetFrameTimeMs, gain: transmitGain)
+    transmitMixer = tMixer
+
+    let input = LineSource(
+      device: microphoneDevice,
+      targetFrameMs: targetFrameTimeMs,
+      codec: RawCodec(),
+      sink: tMixer,
+      filters: filters,
+      easeIn: 0.225,
+      skip: 0.075,
+      backend: makeAudioBackend?())
+    audioInput = input
+
+    if let txCodec = transmitCodec {
+      transmitPipeline = try? Pipeline(source: tMixer, codec: txCodec, sink: pkt)
     }
 
-    // MARK: - Mode switching (half-duplex)
+    let audioSrc = LinkSource(link: call.link, signallingProxy: self, sink: rMixer)
+    call.audioSource = audioSrc
+    // Python: self.receive_mixer.set_source_max_frames(audio_source, self.target_buffer_frames)
+    rMixer.setSourceMaxFrames(targetBufferFrames, for: audioSrc)
 
-    /// Switch duplex mode mid-call, signalling the peer unless the switch was
-    /// itself triggered by inbound signalling.
-    /// Python: `Telephone.switch_mode(mode=None, from_signalling=False)`
-    public func switchMode(_ mode: CallMode, fromSignalling: Bool = false) {
-        guard let call = activeCall else { return }
-        guard call.callMode != mode else { return }
-        guard CallMode.available.contains(mode) else { return }
-        guard callStatus == .established else { return }
-        call.callMode = mode
-        if !fromSignalling {
-            // Python: self.signal(Signalling.PREFERRED_MODE + self.active_call.call_mode, ...)
-            let composite = Int(signallingPreferredMode) + Int(mode.rawValue)
-            sendSignal(composite, on: call.link)
-        }
-        selectCallMode(mode)
+    if call.isIncoming {
+      sendSignal(.connecting, on: call.link)
+    }
+    sendSignal(.established, on: call.link)
+    _ = output
+  }
+
+  private func startPipelines() {
+    pipelineLock.lock()
+    defer { pipelineLock.unlock() }
+    receiveMixer?.start()
+    transmitMixer?.start()
+    audioInput?.start()
+    transmitPipeline?.start()
+    if receivePipeline?.running == false { receivePipeline?.start() }
+  }
+
+  private func stopPipelines() {
+    pipelineLock.lock()
+    defer { pipelineLock.unlock() }
+    receiveMixer?.stop()
+    transmitMixer?.stop()
+    audioInput?.stop()
+    receivePipeline?.stop()
+    transmitPipeline?.stop()
+  }
+
+  private func reconfigureTransmitPipeline() {
+    guard callStatus == .established else { return }
+    // Snapshot + clear the old transmit-path fields under the lock; stop them
+    // OUTSIDE it (stop() is a callout). The build (makeAudioBackend / Pipeline)
+    // also happens outside the lock, which is re-acquired only to commit.
+    pipelineLock.lock()
+    let oldInput = audioInput
+    let oldMixer = transmitMixer
+    let oldPipe = transmitPipeline
+    let gainSnapshot = transmitGain
+    let mutedSnapshot = transmitIsMuted
+    pipelineLock.unlock()
+    oldInput?.stop()
+    oldMixer?.stop()
+    oldPipe?.stop()
+
+    guard let call = activeCall else { return }
+    let tMixer = Mixer(targetFrameMs: targetFrameTimeMs, gain: gainSnapshot)
+    tMixer.mute(mutedSnapshot)
+    let input = LineSource(
+      device: microphoneDevice,
+      targetFrameMs: targetFrameTimeMs,
+      codec: RawCodec(),
+      sink: tMixer,
+      filters: call.filters,
+      skip: 0.075,
+      backend: makeAudioBackend?())
+    var newPipeline: Pipeline? = nil
+    if let txCodec = transmitCodec, let pkt = call.packetizer {
+      newPipeline = try? Pipeline(source: tMixer, codec: txCodec, sink: pkt)
     }
 
-    /// Apply a duplex mode locally (default to `DEFAULT_MODE` when nil), squelching
-    /// or unsquelching the transmit packetizer to match.
-    /// Python: `Telephone.__select_call_mode(mode=None)`
-    private func selectCallMode(_ mode: CallMode? = nil) {
-        let resolved = mode ?? CallMode.defaultMode
-        activeCall?.callMode = resolved
-        if let pkt = activeCall?.packetizer {
-            switch resolved {
-            case .halfDuplex: pkt.squelch()
-            case .fullDuplex: pkt.unsquelch()
-            }
-        }
+    // Commit under the lock—but only if the call is still established. A
+    // concurrent hangup wins the race and discards (stops) the freshly built
+    // objects rather than leak a started transmit pipeline onto a dead call.
+    pipelineLock.lock()
+    guard callStatus == .established, activeCall != nil else {
+      pipelineLock.unlock()
+      tMixer.stop()
+      input.stop()
+      newPipeline?.stop()
+      return
     }
+    transmitMixer = tMixer
+    audioInput = input
+    transmitPipeline = newPipeline
+    pipelineLock.unlock()
 
-    // MARK: - SignallingReceiver override
+    tMixer.start()
+    input.start()
+    newPipeline?.start()
+  }
 
-    /// Handle incoming signalling packets from the active call link.
-    /// Python: `Telephone.signalling_received(signals, source)`
-    override public func signallingReceived(_ signals: [Int], from source: (any Source)?) {
-        // activeCall is mutated under callHandlerLock by call/answer/hangup on
-        // other threads—snapshot the reference under the lock, then operate on
-        // the local (this handler runs on the link receive thread).
-        callHandlerLock.lock()
-        let callSnapshot = activeCall
-        callHandlerLock.unlock()
-        guard let call = callSnapshot else { return }
+  private func disableDialTone() {
+    pipelineLock.lock()
+    let dt = dialTone
+    pipelineLock.unlock()
+    dt?.stop()
+  }
 
-        for signal in signals {
-            // Incoming, not-yet-answered calls ignore status codes but still accept
-            // profile- and mode-preference signals (>= PREFERRED_MODE), so the
-            // preferred codec/duplex-mode is recorded while ringing.
-            // Python: first guard of signalling_received (threshold lowered to
-            // PREFERRED_MODE in LXST 0.5.0 to allow mode signalling before answer).
-            if call.isIncoming, !call.answered, signal < Int(signallingPreferredMode) {
-                return
-            }
-
-            // Profile-preference composite signal (Python: signal >= PREFERRED_PROFILE).
-            // PREFERRED_PROFILE (0xFF) + profile (0x10..0x80) exceeds a single byte.
-            // Checked before the mode branch because profile composites (>= 0xFF)
-            // are also >= PREFERRED_MODE (0xF0); mode composites (0xF1/0xF2) are not.
-            if signal >= Int(signallingPreferredProfile) {
-                let profileRaw = signal - Int(signallingPreferredProfile)
-                if profileRaw >= 0, profileRaw <= 0xFF,
-                   let profile = TelephonyProfile(rawValue: UInt8(profileRaw)) {
-                    if callStatus == .established {
-                        switchProfile(profile, fromSignalling: true)
-                    } else {
-                        selectCallProfile(profile)
-                    }
-                }
-                continue
-            }
-
-            // Mode-preference composite signal (Python: signal >= PREFERRED_MODE).
-            // PREFERRED_MODE (0xF0) + mode (0x01/0x02) = 0xF1/0xF2.
-            if signal >= Int(signallingPreferredMode) {
-                let modeRaw = signal - Int(signallingPreferredMode)
-                if modeRaw >= 0, modeRaw <= 0xFF,
-                   let mode = CallMode(rawValue: UInt8(modeRaw)) {
-                    if callStatus == .established {
-                        switchMode(mode, fromSignalling: true)
-                    } else {
-                        selectCallMode(mode)
-                    }
-                }
-                continue
-            }
-
-            guard signal >= 0, signal <= 0xFF,
-                  let status = SignallingStatus(rawValue: UInt8(signal)) else { continue }
-
-            switch status {
-            case .busy:
-                call.isTerminating = true
-                hangup(reason: .busy)
-
-            case .rejected:
-                hangup(reason: .rejected)
-
-            case .available:
-                callStatus = .available
-                try? call.link.identify(as: identity)
-
-            case .ringing:
-                callStatus = .ringing
-                prepareDiallingPipelines()   // selects call mode → call.callMode is set below
-                if call.isOutgoing {
-                    // Python (combined signalling, LXST 0.5.0):
-                    // self.signal([PREFERRED_PROFILE+profile, PREFERRED_MODE+call_mode], ...)
-                    let profileComposite = Int(signallingPreferredProfile) +
-                                           Int((call.profile ?? .qualityMedium).rawValue)
-                    let modeComposite    = Int(signallingPreferredMode) +
-                                           Int((call.callMode ?? .defaultMode).rawValue)
-                    sendSignal([profileComposite, modeComposite], on: call.link)
-                }
-
-            case .connecting:
-                callStatus = .connecting
-                callerPipelineOpenLock.lock()
-                resetDiallingPipelines()
-                openPipelines(for: call.remoteIdentity ?? identity)
-                callerPipelineOpenLock.unlock()
-
-            case .established:
-                if call.isOutgoing {
-                    callerPipelineOpenLock.lock()
-                    startPipelines()
-                    disableDialTone()
-                    callerPipelineOpenLock.unlock()
-                    callStatus = .established
-                    call.establishedAt = Date().timeIntervalSince1970   // Python: active_call.established_at = time.time()
-                    establishedCallback?(call.remoteIdentity)
-                }
-
-            case .calling:
-                callStatus = .calling
-            }
-        }
-    }
-
-    // MARK: - Incoming link
-
-    /// An incoming call link has established.
-    ///
-    /// Mirrors Python
-    /// `__incoming_link_established`: the link is NOT promoted to `activeCall` and
-    /// does NOT ring yet. A remote-identified callback is registered, the link parked
-    /// in `pendingIncomingLinks`, and AVAILABLE signalled. The caller responds to
-    /// AVAILABLE by identifying, which fires `callerIdentified`, where the
-    /// allow-check and ringing happen.
-    private func incomingLinkEstablished(_ link: Link) {
-        callHandlerLock.lock()
-        let lineBusy = (activeCall != nil) || busy
-        if !lineBusy, let id = link.linkID { pendingIncomingLinks[id] = link }
-        callHandlerLock.unlock()
-
-        guard !lineBusy else {
-            sendSignal(.busy, on: link)
-            link.onClosed = nil
-            try? link.teardown()
-            return
-        }
-
-        link.onClosed = { [weak self] l in self?.incomingLinkClosed(l) }
-        link.setRemoteIdentifiedCallback { [weak self] l, callerIdentity in
-            self?.callerIdentified(l, identity: callerIdentity)
-        }
-        sendSignal(.available, on: link)
-    }
-
-    /// The caller on an incoming link has identified.
-    ///
-    /// Mirrors Python
-    /// `__caller_identified`: re-check busy/allowed (signalling BUSY + tearing
-    /// down if not), otherwise promote the link to `activeCall`, ring, fire the
-    /// ringing callback, and arm the ring timeout.
-    private func callerIdentified(_ link: Link, identity callerIdentity: Identity) {
-        callHandlerLock.lock()
-        if let id = link.linkID { pendingIncomingLinks[id] = nil }
-        let admit = (activeCall == nil) && !busy && isAllowed(callerIdentity)
-        let call: ActiveCall?
-        if admit {
-            let c = ActiveCall(link: link)
-            c.isIncoming    = true
-            c.isOutgoing    = false
-            c.isTerminating = false
-            c.profile       = TelephonyProfile.defaultProfile
-            activeCall = c
-            call = c
-        } else {
-            call = nil
-        }
-        callHandlerLock.unlock()
-
-        guard let call else {
-            sendSignal(.busy, on: link)
-            try? link.teardown()
-            return
-        }
-
-        link.onClosed = { [weak self] l in
-            if self?.activeCall?.link === l, !(self?.activeCall?.isTerminating ?? false) {
-                self?.hangup()
-            }
-        }
-        handleSignallingFrom(source: link)
-        prepareDiallingPipelines()
-        sendSignal(.ringing, on: link)
-        ringingCallback?(callerIdentity)
-
-        DispatchQueue.global().asyncAfter(deadline: .now() + Telephone.ringTime) { [weak self] in
-            guard let self, self.activeCall?.link === link,
-                  self.activeCall?.answered == false else { return }
-            call.ringTimeout = true
-            self.hangup()
-        }
-    }
-
-    /// A parked-or-active incoming link closed before/while ringing.
-    private func incomingLinkClosed(_ link: Link) {
-        callHandlerLock.lock()
-        if let id = link.linkID { pendingIncomingLinks[id] = nil }
-        let isActive    = activeCall?.link === link
-        let terminating = activeCall?.isTerminating ?? false
-        callHandlerLock.unlock()
-        if isActive, !terminating { hangup() }
-    }
-
-    /// Whether `identity` is permitted to call.
-    ///
-    /// Mirrors Python `__is_allowed`.
-    private func isAllowed(_ identity: Identity) -> Bool {
-        if let blocked, blocked.contains(identity.hash) { return false }
-        switch allowed {
-        case .allowAll:  return true
-        case .allowNone: return false
-        }
-    }
-
-    private func outgoingLinkEstablished(_ link: Link) {
-        link.onClosed = { [weak self] l in
-            if self?.activeCall?.link === l { self?.hangup() }
-        }
-        handleSignallingFrom(source: link)
-    }
-
-    // MARK: - Pipeline management
-
-    private func selectCallProfile(_ profile: TelephonyProfile) {
-        activeCall?.profile = profile
-        transmitCodec = profile.codec
-        targetFrameTimeMs = Double(profile.frameTimeMs)
-        targetBufferFrames = profile.bufferFrames
-    }
-
-    /// Locking wrapper for callers that do NOT already hold `pipelineLock`
-    /// (the `.ringing` and incoming-caller-identified paths).
-    ///
-    /// Callers already
-    /// holding the lock (`openPipelines`, `resetDiallingPipelines`) must call
-    /// `prepareDiallingPipelinesLocked()` directly to avoid re-entering the
-    /// non-recursive lock.
-    private func prepareDiallingPipelines() {
-        pipelineLock.lock(); defer { pipelineLock.unlock() }
-        prepareDiallingPipelinesLocked()
-    }
-
-    /// Builds the receive-side dialling pipeline.
-    ///
-    /// Caller MUST hold `pipelineLock`.
-    /// The body is byte-identical to the original `prepareDiallingPipelines`—the
-    /// nil-check-then-assign order (audioOutput → receiveMixer → dialTone →
-    /// receivePipeline) and every constructor argument are unchanged, so audio/wire
-    /// behavior is identical; only the lock discipline around it changed.
-    private func prepareDiallingPipelinesLocked() {
-        selectCallProfile(activeCall?.profile ?? .qualityMedium)
-        selectCallMode(activeCall?.callMode)   // Python: self.__select_call_mode(self.active_call.call_mode)
-        if audioOutput    == nil { audioOutput    = LineSink(device: speakerDevice, backend: makeAudioBackend?()) }
-        if receiveMixer   == nil { receiveMixer   = Mixer(targetFrameMs: targetFrameTimeMs, gain: receiveGain) }
-        if dialTone       == nil { dialTone       = ToneSource(frequency: Telephone.dialToneFrequency,
-                                                                gain: 0,
-                                                                easeTimeMs: Telephone.dialToneEaseMs,
-                                                                targetFrameMs: targetFrameTimeMs,
-                                                                codec: NullCodec(),
-                                                                sink: receiveMixer) }
-        if receivePipeline == nil, let mixer = receiveMixer, let output = audioOutput {
-            receivePipeline = try? Pipeline(source: mixer, codec: NullCodec(), sink: output)
-        }
-    }
-
-    private func resetDiallingPipelines() {
-        // Hold pipelineLock across the ENTIRE stop → nil → rebuild sequence so no
-        // other thread observes the half-nil'd fields (closes the torn-state window
-        // that existed between the old unlock() and the follow-up prepare()).
-        pipelineLock.lock()
-        audioOutput?.stop()
-        dialTone?.stop()
-        receivePipeline?.stop()
-        receiveMixer?.stop()
-        audioOutput    = nil
-        dialTone       = nil
-        receivePipeline = nil
-        receiveMixer   = nil
-        prepareDiallingPipelinesLocked()
-        pipelineLock.unlock()
-    }
-
-    private func openPipelines(for identity: Identity) {
-        pipelineLock.lock()
-        defer { pipelineLock.unlock() }
-
-        // Build the mic filter chain: bandpass → AGC → echo suppressor.
-        // Python: filter_chain construction in __open_audio_pipelines.
-        var filters: [any Filter] = []
-        if useBandpass { filters.append(BandPass(lowCut: 250, highCut: 8500)) }
-        if useAGC      { filters.append(AGC(targetLevel: -15)) }
-        var suppressor: EchoSuppressor? = nil
-        if useEchoCancellation {
-            let es = EchoSuppressor()
-            suppressor = es
-            filters.append(es)
-        }
-        activeCall?.echoSuppressor = suppressor
-        activeCall?.filters = filters
-        prepareDiallingPipelinesLocked()   // openPipelines already holds pipelineLock
-
-        guard let call = activeCall,
-              let rMixer = receiveMixer,
-              let output = audioOutput else { return }
-
-        // Feed the receive mixer's played-out signal to the echo suppressor as
-        // its reference. Python: self.receive_mixer.reference_outs = [suppressor]
-        if let es = call.echoSuppressor {
-            rMixer.referenceOuts = [es]
-        }
-
-        let pkt = Packetizer(destination: call.link, onFailure: { [weak self] in
-            self?.hangup()
-        })
-        call.packetizer = pkt
-        // Half-duplex: start with the transmit path squelched.
-        // Python: if self.active_call.call_mode == Profiles.MODE_HALF_DUPLEX: packetizer.squelch()
-        if call.callMode == .halfDuplex { pkt.squelch() }
-
-        let tMixer = Mixer(targetFrameMs: targetFrameTimeMs, gain: transmitGain)
-        transmitMixer = tMixer
-
-        let input = LineSource(device: microphoneDevice,
-                               targetFrameMs: targetFrameTimeMs,
-                               codec: RawCodec(),
-                               sink: tMixer,
-                               filters: filters,
-                               easeIn: 0.225,
-                               skip: 0.075,
-                               backend: makeAudioBackend?())
-        audioInput = input
-
-        if let txCodec = transmitCodec {
-            transmitPipeline = try? Pipeline(source: tMixer, codec: txCodec, sink: pkt)
-        }
-
-        let audioSrc = LinkSource(link: call.link, signallingProxy: self, sink: rMixer)
-        call.audioSource = audioSrc
-        // Python: self.receive_mixer.set_source_max_frames(audio_source, self.target_buffer_frames)
-        rMixer.setSourceMaxFrames(targetBufferFrames, for: audioSrc)
-
-        if call.isIncoming {
-            sendSignal(.connecting, on: call.link)
-        }
-        sendSignal(.established, on: call.link)
-        _ = output
-    }
-
-    private func startPipelines() {
-        pipelineLock.lock()
-        defer { pipelineLock.unlock() }
-        receiveMixer?.start()
-        transmitMixer?.start()
-        audioInput?.start()
-        transmitPipeline?.start()
-        if receivePipeline?.running == false { receivePipeline?.start() }
-    }
-
-    private func stopPipelines() {
-        pipelineLock.lock()
-        defer { pipelineLock.unlock() }
-        receiveMixer?.stop()
-        transmitMixer?.stop()
-        audioInput?.stop()
-        receivePipeline?.stop()
-        transmitPipeline?.stop()
-    }
-
-    private func reconfigureTransmitPipeline() {
-        guard callStatus == .established else { return }
-        // Snapshot + clear the old transmit-path fields under the lock; stop them
-        // OUTSIDE it (stop() is a callout). The build (makeAudioBackend / Pipeline)
-        // also happens outside the lock, which is re-acquired only to commit.
-        pipelineLock.lock()
-        let oldInput = audioInput
-        let oldMixer = transmitMixer
-        let oldPipe  = transmitPipeline
-        let gainSnapshot = transmitGain
-        let mutedSnapshot = transmitIsMuted
-        pipelineLock.unlock()
-        oldInput?.stop()
-        oldMixer?.stop()
-        oldPipe?.stop()
-
-        guard let call = activeCall else { return }
-        let tMixer = Mixer(targetFrameMs: targetFrameTimeMs, gain: gainSnapshot)
-        tMixer.mute(mutedSnapshot)
-        let input = LineSource(device: microphoneDevice,
-                               targetFrameMs: targetFrameTimeMs,
-                               codec: RawCodec(),
-                               sink: tMixer,
-                               filters: call.filters,
-                               skip: 0.075,
-                               backend: makeAudioBackend?())
-        var newPipeline: Pipeline? = nil
-        if let txCodec = transmitCodec, let pkt = call.packetizer {
-            newPipeline = try? Pipeline(source: tMixer, codec: txCodec, sink: pkt)
-        }
-
-        // Commit under the lock—but only if the call is still established. A
-        // concurrent hangup wins the race and discards (stops) the freshly built
-        // objects rather than leak a started transmit pipeline onto a dead call.
-        pipelineLock.lock()
-        guard callStatus == .established, activeCall != nil else {
-            pipelineLock.unlock()
-            tMixer.stop(); input.stop(); newPipeline?.stop()
-            return
-        }
-        transmitMixer = tMixer
-        audioInput = input
-        transmitPipeline = newPipeline
-        pipelineLock.unlock()
-
-        tMixer.start()
-        input.start()
-        newPipeline?.start()
-    }
-
-    private func disableDialTone() {
-        pipelineLock.lock(); let dt = dialTone; pipelineLock.unlock()
-        dt?.stop()
-    }
-
-    /// Nil out every pipeline field + reset the mute flags, all under `pipelineLock`
-    /// (the mute flags are guarded there too so this stays consistent with the gain/
-    /// mute accessors).
-    ///
-    /// Pipeline .stop() is done by the caller (stopPipelines) first.
-    private func clearPipelineFields() {
-        pipelineLock.lock()
-        receiveMixer      = nil
-        transmitMixer     = nil
-        receivePipeline   = nil
-        transmitPipeline  = nil
-        audioInput        = nil
-        audioOutput       = nil
-        dialTone          = nil
-        receiveIsMuted    = false
-        transmitIsMuted   = false
-        pipelineLock.unlock()
-    }
+  /// Nil out every pipeline field + reset the mute flags, all under `pipelineLock`
+  /// (the mute flags are guarded there too so this stays consistent with the gain/
+  /// mute accessors).
+  ///
+  /// Pipeline .stop() is done by the caller (stopPipelines) first.
+  private func clearPipelineFields() {
+    pipelineLock.lock()
+    receiveMixer = nil
+    transmitMixer = nil
+    receivePipeline = nil
+    transmitPipeline = nil
+    audioInput = nil
+    audioOutput = nil
+    dialTone = nil
+    receiveIsMuted = false
+    transmitIsMuted = false
+    pipelineLock.unlock()
+  }
 }
 
 // MARK: - Test helpers (internal; allow unit tests to fire callbacks without real links)
 
 extension Telephone {
-    /// Set callStatus directly—for testing only.
-    public func testSetCallStatus(_ status: SignallingStatus) {
-        callStatus = status
-    }
+  /// Set callStatus directly—for testing only.
+  public func testSetCallStatus(_ status: SignallingStatus) {
+    callStatus = status
+  }
 
-    /// Fire the ringing callback—for testing only.
-    public func testFireRingingCallback(identity: Identity?) {
-        ringingCallback?(identity)
-    }
+  /// Fire the ringing callback—for testing only.
+  public func testFireRingingCallback(identity: Identity?) {
+    ringingCallback?(identity)
+  }
 
-    /// Fire the established callback—for testing only.
-    public func testFireEstablishedCallback(identity: Identity?) {
-        establishedCallback?(identity)
-    }
+  /// Fire the established callback—for testing only.
+  public func testFireEstablishedCallback(identity: Identity?) {
+    establishedCallback?(identity)
+  }
 
-    /// Fire the ended callback—for testing only.
-    public func testFireEndedCallback(identity: Identity?) {
-        endedCallback?(identity)
-    }
+  /// Fire the ended callback—for testing only.
+  public func testFireEndedCallback(identity: Identity?) {
+    endedCallback?(identity)
+  }
 
-    /// Fire the busy callback—for testing only.
-    public func testFireBusyCallback(identity: Identity?) {
-        busyCallback?(identity)
-    }
+  /// Fire the busy callback—for testing only.
+  public func testFireBusyCallback(identity: Identity?) {
+    busyCallback?(identity)
+  }
 
-    /// Fire the rejected callback—for testing only.
-    public func testFireRejectedCallback(identity: Identity?) {
-        rejectedCallback?(identity)
-    }
+  /// Fire the rejected callback—for testing only.
+  public func testFireRejectedCallback(identity: Identity?) {
+    rejectedCallback?(identity)
+  }
 
-    /// Send a signal without a real link—for testing state transitions only.
-    public func testSignal(_ status: SignallingStatus) {
-        if SignallingStatus.autoStatusCodes.contains(status) {
-            callStatus = status
-        }
+  /// Send a signal without a real link—for testing state transitions only.
+  public func testSignal(_ status: SignallingStatus) {
+    if SignallingStatus.autoStatusCodes.contains(status) {
+      callStatus = status
     }
+  }
 
-    /// Test-only: populate the receive-side dialling pipeline (no call/link needed),
-    /// exercising the locking `prepareDiallingPipelines()` wrapper.
-    func testPreparePipelines() { prepareDiallingPipelines() }
-    /// Test-only: stop+nil+rebuild the dialling pipeline under the lock.
-    func testResetPipelines() { resetDiallingPipelines() }
-    /// Test-only: nil out all pipeline fields under the lock (hangup's field-clear).
-    func testNilPipelines() { clearPipelineFields() }
-    /// Test-only: read the pipeline field REFERENCES under the lock without calling
-    /// any Mixer/Pipeline method—exercises the Telephone field-reference race
-    /// surface (the target of this fix) without forcing concurrent Mixer access.
-    func testPipelineFieldsPresent() -> (Bool, Bool, Bool, Bool) {
-        pipelineLock.lock(); defer { pipelineLock.unlock() }
-        return (receiveMixer != nil, transmitMixer != nil, audioOutput != nil, receivePipeline != nil)
-    }
+  /// Test-only: populate the receive-side dialling pipeline (no call/link needed),
+  /// exercising the locking `prepareDiallingPipelines()` wrapper.
+  func testPreparePipelines() { prepareDiallingPipelines() }
+  /// Test-only: stop+nil+rebuild the dialling pipeline under the lock.
+  func testResetPipelines() { resetDiallingPipelines() }
+  /// Test-only: nil out all pipeline fields under the lock (hangup's field-clear).
+  func testNilPipelines() { clearPipelineFields() }
+  /// Test-only: read the pipeline field REFERENCES under the lock without calling
+  /// any Mixer/Pipeline method—exercises the Telephone field-reference race
+  /// surface (the target of this fix) without forcing concurrent Mixer access.
+  func testPipelineFieldsPresent() -> (Bool, Bool, Bool, Bool) {
+    pipelineLock.lock()
+    defer { pipelineLock.unlock() }
+    return (receiveMixer != nil, transmitMixer != nil, audioOutput != nil, receivePipeline != nil)
+  }
 }

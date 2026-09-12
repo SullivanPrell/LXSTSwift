@@ -20,7 +20,7 @@ import Foundation
 /// `UInt8`) is required for the value to round-trip.
 /// Python: `SignallingReceiver.proxy`
 public protocol SignallingHandler: AnyObject {
-    func signallingReceived(_ signals: [Int], from source: (any Source)?)
+  func signallingReceived(_ signals: [Int], from source: (any Source)?)
 }
 
 // MARK: - SignallingReceiver
@@ -30,120 +30,123 @@ public protocol SignallingHandler: AnyObject {
 /// Python: `LXST.Network.SignallingReceiver`
 /// Open so that `Telephone` can inherit from it (Python: `class Telephone(SignallingReceiver)`).
 open class SignallingReceiver {
-    /// Handler received signalling is forwarded to.
-    public var proxy: (any SignallingHandler)?
+  /// Handler received signalling is forwarded to.
+  public var proxy: (any SignallingHandler)?
 
-    /// Creates a receiver forwarding to `proxy`.
-    ///
-    /// Python: `def __init__(self, proxy=None)`
-    public init(proxy: (any SignallingHandler)? = nil) {
-        self.proxy = proxy
+  /// Creates a receiver forwarding to `proxy`.
+  ///
+  /// Python: `def __init__(self, proxy=None)`
+  public init(proxy: (any SignallingHandler)? = nil) {
+    self.proxy = proxy
+  }
+
+  /// Register a packet callback on `source` (an RNS Link) to handle signalling.
+  /// Python: `handle_signalling_from(source)`
+  public func handleSignallingFrom(source: Link) {
+    source.onDataReceived = { [weak self] data, _ in
+      self?.processSignallingData(data, from: nil)
     }
+  }
 
-    /// Register a packet callback on `source` (an RNS Link) to handle signalling.
-    /// Python: `handle_signalling_from(source)`
-    public func handleSignallingFrom(source: Link) {
-        source.onDataReceived = { [weak self] data, _ in
-            self?.processSignallingData(data, from: nil)
-        }
+  /// Send one or more signals to `destination` in a single packet.
+  ///
+  /// Python:
+  /// ```
+  /// if type(signal) != list: signalling_data = {FIELD_SIGNALLING: [signal]}
+  /// else:                    signalling_data = {FIELD_SIGNALLING: signal}
+  /// RNS.Packet(destination, mp.packb(signalling_data), create_receipt=False).send()
+  /// ```
+  /// A whole list of composite codes (for example, `[PREFERRED_PROFILE+profile,
+  /// PREFERRED_MODE+mode]`) rides in one `FIELD_SIGNALLING` array, matching the
+  /// "Combined signalling" change in LXST 0.5.0. The list is msgpack-encoded and
+  /// transmit it over the link, so the payload is encrypted with the link key
+  /// and routed by transport.
+  public func signal(_ signals: [Int], to destination: any LXSTDestination, immediate: Bool = true)
+  {
+    guard immediate else { return }  // non-immediate scheduling TBD (Python has the same TODO)
+    let signallingData = Self.encodeSignals(signals)
+    if let link = destination as? Link {
+      try? link.send(signallingData)
     }
+  }
 
-    /// Send one or more signals to `destination` in a single packet.
-    ///
-    /// Python:
-    /// ```
-    /// if type(signal) != list: signalling_data = {FIELD_SIGNALLING: [signal]}
-    /// else:                    signalling_data = {FIELD_SIGNALLING: signal}
-    /// RNS.Packet(destination, mp.packb(signalling_data), create_receipt=False).send()
-    /// ```
-    /// A whole list of composite codes (for example, `[PREFERRED_PROFILE+profile,
-    /// PREFERRED_MODE+mode]`) rides in one `FIELD_SIGNALLING` array, matching the
-    /// "Combined signalling" change in LXST 0.5.0. The list is msgpack-encoded and
-    /// transmit it over the link, so the payload is encrypted with the link key
-    /// and routed by transport.
-    public func signal(_ signals: [Int], to destination: any LXSTDestination, immediate: Bool = true) {
-        guard immediate else { return }  // non-immediate scheduling TBD (Python has the same TODO)
-        let signallingData = Self.encodeSignals(signals)
-        if let link = destination as? Link {
-            try? link.send(signallingData)
-        }
+  /// Convenience single-signal overload—wraps `signal` in a one-element list,
+  /// exactly as Python does for a non-list argument.
+  public func signal(_ signal: Int, to destination: any LXSTDestination, immediate: Bool = true) {
+    self.signal([signal], to: destination, immediate: immediate)
+  }
+
+  /// Propagate received signals to proxy.
+  ///
+  /// Python: `signalling_received(signals, source)`
+  /// Open so `Telephone` can override it.
+  open func signallingReceived(_ signals: [Int], from source: (any Source)?) {
+    proxy?.signallingReceived(signals, from: source)
+  }
+
+  // MARK: - Wire codec
+
+  /// Encode `{fieldSignalling: [signal, ...]}` as msgpack—the exact payload
+  /// Python builds via `mp.packb({FIELD_SIGNALLING:[signal]})`.
+  static func encodeSignals(_ signals: [Int]) -> Data {
+    MsgPack.encode(
+      .map([
+        (.int(Int64(fieldSignalling)), .array(signals.map { .int(Int64($0)) }))
+      ]))
+  }
+
+  /// Decode the integer signal list from a received packet.
+  ///
+  /// Returns nil if the
+  /// packet carries no `fieldSignalling` field. A scalar value is wrapped in a
+  /// single-element list (Python: `if type(signalling)==list ... else [signalling]`).
+  static func decodeSignals(_ data: Data) -> [Int]? {
+    guard let unpacked = try? MsgPack.decode(data),
+      case .map(let pairs) = unpacked
+    else { return nil }
+    for (k, v) in pairs {
+      let key: Int
+      switch k {
+      case .int(let n): key = Int(n)
+      case .uint(let n): key = Int(n)
+      default: continue
+      }
+      guard key == Int(fieldSignalling) else { continue }
+      return signalValues(from: v)
     }
+    return nil
+  }
 
-    /// Convenience single-signal overload—wraps `signal` in a one-element list,
-    /// exactly as Python does for a non-list argument.
-    public func signal(_ signal: Int, to destination: any LXSTDestination, immediate: Bool = true) {
-        self.signal([signal], to: destination, immediate: immediate)
+  /// Extract integer signal values from a msgpack value that is either an array
+  /// of ints or a single scalar int.
+  static func signalValues(from value: MsgPack.Value) -> [Int] {
+    switch value {
+    case .array(let arr):
+      return arr.compactMap { intValue(from: $0) }
+    default:
+      if let n = intValue(from: value) { return [n] }
+      return []
     }
+  }
 
-    /// Propagate received signals to proxy.
-    ///
-    /// Python: `signalling_received(signals, source)`
-    /// Open so `Telephone` can override it.
-    open func signallingReceived(_ signals: [Int], from source: (any Source)?) {
-        proxy?.signallingReceived(signals, from: source)
+  private static func intValue(from value: MsgPack.Value) -> Int? {
+    switch value {
+    case .int(let n): return Int(exactly: n)
+    // `Int(n)` traps for a wire-parsed UInt64 above Int.max; Int(exactly:)
+    // returns nil so an out-of-range signalling value is ignored, not fatal.
+    case .uint(let n): return Int(exactly: n)
+    default: return nil
     }
+  }
 
-    // MARK: - Wire codec
+  // MARK: - Internal
 
-    /// Encode `{fieldSignalling: [signal, ...]}` as msgpack—the exact payload
-    /// Python builds via `mp.packb({FIELD_SIGNALLING:[signal]})`.
-    static func encodeSignals(_ signals: [Int]) -> Data {
-        MsgPack.encode(.map([
-            (.int(Int64(fieldSignalling)), .array(signals.map { .int(Int64($0)) }))
-        ]))
-    }
-
-    /// Decode the integer signal list from a received packet.
-    ///
-    /// Returns nil if the
-    /// packet carries no `fieldSignalling` field. A scalar value is wrapped in a
-    /// single-element list (Python: `if type(signalling)==list ... else [signalling]`).
-    static func decodeSignals(_ data: Data) -> [Int]? {
-        guard let unpacked = try? MsgPack.decode(data),
-              case .map(let pairs) = unpacked else { return nil }
-        for (k, v) in pairs {
-            let key: Int
-            switch k {
-            case .int(let n):  key = Int(n)
-            case .uint(let n): key = Int(n)
-            default: continue
-            }
-            guard key == Int(fieldSignalling) else { continue }
-            return signalValues(from: v)
-        }
-        return nil
-    }
-
-    /// Extract integer signal values from a msgpack value that is either an array
-    /// of ints or a single scalar int.
-    static func signalValues(from value: MsgPack.Value) -> [Int] {
-        switch value {
-        case .array(let arr):
-            return arr.compactMap { intValue(from: $0) }
-        default:
-            if let n = intValue(from: value) { return [n] }
-            return []
-        }
-    }
-
-    private static func intValue(from value: MsgPack.Value) -> Int? {
-        switch value {
-        case .int(let n):  return Int(exactly: n)
-        // `Int(n)` traps for a wire-parsed UInt64 above Int.max; Int(exactly:)
-        // returns nil so an out-of-range signalling value is ignored, not fatal.
-        case .uint(let n): return Int(exactly: n)
-        default:           return nil
-        }
-    }
-
-    // MARK: - Internal
-
-    /// Decode a received signalling packet and dispatch to `signallingReceived`.
-    ///
-    /// Split out from the Link callback so the wire-decode path is testable
-    /// without a live Link. Python: `SignallingReceiver._packet`.
-    func processSignallingData(_ data: Data, from source: (any Source)?) {
-        guard let signals = Self.decodeSignals(data) else { return }
-        signallingReceived(signals, from: source)
-    }
+  /// Decode a received signalling packet and dispatch to `signallingReceived`.
+  ///
+  /// Split out from the Link callback so the wire-decode path is testable
+  /// without a live Link. Python: `SignallingReceiver._packet`.
+  func processSignallingData(_ data: Data, from source: (any Source)?) {
+    guard let signals = Self.decodeSignals(data) else { return }
+    signallingReceived(signals, from: source)
+  }
 }

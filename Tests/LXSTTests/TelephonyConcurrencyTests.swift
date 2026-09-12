@@ -8,8 +8,9 @@
 // SPDX-License-Identifier: LicenseRef-Reticulum
 //===----------------------------------------------------------------------===//
 
-import XCTest
 import ReticulumSwift
+import XCTest
+
 @testable import LXST
 
 /// Concurrency stress test for the `Telephone.pipelineLock` hardening in the
@@ -35,29 +36,29 @@ import ReticulumSwift
 /// proves neither happens on the Telephone side.
 final class TelephonyConcurrencyTests: XCTestCase {
 
-    func testConcurrentPipelineFieldsDoNotCrashOrRace() {
-        let phone = Telephone(identity: Identity(), transport: Transport())
-        phone.testSetCallStatus(.available)
+  func testConcurrentPipelineFieldsDoNotCrashOrRace() {
+    let phone = Telephone(identity: Identity(), transport: Transport())
+    phone.testSetCallStatus(.available)
 
-        let done = expectation(description: "telephony pipeline stress")
-        let workers = 8
-        let iterations = 1500
+    let done = expectation(description: "telephony pipeline stress")
+    let workers = 8
+    let iterations = 1500
 
-        DispatchQueue.global().async {
-            DispatchQueue.concurrentPerform(iterations: workers) { w in
-                for i in 0..<iterations {
-                    switch (w &+ i) % 5 {
-                    case 0: phone.testPreparePipelines()             // populate fields (serialized by pipelineLock)
-                    case 1: phone.testResetPipelines()               // stop+nil+rebuild under the lock
-                    case 2: phone.testNilPipelines()                 // nil ALL 7 fields under the lock (hangup's clear)
-                    case 3: _ = phone.testPipelineFieldsPresent()    // read references under the lock
-                    default: _ = phone.testPipelineFieldsPresent()
-                    }
-                }
-            }
-            done.fulfill()
+    DispatchQueue.global().async {
+      DispatchQueue.concurrentPerform(iterations: workers) { w in
+        for i in 0..<iterations {
+          switch (w &+ i) % 5 {
+          case 0: phone.testPreparePipelines()  // populate fields (serialized by pipelineLock)
+          case 1: phone.testResetPipelines()  // stop+nil+rebuild under the lock
+          case 2: phone.testNilPipelines()  // nil ALL 7 fields under the lock (hangup's clear)
+          case 3: _ = phone.testPipelineFieldsPresent()  // read references under the lock
+          default: _ = phone.testPipelineFieldsPresent()
+          }
         }
-        wait(for: [done], timeout: 60)
-        _ = phone.testPipelineFieldsPresent()
+      }
+      done.fulfill()
     }
+    wait(for: [done], timeout: 60)
+    _ = phone.testPipelineFieldsPresent()
+  }
 }
