@@ -152,7 +152,7 @@ public final class AGC: Filter {
         guard !frame.samples.isEmpty else { return frame }
 
         // Python: `target_linear`/`max_gain_linear = 10 ** (x / 10)`
-        // (Filters.py:187-188 — the power-dB seam, see DBGain).
+        // (Filters.py:187-188—the power-dB seam, see DBGain).
         let targetLinear  = Float(DBGain.linear(targetLevel))
         let maxGainLinear = Float(DBGain.linear(maxGain))
         let sr            = Float(frame.sampleRate)

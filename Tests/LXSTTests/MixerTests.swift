@@ -217,7 +217,7 @@ final class MixerTests: XCTestCase {
         // The actual race detector for this test is ThreadSanitizer: the
         // gain/muted/shouldRun scalar read/write races are benign on this
         // hardware (aligned word-sized loads don't tear into wrong values), so
-        // ONLY `--sanitize=thread` observes them — a plain `swift test` cannot.
+        // ONLY `--sanitize=thread` observes them—a plain `swift test` cannot.
         // What a plain run CAN check is that the lock-backed run-flag accessor
         // still functions after the storm: a full start→stop round-trip that a
         // broken getter/setter would fail (unlike a bare post-stop() assert,
@@ -260,7 +260,7 @@ final class MixerTests: XCTestCase {
         m.stop()
         Thread.sleep(forTimeInterval: 0.05)
         // ThreadSanitizer is the race detector here (see
-        // testConcurrentControlPlaneStressIsRaceFree). Without the sanitizer we
+        // testConcurrentControlPlaneStressIsRaceFree). Without the sanitizer this
         // can still assert the lock-backed run flag round-trips correctly.
         XCTAssertFalse(m.shouldRun)
         m.start(); XCTAssertTrue(m.shouldRun)

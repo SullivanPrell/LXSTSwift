@@ -106,7 +106,7 @@ final class EchoSuppressorTests: XCTestCase {
 
     func testPureEchoIsDetectedAndGated() {
         // Reproduces the Python end-to-end vector: mic = attenuated (0.25),
-        // delayed (1200 samples @48k = 25 ms) copy of the reference — pure echo,
+        // delayed (1200 samples @48k = 25 ms) copy of the reference—pure echo,
         // no near-end speech. The suppressor must lock the delay and gate the mic.
         let sr = 48000.0
         let n = 1920                // 40 ms frame

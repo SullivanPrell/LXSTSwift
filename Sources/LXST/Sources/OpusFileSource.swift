@@ -51,7 +51,7 @@ public final class OpusFileSource: LocalSource {
 
     /// Whether the source is running.
     ///
-    /// Python: `@property running` — alias for shouldRun
+    /// Python: `@property running`—alias for shouldRun
     public var running: Bool { shouldRun }
 
     public override func start() {
@@ -95,7 +95,7 @@ public final class OpusFileSource: LocalSource {
             channels   = Int(data[13])
             headerSize = 14
         } else {
-            // v1 — no audio params stored; assume 48kHz mono
+            // v1—no audio params stored; assume 48kHz mono
             sampleRate = 48000
             channels   = 1
             headerSize = 9
@@ -134,7 +134,7 @@ public final class OpusFileSource: LocalSource {
         }
         defer { opus_decoder_destroy(dec) }
 
-        // Max samples per channel for a 60ms Opus frame
+        // Max samples per channel for a 60 ms Opus frame
         let maxSamplesPerCh = Int(file.sampleRate * 0.060) + 64
         let frameTime = targetFrameMs / 1000.0
 

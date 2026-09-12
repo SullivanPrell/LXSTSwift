@@ -27,7 +27,7 @@ public enum Codec2Mode: Int, CaseIterable {
     /// C-library mode constant (codec2.h: CODEC2_MODE_*).
     ///
     /// Python: `Codec2.MODE_HEADERS` maps Python mode int → header byte,
-    /// but the C library uses its own ordering. We map our enum → C constant.
+    /// but the C library uses its own ordering, so this enum maps to the C constant.
     internal var cMode: Int32 {
         switch self {
         case .mode3200: return CODEC2_MODE_3200   // 0
@@ -80,10 +80,10 @@ public let codec2FrameQuantaMs: Double = 40
 
 /// Codec2 ultra-low-bandwidth voice codec backed by libcodec2 (CCodec2 XCFramework).
 ///
-/// Python: `LXST.Codecs.Codec2` — LXST wire header byte CODEC2 = 0x02
+/// Python: `LXST.Codecs.Codec2`—LXST wire header byte CODEC2 = 0x02
 ///
 /// Wire format for encoded bytes:
-///   [mode_header_byte (1B)][codec2_encoded_bytes (N B)]
+///   [mode_header_byte (1 byte)][codec2_encoded_bytes (N bytes)]
 ///
 /// Default mode: `.mode2400` (Python: `def __init__(self, mode=CODEC2_2400)`)
 public final class Codec2Codec: Codec {
@@ -162,7 +162,7 @@ public final class Codec2Codec: Codec {
 
     // MARK: - Encode
 
-    /// Python: `Codec2.encode(frame)` — resample to 8 kHz, encode to Codec2 bytes.
+    /// Python: `Codec2.encode(frame)`—resample to 8 kHz, encode to Codec2 bytes.
     /// Wire output: `[mode_header_byte][codec2_encoded_bytes]`
     public func encode(_ frame: AudioFrame) throws -> Data {
         lock.lock(); defer { lock.unlock() }
@@ -191,7 +191,7 @@ public final class Codec2Codec: Codec {
 
     // MARK: - Decode
 
-    /// Python: `Codec2.decode(frame_bytes)` — decode Codec2 bytes to PCM Float32.
+    /// Python: `Codec2.decode(frame_bytes)`—decode Codec2 bytes to PCM Float32.
     /// Input: `[mode_header_byte][codec2_encoded_bytes]`
     public func decode(_ data: Data) throws -> AudioFrame {
         lock.lock(); defer { lock.unlock() }
@@ -201,11 +201,11 @@ public final class Codec2Codec: Codec {
         // Adopt the sender's mode from the wire header byte, exactly like Python
         // `Codec2.decode` (HEADER_MODES[frame_header] → set_mode(frame_mode)):
         // a receiver decodes whatever mode the sender used, not just its own.
-        // An unrecognised header keeps the current mode (Python: `else frame_mode
+        // An unrecognized header keeps the current mode (Python: `else frame_mode
         // = self.mode`). This MUST run before `ensureState()` so the codec
-        // geometry (samples/bytes-per-frame) matches the wire mode — otherwise
+        // geometry (samples/bytes-per-frame) matches the wire mode—otherwise
         // a different-mode frame is mis-sliced (garbage audio, or an
-        // `invalidFrame` throw when its length isn't a multiple of our BPF).
+        // `invalidFrame` throw when its length isn't a multiple of the configured BPF).
         let frameHeader = data[data.startIndex]
         let frameMode = Codec2Mode.from(headerByte: frameHeader) ?? mode
         if frameMode != mode {
@@ -234,13 +234,13 @@ public final class Codec2Codec: Codec {
             allSamples.append(contentsOf: pcm16.map { Float($0) / 32768.0 })
         }
 
-        // Codec2 is 8 kHz in and out, so a sink at any other rate needs the samples converted —
-        // Python: `Codec2.py:115-117`, gated on the sink existing and its rate differing.
+        // Codec2 is 8 kHz in and out, so a sink at any other rate needs the samples converted—Python:
+        // `Codec2.py:115-117`, gated on the sink existing and its rate differing.
         //
         // `bugs/018`: there was no conversion here at all. The 8 kHz samples were handed on
         // carrying the sink's rate as a *label*, which at `bandwidthUltraLow` meant 3200 real
         // samples at the head of a 19200-sample mixer frame and 16000 samples of silence after
-        // it — on every one of the three Codec2 profiles, while the call reported ESTABLISHED.
+        // it—on every one of the three Codec2 profiles, while the call reported ESTABLISHED.
         //
         // Note the sink is read through the protocol, not `as? LocalSink`: the receive path's
         // sink is a `Mixer`, which conforms to `Sink` directly, so the narrowing this replaces
@@ -261,7 +261,7 @@ public final class Codec2Codec: Codec {
     /// The one resampler in this file, used by both directions: encode's conversion down to
     /// 8 kHz and decode's conversion up to the sink's rate. Decode had no conversion at all
     /// (`bugs/018`) partly because the encode side's was buried inside `toInt16Mono` and so was
-    /// not reusable — a shape that let the two directions differ silently.
+    /// not reusable—a shape that let the two directions differ silently.
     private static func resampleMono(_ samples: [Float],
                                      from srcRate: Double,
                                      to dstRate: Double) -> [Float] {

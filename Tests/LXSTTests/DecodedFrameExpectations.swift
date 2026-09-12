@@ -17,9 +17,9 @@ import XCTest
 ///
 /// `017` (Opus decodes at the codec profile's rate) and `018` (Codec2 omits the reference's
 /// 8 kHz → sink resample and relabels the samples instead) are the same contract broken in two
-/// unrelated code paths. Their fixes cannot be shared — Opus can be told to decode at any rate
+/// unrelated code paths. Their fixes cannot be shared—Opus can be told to decode at any rate
 /// (`Opus.py:170,174`), Codec2 is fixed at 8 kHz and must convert on the way out
-/// (`Codec2.py:115-117`) — so what is shared is this post-condition (design D4).
+/// (`Codec2.py:115-117`)—so what is shared is this post-condition (design D4).
 ///
 /// **The precondition is the point.** Every decode test in this package used to leave
 /// `codec.sink` nil, so the codec's own rate was simultaneously the decode rate and the reported
@@ -31,7 +31,7 @@ import XCTest
 /// - Parameters:
 ///   - frame:      the frame returned by `decode`
 ///   - sink:       the sink attached to the codec at decode time
-///   - codecRate:  the codec's own rate — the rate a broken decoder would produce
+///   - codecRate:  the codec's own rate—the rate a broken decoder would produce
 ///   - durationMs: the duration the encoded payload represents, known independently of both rates
 ///   - file:       the file the assertion is reported against
 ///   - line:       the line the assertion is reported against
@@ -50,7 +50,7 @@ func assertDecoded(_ frame: AudioFrame,
                       file: file, line: line)
 
     // Computed from the sink's rate and the payload's duration, so a decoder that returns the
-    // codec's own sample count cannot satisfy it — and a decoder that returns the codec's
+    // codec's own sample count cannot satisfy it—and a decoder that returns the codec's
     // samples carrying the sink's rate as a *label* cannot either.
     let expected = Int((sink.sampleRate * durationMs / 1000).rounded())
     XCTAssertEqual(Double(frame.sampleCount), Double(expected), accuracy: 1,
@@ -66,7 +66,7 @@ func assertDecoded(_ frame: AudioFrame,
                    "a frame handed to a \(sink.sampleRate) Hz sink must declare that rate",
                    file: file, line: line)
 
-    // Python gates the channel adaptation the same way (`Opus.py:169` — `if self.sink and
+    // Python gates the channel adaptation the same way (`Opus.py:169`—`if self.sink and
     // self.sink.channels`), so a sink that declares nothing imposes nothing.
     if let sinkChannels = sink.channels {
         XCTAssertEqual(frame.channelCount, sinkChannels,
@@ -92,8 +92,8 @@ func assertEnergyIsSpreadAcrossTheFrame(_ frame: AudioFrame,
     let quarter = frame.samples.count / 4
     guard quarter > 0 else { return XCTFail("frame too short to inspect", file: file, line: line) }
 
-    // Measured against the LOUDEST quarter, not the first: a codec with encoder lookahead —
-    // Opus has about 6.5 ms of it — leaves the head of a short frame genuinely near-silent, so
+    // Measured against the LOUDEST quarter, not the first: a codec with encoder lookahead—Opus
+    // has about 6.5 ms of it—leaves the head of a short frame genuinely near-silent, so
     // comparing the tail to the head would fail on correct output.
     let loudest = (0..<4).map { q in
         rms(frame.samples[(q * quarter) ..< min((q + 1) * quarter, frame.samples.count)])

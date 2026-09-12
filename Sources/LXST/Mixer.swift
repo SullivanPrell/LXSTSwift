@@ -10,8 +10,8 @@
 
 import Foundation
 
-/// A sink that receives a mixer's *reference* output — the mixed signal as it
-/// is played out (before codec encoding) — for use as an echo-cancellation
+/// A sink that receives a mixer's *reference* output—the mixed signal as it
+/// is played out (before codec encoding)—for use as an echo-cancellation
 /// reference.
 ///
 /// Python: any object with `handle_reference(frame, samplerate)`
@@ -55,14 +55,14 @@ public final class Mixer: Source, Sink {
     // MARK: - Mixer control-plane state (thread-safe)
     //
     // `gain`, `muted`, `shouldRun` and `referenceOuts` are written from control
-    // threads — the app/UI thread (setGain/mute/unmute), and hangup → stop() on
-    // the Reticulum callback thread — while the mix loop reads them on every frame
+    // threads—the app/UI thread (setGain/mute/unmute), and hangup → stop() on
+    // the Reticulum callback thread—while the mix loop reads them on every frame
     // from the `lxst.mixer` thread. All four are guarded by `stateLock` so a
     // control write can never race a mix-loop read (ThreadSanitizer-clean, and, for
-    // `referenceOuts`, crash-safe — a Swift Array read racing a write can crash).
+    // `referenceOuts`, crash-safe—a Swift Array read racing a write can crash).
     //
     // `stateLock` is only ever held for the trivial load/store in the accessors
-    // below — never across mixing, codec encode/decode, or sink delivery — so it
+    // below—never across mixing, codec encode/decode, or sink delivery—so it
     // adds no audio-path contention. It is also never held together with
     // `insertLock`, so the two locks cannot deadlock.
     private let stateLock = NSLock()
@@ -89,7 +89,7 @@ public final class Mixer: Source, Sink {
         set { stateLock.lock(); unsafeShouldRun = newValue; stateLock.unlock() }
     }
 
-    /// Reference outputs — each receives every mixed (pre-codec) frame, for use
+    /// Reference outputs—each receives every mixed (pre-codec) frame, for use
     /// as an echo-cancellation reference signal. Python: `Mixer.reference_outs`
     public var referenceOuts: [any ReferenceSink] {
         get { stateLock.lock(); defer { stateLock.unlock() }; return unsafeReferenceOuts }
@@ -98,7 +98,7 @@ public final class Mixer: Source, Sink {
 
     private var incomingFrames: [ObjectIdentifier: [AudioFrame]] = [:]
     private var sourceMaxFrames: [ObjectIdentifier: Int] = [:]
-    /// Guards BOTH `incomingFrames` and `sourceMaxFrames` — they are read together
+    /// Guards BOTH `incomingFrames` and `sourceMaxFrames`—they are read together
     /// in canReceive/handleFrame, so a single consistent lock avoids the
     /// mixed-lock data race (a Swift Dictionary read racing a write can crash).
     private let insertLock = NSLock()
@@ -121,7 +121,7 @@ public final class Mixer: Source, Sink {
 
     // MARK: - Gain and mute (Python: set_gain, mute, unmute)
 
-    /// Python: `set_gain(gain=None)` — nil resets to 0.0 dB.
+    /// Python: `set_gain(gain=None)`—nil resets to 0.0 dB.
     public func setGain(_ gain: Float?) {
         self.gain = gain ?? 0.0
     }
@@ -151,7 +151,7 @@ public final class Mixer: Source, Sink {
         insertLock.unlock()
     }
 
-    /// Python: `can_receive(from_source)` — returns false when the queue is full.
+    /// Python: `can_receive(from_source)`—returns false when the queue is full.
     public func canReceive(from source: any Source) -> Bool {
         let key = ObjectIdentifier(source)
         insertLock.lock(); defer { insertLock.unlock() }
@@ -226,7 +226,7 @@ public final class Mixer: Source, Sink {
             guard hasSamples else { continue }
 
             // Apply gain and clamp. Python: `next_frame*self._mixing_gain` with
-            // `_mixing_gain = 10**(self.gain/10)` (Mixer.py:102,:113-114 — the
+            // `_mixing_gain = 10**(self.gain/10)` (Mixer.py:102,:113-114—the
             // power-dB seam, see DBGain).
             let gainLinear = DBGain.linear(gain)
             for i in 0..<mixed.count {
@@ -247,7 +247,7 @@ public final class Mixer: Source, Sink {
             }
 
             // Deliver the raw (pre-codec) mixed frame to any reference outputs,
-            // e.g. an echo suppressor tracking the played-out signal.
+            // for example, an echo suppressor tracking the played-out signal.
             // Python: `for ref in self.reference_outs: ref.handle_reference(mixed_frame, self.samplerate)`
             let refs = referenceOuts
             if !refs.isEmpty {

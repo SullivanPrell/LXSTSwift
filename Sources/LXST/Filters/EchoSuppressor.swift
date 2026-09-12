@@ -17,7 +17,7 @@ import Accelerate
 /// numpy). It tracks the far-end signal played out of the local speaker (fed in
 /// via `handleReference`, from a `Mixer.referenceOuts`) and, when the near-end
 /// microphone signal is a delayed, attenuated copy of it (acoustic echo),
-/// gates the microphone output — injecting comfort noise so the far end doesn't
+/// gates the microphone output—injecting comfort noise so the far end doesn't
 /// hear a hard mute.
 ///
 /// Signal path (mirrors Python):
@@ -77,7 +77,7 @@ public final class EchoSuppressor: Filter, ReferenceSink {
     public static let defaultCngEnabled          = true
     /// Default comfort-noise gain.
     public static let defaultCngGain             = 0.0015
-    /// Default comfort-noise colouring coefficient.
+    /// Default comfort-noise coloring coefficient.
     public static let defaultCngColor            = 0.98
     /// Default comfort-noise block length, in samples.
     public static let defaultCngBlockSize        = 16384
@@ -344,7 +344,7 @@ public final class EchoSuppressor: Filter, ReferenceSink {
         guard n > 0 else { return [] }
         if cngBufferPos + n > cngBuffer.count {
             // Regenerate a block at least as large as the request. A request larger
-            // than cngBlockSize (e.g. an oversized inbound frame) previously
+            // than cngBlockSize (for example, an oversized inbound frame) previously
             // produced a too-small block and the slice below overran, crashing.
             // Comfort-noise is local DSP, so sizing the block up is wire-neutral.
             cngBuffer = generateCngBlock(max(cngBlockSize, n))
@@ -554,8 +554,8 @@ public final class EchoSuppressor: Filter, ReferenceSink {
         var refDelayed: [Float]? = nil
 
         // `refValid`/`samplerate` are written under `lock` by handleReference/
-        // ensureBuffer on the mixer reference thread — snapshot them under the
-        // lock before the early-return checks instead of reading them raw.
+        // ensureBuffer on the mixer reference thread—snapshot them under the
+        // lock before the checks that return early, instead of reading them raw.
         lock.lock()
         let refValidSnapshot = refValid
         let samplerateSnapshot = samplerate

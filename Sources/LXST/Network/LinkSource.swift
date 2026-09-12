@@ -39,13 +39,13 @@ public final class LinkSource: RemoteSource {
 
     // MARK: - Receive-path codec construction
 
-    /// Build the codec for a wire header byte, already wired to the sink the stream will be
-    /// played through.
+    /// Build the codec for a wire header byte, already wired to the sink that plays the
+    /// stream.
     ///
     /// Returns nil for a header byte no codec claims.
     ///
     /// The sink is attached **here**, not by the caller, because `decode` configures itself from
-    /// it — Opus takes its output rate and channel count from the sink (Python `Opus.py:170,174`)
+    /// it—Opus takes its output rate and channel count from the sink (Python `Opus.py:170,174`)
     /// and Codec2 resamples its fixed 8 kHz output to the sink's rate (`Codec2.py:115-117`). A
     /// codec that reaches its first frame with no sink attached decodes at its own default rate,
     /// which on this path is always 8 kHz whatever the sender chose (`bugs/017`). One function
@@ -101,7 +101,7 @@ public final class LinkSource: RemoteSource {
             sink?.handleFrame(frame, from: self)
         }
 
-        // Handle signalling field — decode the real integer signal values
+        // Handle signalling field—decode the real integer signal values
         // (Python: LinkSource._packet defers to SignallingReceiver._packet for
         // FIELD_SIGNALLING). A scalar is wrapped in a single-element list.
         if let sigVal = dict[Int(fieldSignalling)] {

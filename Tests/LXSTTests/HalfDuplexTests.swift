@@ -68,7 +68,7 @@ final class HalfDuplexTests: XCTestCase {
 
     /// A combined `[PREFERRED_PROFILE+profile, PREFERRED_MODE+mode]` list must
     /// encode into one fieldSignalling array and decode back to the same two
-    /// composite ints — exactly what a Python 0.5.0 caller emits at ringing.
+    /// composite ints—exactly what a Python 0.5.0 caller emits at ringing.
     func testCombinedProfileAndModeSignalRoundTrip() {
         let profileComposite = Int(signallingPreferredProfile) + Int(TelephonyProfile.qualityHigh.rawValue)
         let modeComposite    = Int(signallingPreferredMode) + Int(CallMode.halfDuplex.rawValue)

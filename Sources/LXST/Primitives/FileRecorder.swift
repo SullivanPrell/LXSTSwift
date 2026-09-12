@@ -59,7 +59,7 @@ public final class FileRecorder {
 
     /// Begins recording.
     ///
-    /// Python: `FileRecorder.record()` — alias for start()
+    /// Python: `FileRecorder.record()`—alias for start()
     public func record() { start() }
 
     /// Starts recording.

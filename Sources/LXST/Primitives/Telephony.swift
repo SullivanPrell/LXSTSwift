@@ -84,7 +84,7 @@ public enum CallMode: UInt8, CaseIterable {
 
     /// Short form of the mode name.
     ///
-    /// Python: `Profiles.mode_abbrevation(profile)` — note: typo in Python preserved
+    /// Python: `Profiles.mode_abbrevation(profile)`—note: typo in Python preserved
     public var abbreviation: String {
         switch self {
         case .fullDuplex: return "FDX"
@@ -120,7 +120,7 @@ public enum TelephonyProfile: UInt8, CaseIterable {
 
     /// Profiles this implementation offers, in quality order.
     ///
-    /// Python: `available_profiles()` — ordered list
+    /// Python: `available_profiles()`—ordered list
     public static var available: [TelephonyProfile] {
         [.bandwidthUltraLow, .bandwidthVeryLow, .bandwidthLow,
          .qualityMedium, .qualityHigh, .qualityMax,
@@ -148,7 +148,7 @@ public enum TelephonyProfile: UInt8, CaseIterable {
 
     /// Short form of the profile name.
     ///
-    /// Python: `profile_abbrevation(profile)` — note: typo in Python preserved
+    /// Python: `profile_abbrevation(profile)`—note: typo in Python preserved
     public var abbreviation: String {
         switch self {
         case .bandwidthUltraLow: return "ULBW"
@@ -179,7 +179,7 @@ public enum TelephonyProfile: UInt8, CaseIterable {
     }
 
     /// Number of frames to buffer on the receive mixer's audio source for this
-    /// profile — larger for higher-quality profiles, smaller for low-latency.
+    /// profile—larger for higher-quality profiles, smaller for low-latency.
     /// Python: `Profiles.get_buffer_frames(profile)`
     public var bufferFrames: Int {
         switch self {
@@ -192,7 +192,7 @@ public enum TelephonyProfile: UInt8, CaseIterable {
 
     /// Returns a fresh codec configured for this profile.
     ///
-    /// Python: `get_codec(profile)` — returns a fresh codec instance
+    /// Python: `get_codec(profile)`—returns a fresh codec instance
     public var codec: any Codec {
         switch self {
         case .bandwidthUltraLow: return Codec2Codec(mode: .mode700C)
@@ -208,7 +208,7 @@ public enum TelephonyProfile: UInt8, CaseIterable {
 
     /// Returns the profile after `profile`, wrapping at the end.
     ///
-    /// Python: `next_profile(profile)` — wraps around
+    /// Python: `next_profile(profile)`—wraps around
     public static func next(after profile: TelephonyProfile) -> TelephonyProfile {
         let list = Self.available
         guard let idx = list.firstIndex(of: profile) else { return profile }
@@ -265,11 +265,11 @@ public final class ActiveCall {
 
 // MARK: - Telephone
 
-/// Full telephony session manager — handles call establishment, audio pipelines,
+/// Full telephony session manager—handles call establishment, audio pipelines,
 /// signalling, gain, muting, and profile switching.
 ///
 /// Python: `LXST.Primitives.Telephony.Telephone`
-/// (Note: Python uses `Telephone`, our earlier stub was named `TelephonyCall`)
+/// (Note: Python uses `Telephone`; the earlier stub here was named `TelephonyCall`)
 public final class Telephone: SignallingReceiver, SignallingHandler {
 
     // MARK: - Class constants
@@ -334,7 +334,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// identified.
     ///
     /// They sit in AVAILABLE state until the remote identifies (or
-    /// the link closes). Mirrors Python's `self.links` dict — an incoming link
+    /// the link closes). Mirrors Python's `self.links` dict—an incoming link
     /// is only promoted to `activeCall` once the caller is identified and
     /// allowed. Keyed by link id.
     private var pendingIncomingLinks: [Data: Link] = [:]
@@ -384,7 +384,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// Factory for the platform audio backend used by the call's capture
     /// (`LineSource`) and playback (`LineSink`). `Telephone` itself is
     /// platform-agnostic; a host app injects this to wire real mic/speaker I/O
-    /// (e.g. `{ AVAudioEngineBackend() }`).
+    /// (for example, `{ AVAudioEngineBackend() }`).
     ///
     /// Each call returns a fresh instance
     /// because a backend owns a single engine, and capture + playback run on
@@ -486,7 +486,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 
     /// Sets which callers are admitted.
     ///
-    /// Python: `set_allowed(allowed)` — AllowedCallers enum or list
+    /// Python: `set_allowed(allowed)`—AllowedCallers enum or list
     public func setAllowed(_ allowed: AllowedCallers) { self.allowed = allowed }
 
     /// Sets the callers that are refused.
@@ -639,7 +639,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// super().signal(signals, link)
     /// ```
     /// Values are `Int` (not `UInt8`) so composites like `PREFERRED_PROFILE +
-    /// profile` (e.g. `0x13F`) round-trip intact. A combined
+    /// profile` (for example, `0x13F`) round-trip intact. A combined
     /// `[PREFERRED_PROFILE+profile, PREFERRED_MODE+mode]` list rides in one packet.
     public func sendSignal(_ signals: [Int], on link: Link) {
         for signal in signals {
@@ -649,7 +649,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
                 callStatus = status
             }
         }
-        // Inherited SignallingReceiver.signal — encodes {fieldSignalling: signals}
+        // Inherited SignallingReceiver.signal—encodes {fieldSignalling: signals}
         // and sends it over the link (encrypted with the link key, routed by transport).
         self.signal(signals, to: link)
     }
@@ -657,7 +657,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// Convenience single-signal overload.
     ///
     /// The value is an `Int` (not `UInt8`) so the composite
-    /// `PREFERRED_PROFILE + profile` (e.g. `0x13F`) round-trips intact.
+    /// `PREFERRED_PROFILE + profile` (for example, `0x13F`) round-trips intact.
     public func sendSignal(_ signal: Int, on link: Link) {
         sendSignal([signal], on: link)
     }
@@ -751,7 +751,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         let cb = establishedCallback
         callHandlerLock.unlock()
         // Fire the app callback OUTSIDE callHandlerLock (it may re-enter the
-        // Telephone, e.g. hangup(), which takes the same non-recursive lock).
+        // Telephone, for example, hangup(), which takes the same non-recursive lock).
         cb?(identity)
         return true
     }
@@ -769,7 +769,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         callHandlerLock.unlock()
 
         // Declining (or losing) an unanswered, still-ringing incoming call
-        // tells the caller we rejected it. Mirrors Python `hangup`'s
+        // tells the caller it was rejected. Mirrors Python `hangup`'s
         // STATUS_REJECTED signal. Skipped on ring-timeout (the caller already
         // sees no answer) and when the link is already gone.
         if let call, wasRingingIncoming, !ringTimedOut, call.link.status == .active {
@@ -860,7 +860,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// Python: `Telephone.signalling_received(signals, source)`
     override public func signallingReceived(_ signals: [Int], from source: (any Source)?) {
         // activeCall is mutated under callHandlerLock by call/answer/hangup on
-        // other threads — snapshot the reference under the lock, then operate on
+        // other threads—snapshot the reference under the lock, then operate on
         // the local (this handler runs on the link receive thread).
         callHandlerLock.lock()
         let callSnapshot = activeCall
@@ -966,9 +966,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// An incoming call link has established.
     ///
     /// Mirrors Python
-    /// `__incoming_link_established`: we do NOT promote it to `activeCall` and
-    /// do NOT ring yet — we register a remote-identified callback, park the link
-    /// in `pendingIncomingLinks`, and signal AVAILABLE. The caller responds to
+    /// `__incoming_link_established`: the link is NOT promoted to `activeCall` and
+    /// does NOT ring yet. A remote-identified callback is registered, the link parked
+    /// in `pendingIncomingLinks`, and AVAILABLE signalled. The caller responds to
     /// AVAILABLE by identifying, which fires `callerIdentified`, where the
     /// allow-check and ringing happen.
     private func incomingLinkEstablished(_ link: Link) {
@@ -1091,7 +1091,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// Builds the receive-side dialling pipeline.
     ///
     /// Caller MUST hold `pipelineLock`.
-    /// The body is byte-identical to the original `prepareDiallingPipelines` — the
+    /// The body is byte-identical to the original `prepareDiallingPipelines`—the
     /// nil-check-then-assign order (audioOutput → receiveMixer → dialTone →
     /// receivePipeline) and every constructor argument are unchanged, so audio/wire
     /// behavior is identical; only the lock discipline around it changed.
@@ -1218,7 +1218,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         guard callStatus == .established else { return }
         // Snapshot + clear the old transmit-path fields under the lock; stop them
         // OUTSIDE it (stop() is a callout). The build (makeAudioBackend / Pipeline)
-        // also happens outside the lock; we re-acquire only to commit.
+        // also happens outside the lock, which is re-acquired only to commit.
         pipelineLock.lock()
         let oldInput = audioInput
         let oldMixer = transmitMixer
@@ -1245,8 +1245,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
             newPipeline = try? Pipeline(source: tMixer, codec: txCodec, sink: pkt)
         }
 
-        // Commit under the lock — but only if the call is still established. A
-        // concurrent hangup wins the race and we discard (stop) the freshly-built
+        // Commit under the lock—but only if the call is still established. A
+        // concurrent hangup wins the race and discards (stops) the freshly built
         // objects rather than leak a started transmit pipeline onto a dead call.
         pipelineLock.lock()
         guard callStatus == .established, activeCall != nil else {
@@ -1292,37 +1292,37 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 // MARK: - Test helpers (internal; allow unit tests to fire callbacks without real links)
 
 extension Telephone {
-    /// Set callStatus directly — for testing only.
+    /// Set callStatus directly—for testing only.
     public func testSetCallStatus(_ status: SignallingStatus) {
         callStatus = status
     }
 
-    /// Fire the ringing callback — for testing only.
+    /// Fire the ringing callback—for testing only.
     public func testFireRingingCallback(identity: Identity?) {
         ringingCallback?(identity)
     }
 
-    /// Fire the established callback — for testing only.
+    /// Fire the established callback—for testing only.
     public func testFireEstablishedCallback(identity: Identity?) {
         establishedCallback?(identity)
     }
 
-    /// Fire the ended callback — for testing only.
+    /// Fire the ended callback—for testing only.
     public func testFireEndedCallback(identity: Identity?) {
         endedCallback?(identity)
     }
 
-    /// Fire the busy callback — for testing only.
+    /// Fire the busy callback—for testing only.
     public func testFireBusyCallback(identity: Identity?) {
         busyCallback?(identity)
     }
 
-    /// Fire the rejected callback — for testing only.
+    /// Fire the rejected callback—for testing only.
     public func testFireRejectedCallback(identity: Identity?) {
         rejectedCallback?(identity)
     }
 
-    /// Send a signal without a real link — for testing state transitions only.
+    /// Send a signal without a real link—for testing state transitions only.
     public func testSignal(_ status: SignallingStatus) {
         if SignallingStatus.autoStatusCodes.contains(status) {
             callStatus = status
@@ -1337,7 +1337,7 @@ extension Telephone {
     /// Test-only: nil out all pipeline fields under the lock (hangup's field-clear).
     func testNilPipelines() { clearPipelineFields() }
     /// Test-only: read the pipeline field REFERENCES under the lock without calling
-    /// any Mixer/Pipeline method — exercises the Telephone field-reference race
+    /// any Mixer/Pipeline method—exercises the Telephone field-reference race
     /// surface (the target of this fix) without forcing concurrent Mixer access.
     func testPipelineFieldsPresent() -> (Bool, Bool, Bool, Bool) {
         pipelineLock.lock(); defer { pipelineLock.unlock() }

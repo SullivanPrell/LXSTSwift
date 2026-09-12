@@ -23,10 +23,10 @@ import ReticulumSwift
 /// the gain/mute accessors, `reconfigureTransmitPipeline`, `disableDialTone`).
 ///
 /// This validates the target of the fix: safe concurrent access to the Telephone
-/// FIELD REFERENCES themselves — a stale reference or torn nil-check-then-assign
+/// FIELD REFERENCES themselves—a stale reference or torn nil-check-then-assign
 /// would crash. It deliberately does NOT drive concurrent Mixer/Pipeline METHOD
 /// calls on the same object; the underlying Mixer/Pipeline primitives have their
-/// own (separately-tracked) internal thread-safety story, out of scope here.
+/// own (separately tracked) internal thread-safety story, out of scope here.
 ///
 /// A lock inversion or reentrant self-deadlock (calling the locking
 /// `prepareDiallingPipelines()` wrapper from a path already holding `pipelineLock`)

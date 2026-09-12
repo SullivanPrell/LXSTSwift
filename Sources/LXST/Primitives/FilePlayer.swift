@@ -58,7 +58,7 @@ public final class FilePlayer {
 
     /// Begins playback.
     ///
-    /// Python: `FilePlayer.play()` — alias for start()
+    /// Python: `FilePlayer.play()`—alias for start()
     public func play() { start() }
 
     /// Starts playback.

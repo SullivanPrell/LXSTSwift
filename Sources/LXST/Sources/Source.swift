@@ -56,8 +56,8 @@ open class LocalSource: Source {
     public var targetFrameMs:  Double        = 80
 
     // `shouldRun` is the run flag: written by start()/stop() from control
-    // threads — including stop() on the Reticulum callback thread during hangup —
-    // while background job threads read it every iteration (e.g.
+    // threads—including stop() on the Reticulum callback thread during hangup—while
+    // background job threads read it every iteration (for example,
     // `OpusFileSource.ingestJob`) and `Pipeline.running` reads it from the app
     // thread. Guard it with a lock so the read/write can't race
     // (ThreadSanitizer-clean). Same pattern as `Mixer`.
@@ -105,7 +105,7 @@ open class RemoteSource: Source {
     /// Target frame duration, in milliseconds.
     public var targetFrameMs:  Double        = 40
 
-    // See `LocalSource.shouldRun` — the run flag is read from control threads
+    // See `LocalSource.shouldRun`—the run flag is read from control threads
     // (`Pipeline.running`) while start()/stop() write it (stop() runs on the
     // Reticulum callback thread during hangup). Guard it with a lock.
     private let runLock = NSLock()

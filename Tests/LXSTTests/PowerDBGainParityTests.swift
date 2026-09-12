@@ -14,8 +14,8 @@ import XCTest
 /// dB → linear gain convention parity, asserted through the LIVE audio paths.
 ///
 /// Python converts dB to a linear multiplier with the POWER-dB formula
-/// `10 ** (dB / 10)` and applies the result directly to amplitude samples —
-/// nonstandard (the amplitude convention would be dB/20) but authoritative
+/// `10 ** (dB / 10)` and applies the result directly to amplitude samples—nonstandard
+/// (the amplitude convention would be dB/20) but authoritative
 /// for parity, and used identically at all three Python gain sites:
 ///   - Sources.py:180     `linear_gain(gain_db): return 10**(gain_db/10)`,
 ///     applied to mic samples at Sources.py:270 before codec.encode
@@ -24,10 +24,10 @@ import XCTest
 ///   - Filters.py:187-188 AGC `target_linear` / `max_gain_linear`
 ///
 /// Every expected value below is a hardcoded literal evaluated from Python's
-/// formula (e.g. `10**(10/10)` = 10.0) — never computed by calling the Swift
+/// formula (for example, `10**(10/10)` = 10.0)—never computed by calling the Swift
 /// code under test. Each test drives real frames through a production path
 /// (LineSource.deliver, the Mixer mix loop, AGC.handleFrame); none tests a
-/// conversion helper in isolation — helper-only tests previously passed while
+/// conversion helper in isolation—helper-only tests previously passed while
 /// all three live paths shipped with 10^(dB/20).
 final class PowerDBGainParityTests: XCTestCase {
 

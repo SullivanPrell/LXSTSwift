@@ -16,7 +16,7 @@ import XCTest
 ///
 /// `bugs/017`: `LinkSource` instantiates a bare `OpusCodec()` for any 0x01 frame and never calls
 /// `setProfile`, so the codec's own rate is the 8 kHz default whatever the sender chose. That is
-/// only harmless because `decode` now takes its rate from the sink — which means the sink must
+/// only harmless because `decode` now takes its rate from the sink—which means the sink must
 /// already be attached at that point, for every codec type, forever.
 final class ReceivePathCodecTests: XCTestCase {
 
@@ -55,10 +55,10 @@ final class ReceivePathCodecTests: XCTestCase {
     /// receiver whose codec is the 8 kHz default, playing into a 48 kHz sink.
     ///
     /// Before the fix the
-    /// receiver got 480 samples where the mixer expected 2880 — 10 ms of speech at six times
+    /// receiver got 480 samples where the mixer expected 2880—10 ms of speech at six times
     /// pitch, then 50 ms of silence, with signalling reporting an established call throughout.
     func testAReceiveCodecDecodesAtTheSinkRateOnItsFirstFrame() throws {
-        let sender = OpusCodec(profile: .voiceMedium)      // 24 kHz — Telephone .qualityMedium
+        let sender = OpusCodec(profile: .voiceMedium)      // 24 kHz—Telephone .qualityMedium
         let n = Int(24000 * 0.060)                          // 60 ms
         let wire = try sender.encode(AudioFrame(samples: [Float](repeating: 0.1, count: n),
                                                 channelCount: 1, sampleRate: 24000))

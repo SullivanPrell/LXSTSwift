@@ -28,7 +28,7 @@ public final class LineSource: LocalSource {
     /// Convert dB gain to linear multiplier.
     ///
     /// Python: `@staticmethod linear_gain(gain_db): return 10**(gain_db/10)`
-    /// (Sources.py:180 — the power-dB seam, see DBGain).
+    /// (Sources.py:180—the power-dB seam, see DBGain).
     public static func linearGain(_ gainDB: Float) -> Float {
         DBGain.linear(gainDB)
     }
@@ -42,7 +42,7 @@ public final class LineSource: LocalSource {
     /// Audio discarded at start, in seconds.
     public var skip: Double = 0.0
 
-    /// Called when `startCapture` throws (e.g. "could not make an audio connection").
+    /// Called when `startCapture` throws (for example, "could not make an audio connection").
     ///
     /// Allows callers to surface hardware errors that would otherwise be silently dropped.
     public var onStartError: ((Error) -> Void)?

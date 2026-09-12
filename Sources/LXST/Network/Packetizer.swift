@@ -12,7 +12,7 @@ import Foundation
 
 // MARK: - LXSTDestination
 
-/// A destination that can receive LXST packets — either an RNS Link or Destination.
+/// A destination that can receive LXST packets—either an RNS Link or Destination.
 /// Python: `type(self.destination) == RNS.Link` check in `Packetizer.handle_frame`
 public protocol LXSTDestination: AnyObject {}
 extension Link:        LXSTDestination {}
@@ -40,8 +40,8 @@ public final class Packetizer: RemoteSink {
     /// True after a transmit failure. Python: `transmit_failure`
     public private(set) var transmitFailure: Bool = false
 
-    /// When squelched, `handleFrame` drops frames instead of transmitting them —
-    /// used by half-duplex call mode to gate the local transmit path.
+    /// When squelched, `handleFrame` drops frames instead of transmitting them—used
+    /// by half-duplex call mode to gate the local transmit path.
     /// Python: `Packetizer.squelched`
     public private(set) var squelched: Bool = false
 
@@ -59,7 +59,7 @@ public final class Packetizer: RemoteSink {
 
     // MARK: - Sink: encode and transmit
 
-    /// Squelch the transmit path — subsequent frames are dropped until unsquelched.
+    /// Squelch the transmit path—subsequent frames are dropped until unsquelched.
     /// Python: `Packetizer.squelch()`
     public func squelch()   { squelched = true }
 
@@ -99,7 +99,7 @@ public final class Packetizer: RemoteSink {
                 guard link.status == .active else { return }
                 try link.send(packetData)
             } else if dest is Destination {
-                // Destination sending requires an injected Transport — not yet wired
+                // Destination sending requires an injected Transport—not yet wired
                 return
             } else { return }
 

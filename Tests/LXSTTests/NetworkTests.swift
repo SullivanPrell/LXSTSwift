@@ -96,7 +96,7 @@ final class NetworkTests: XCTestCase {
     // These exercise the real on-the-wire signalling codec (encode → decode →
     // dispatch). The pre-fix code msgpack-encoded an EMPTY array on send and
     // substituted empty strings on receive, so no signal value ever crossed the
-    // wire — a Swift↔Python call could never progress past link establishment.
+    // wire—a Swift↔Python call could never progress past link establishment.
 
     /// Wire bytes for `{FIELD_SIGNALLING:[STATUS_RINGING]}` must match Python
     /// `mp.packb({0x00:[0x04]})` exactly: map(1) key(0x00) array(1) value(0x04).

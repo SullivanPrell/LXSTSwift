@@ -16,7 +16,7 @@ import Foundation
 /// descriptions read identically across implementations.
 ///
 /// Python: `prettyspeed(num, suffix="b")` == `prettysize(num/8, suffix="b")+"ps"`,
-/// and `prettysize` with suffix `"b"` multiplies by 8 again — so the value is
+/// and `prettysize` with suffix `"b"` multiplies by 8 again—so the value is
 /// carried through unchanged and only the unit scaling applies. Units step by
 /// 1000 (not 1024); the base unit prints with no decimals, all others with two.
 func prettySpeed(_ bitsPerSecond: Double) -> String {
@@ -36,7 +36,7 @@ func prettySpeed(_ bitsPerSecond: Double) -> String {
 // MARK: - Codec descriptions
 //
 // Mirrors the `__str__` implementations added in LXST 0.5.0 (commit 7ba2b82).
-// Purely cosmetic — these strings never travel on the wire.
+// Purely cosmetic—these strings never travel on the wire.
 
 extension NullCodec: CustomStringConvertible {
     /// Textual description of the codec.
@@ -56,7 +56,7 @@ extension RawCodec: CustomStringConvertible {
 extension Codec2Codec: CustomStringConvertible {
     /// Textual description of the codec and its settings.
     ///
-    /// Python: `<LXST/Codec2 @ {prettyspeed(self.mode)}>` — the Codec2 mode
+    /// Python: `<LXST/Codec2 @ {prettyspeed(self.mode)}>`—the Codec2 mode
     /// constant *is* the bitrate in bits per second, and `Codec2Mode`'s raw
     /// value carries the same number.
     public var description: String {

@@ -24,7 +24,7 @@ public final class Pipeline {
     /// The active codec.
     ///
     /// Assigning a new value switches codecs mid-stream.
-    /// Python: `@codec.setter` — replaces codec without dropping frames.
+    /// Python: `@codec.setter`—replaces codec without dropping frames.
     public var codec: any Codec {
         get { source.codec ?? storedCodec }
         set {

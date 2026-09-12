@@ -9,48 +9,48 @@ All notable changes to LXSTSwift are documented here. This project follows
 
 - **All three live dB→linear gain sites used the amplitude convention
   `10^(dB/20)`; Python uses the power-dB formula `10^(dB/10)` at every gain
-  site** (`Sources.py:180`, `Mixer.py:102`, `Filters.py:187-188` — nonstandard,
+  site** (`Sources.py:180`, `Mixer.py:102`, `Filters.py:187-188`—nonstandard,
   but authoritative for parity). The Python-matching helper
   `LineSource.linearGain` existed but was dead code: its only callers were
   helper-only tests, while `LineSource.deliver`, the `Mixer` mix loop and
   `AGC.handleFrame` each inlined their own `pow(10, dB/20)`. Consequence: the
   AGC in the default call transmit chain (`AGC(targetLevel: -15)`,
   Telephony.swift:993 / Python Telephony.py:711) normalized transmitted mic
-  audio to RMS `10^(-0.75)` ≈ 0.178 instead of Python's `10^(-1.5)` ≈ 0.0316 —
-  ~5.6x louder payload audio by default — and any nonzero configured gain
+  audio to RMS `10^(-0.75)` ≈ 0.178 instead of Python's `10^(-1.5)` ≈ 0.0316—~5.6x
+  louder payload audio by default—and any nonzero configured gain
   applied the square root of Python's multiplier (10 dB → ×3.16 instead of
   ×10). All conversions now route through a single internal seam
   (`DBGain.linear`), so the convention cannot drift per-site again; new tests
   drive frames through the live paths against hardcoded Python-derived sample
-  values. Wire format untouched — payload sample values only.
+  values. Wire format untouched—payload sample values only.
 
-## [1.2.0] — LXST 0.5.0 parity and LineSink channel-map recovery
+## [1.2.0]—LXST 0.5.0 parity and LineSink channel-map recovery
 
 Catches the port up to Python LXST 0.5.0.
 
 ### Added
 
-- Codec description formatters — `prettySpeed(_:)` matching Python's 1000-step
+- Codec description formatters—`prettySpeed(_:)` matching Python's 1000-step
   `prettysize`, and `CustomStringConvertible` on `NullCodec`, `RawCodec`,
   `Codec2Codec` and `OpusCodec`.
 
 ### Fixed
 
-The mid-stream channel-map adopt — what a Bluetooth headset switching profile,
-or a USB interface being re-plugged, triggers — could never run, and would have
+The mid-stream channel-map adopt—what a Bluetooth headset switching profile,
+or a USB interface being re-plugged, triggers—could never run, and would have
 lost the player if it had:
 
 - `channels` is nil on a freshly constructed `LineSink`, and the guard read nil
-  as "already matches", so the method short-circuited outside tests. `start()`
+  as already matching, so the method short-circuited outside tests. `start()`
   now adopts the device's channel count up front, as Python does in
   `LineSink.__init__`.
 - Adopting the new count without rebuilding the player left the sink feeding a
   player built for the old geometry: Swift truncates against the *player's*
   format in `AVAudioPlayerAdapter.play` rather than per frame as Python does,
-  and that format is fixed at `startPlayback`. The player is now rebuilt —
-  flush, stop, start.
-- A `startPlayback` that threw — which is exactly what an in-flight
-  AVAudioEngine route change produces — left `player` nil while the guard
+  and that format is fixed at `startPlayback`. The player is now rebuilt—flush,
+  stop, start.
+- A `startPlayback` that threw—which is exactly what an in-flight
+  AVAudioEngine route change produces—left `player` nil while the guard
   reported "no change" forever: permanent one-way silence for the rest of the
   call. The new count is committed only once the rebuild succeeds, and a failed
   rebuild falls back to the previous geometry so the next frame retries.
@@ -59,17 +59,17 @@ lost the player if it had:
 
 On Apple platforms the recovery is still effectively dormant:
 `AVAudioEngineBackend.channelCount` is only written in `init`/`startCapture`,
-and a `LineSink`'s backend never captures — so nothing updates the value the
+and a `LineSink`'s backend never captures—so nothing updates the value the
 guard compares against. Closing that needs an `AVAudioSession` route-change
 observer, which is not in this release.
 
-## [1.1.0] – [1.1.4]
+## [1.1.0]–[1.1.4]
 
 Released without changelog entries; see the GitHub releases for those tags.
 
-## [1.0.0] — Initial public release
+## [1.0.0]—initial public release
 
-First public release of LXSTSwift — a Swift port of
+First public release of LXSTSwift—a Swift port of
 [LXST](https://github.com/markqvist/LXST) (Lightweight Extensible Signal
 Transport), wire-compatible with the Python reference (LXST 0.4.6).
 
@@ -83,7 +83,7 @@ Transport), wire-compatible with the Python reference (LXST 0.4.6).
 - **Sources / sinks**: microphone, tone, Opus file, loopback, link-source;
   speaker, Opus file, packetizer, and an additive mixer.
 - **Filters**: high-pass, low-pass, band-pass, and AGC.
-- **Telephony**: the `Telephone` primitive — announce, place/answer/reject/hang
+- **Telephony**: the `Telephone` primitive—announce, place/answer/reject/hang
   up calls, mute/gain control, and call-admission lists.
 - **Network**: packetize/transmit and receive audio over RNS links.
 

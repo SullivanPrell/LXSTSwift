@@ -152,7 +152,7 @@ final class OpusFileSourceRoundTripTests: XCTestCase {
         let url = tmpURL()
         defer { try? FileManager.default.removeItem(at: url) }
 
-        // Write 3 frames of silence at voiceLow (8kHz, mono, 20ms → 160 samples/frame)
+        // Write 3 frames of silence at voiceLow (8 kHz, mono, 20 ms → 160 samples/frame)
         let sink = OpusFileSink(path: url, autodigest: false, profile: .voiceLow)
         for _ in 0..<3 {
             sink.handleFrame(AudioFrame(samples: [Float](repeating: 0, count: 160),
@@ -238,7 +238,7 @@ final class OpusFileSourceRoundTripTests: XCTestCase {
         src.start()
         Thread.sleep(forTimeInterval: 0.1)
         src.stop()
-        // Must not crash — running transitions to false cleanly
+        // Must not crash—running transitions to false cleanly
         XCTAssertFalse(src.running)
     }
 }

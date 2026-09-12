@@ -10,8 +10,8 @@
 
 import Foundation
 
-/// Pass-through codec — encode and decode are identity operations.
-/// Python: `LXST.Codecs.Null` — header byte NULL = 0xFF
+/// Pass-through codec—encode and decode are identity operations.
+/// Python: `LXST.Codecs.Null`—header byte NULL = 0xFF
 public final class NullCodec: Codec {
     /// Codec identifier carried in the frame header.
     public static let headerByte: UInt8 = codecNull

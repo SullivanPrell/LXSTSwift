@@ -125,7 +125,7 @@ public let opusValidFrameMs: [Double] = [2.5, 5, 10, 20, 40, 60]
 // MARK: - OpusCodec
 
 /// Opus audio codec backed by libopus (COpus XCFramework).
-/// Python: `LXST.Codecs.Opus` — header byte OPUS = 0x01
+/// Python: `LXST.Codecs.Opus`—header byte OPUS = 0x01
 ///
 /// Encode: resamples input PCM to the profile's sample rate, then calls
 /// `opus_encode_float()` to produce a real Opus bitstream.
@@ -144,7 +144,7 @@ public final class OpusCodec: Codec {
     public var validFrameMs:        [Double] { opusValidFrameMs }
     /// Output channel count.
     ///
-    /// Python: `Opus.channels` — `decode` overwrites it from the sink
+    /// Python: `Opus.channels`—`decode` overwrites it from the sink
     /// (`Opus.py:169-172`), so this is the *decode* side's value; `inputChannels` is the encode
     /// side's, exactly as Python keeps `channels` and `input_channels` apart.
     public var channels: Int? {
@@ -157,7 +157,7 @@ public final class OpusCodec: Codec {
     }
     private var storedChannels: Int?
 
-    /// Python: `Opus.input_channels` — what `encode` shapes its input to.
+    /// Python: `Opus.input_channels`—what `encode` shapes its input to.
     ///
     /// Kept separate from
     /// `channels` so a decode on the same instance cannot silently re-shape a later encode.
@@ -249,22 +249,22 @@ public final class OpusCodec: Codec {
             throw CodecError.encoderNotConfigured
         }
         // Note: opus_encoder_ctl is variadic and not callable from Swift.
-        // libopus will use auto-bitrate, which produces valid Opus output.
+        // libopus uses auto-bitrate, which produces valid Opus output.
         // Bitrate ceiling is used for frame-size planning (maxBytesPerFrame) only.
         encoder = enc
     }
 
-    // MARK: - Decoder setup — configured from the sink, not from the profile
+    // MARK: - Decoder setup—configured from the sink, not from the profile
 
     /// libopus decodes to one of five fixed rates; `opus_decoder_create` rejects anything else.
     private static let nativeDecodeRates: [Double] = [8000, 12000, 16000, 24000, 48000]
 
-    /// The rate to run the decoder at in order to serve a sink at `rate`.
+    /// The rate to run the decoder at to serve a sink at `rate`.
     ///
     /// For the five rates
     /// libopus supports this is the sink's rate itself and nothing further happens; for any
-    /// other — hardware reporting 44.1 kHz is routine (`AudioBackend.swift:56` adopts the device
-    /// format) — decode at the next rate up and convert, rather than hand the sink samples it
+    /// other—hardware reporting 44.1 kHz is routine (`AudioBackend.swift:56` adopts the device
+    /// format)—decode at the next rate up and convert, rather than hand the sink samples it
     /// cannot play. The reference has no equivalent because `set_sampling_frequency` simply
     /// raises there; refusing to decode is not a better answer than converting.
     private static func nativeDecodeRate(for rate: Double) -> Double {
@@ -272,17 +272,17 @@ public final class OpusCodec: Codec {
         return nativeDecodeRates.first { $0 >= rate } ?? 48000
     }
 
-    /// The rate the sink will play at, and so the rate `decode` must return.
+    /// The rate the sink plays at, and so the rate `decode` must return.
     ///
-    /// Python: `Opus.py:174` — `self.opus_decoder.set_sampling_frequency(self.sink.samplerate)`.
+    /// Python: `Opus.py:174`—`self.opus_decoder.set_sampling_frequency(self.sink.samplerate)`.
     ///
     /// Python has no fallback: `decode` raises `AttributeError` when `sink` is None, because a
     /// decoding pipeline always has one. Falling back to the profile's rate keeps a sink-less
-    /// `decode` working, and is unreachable from any receive path — `LinkSource` assigns the sink
+    /// `decode` working, and is unreachable from any receive path—`LinkSource` assigns the sink
     /// to the codec it builds before the first frame is decoded.
     private var decodeTargetRate: Double { sink?.sampleRate ?? profile.sampleRate }
 
-    /// Python: `Opus.py:169-172` — the sink's channel count where it declares one, else the
+    /// Python: `Opus.py:169-172`—the sink's channel count where it declares one, else the
     /// fixed `output_channels`.
     private var decodeTargetChannels: Int {
         sink?.channels ?? Self.sinklessOutputChannels
@@ -293,7 +293,7 @@ public final class OpusCodec: Codec {
     /// Caller must hold `lock`.
     ///
     /// `bugs/017`: this used to short-circuit on `decoder == nil` alone and take its rate from
-    /// `profile.sampleRate`, so on the receive path — where nothing calls `setProfile` — every
+    /// `profile.sampleRate`, so on the receive path—where nothing calls `setProfile`—every
     /// call decoded at the 8 kHz default whatever the sender sent and whatever the sink runs at.
     private func configureDecoder() throws -> (rate: Double, channels: Int) {
         let ch   = decodeTargetChannels
@@ -358,7 +358,7 @@ public final class OpusCodec: Codec {
         guard let dec = decoder else { throw CodecError.decoderNotConfigured }
 
         // Max output: 60 ms at the decoder's rate, sized from that rate rather than the
-        // profile's — an 8 kHz profile serving a 48 kHz sink needs six times the room, and
+        // profile's—an 8 kHz profile serving a 48 kHz sink needs six times the room, and
         // `opus_decode_float` returns OPUS_BUFFER_TOO_SMALL rather than truncating.
         let maxSamplesPerCh = Int(rate * opusFrameMaxMs / 1000.0) + 64
         let maxTotal = maxSamplesPerCh * ch
@@ -424,7 +424,7 @@ public final class OpusCodec: Codec {
 
         let ratio   = targetRate / srcRate
         // Round (not truncate) to avoid off-by-one samples after resampling
-        // (e.g. 882 @ 44.1 kHz → 48 kHz: 882 × 1.0884 = 959.97 → 960, not 959).
+        // (for example, 882 @ 44.1 kHz → 48 kHz: 882 × 1.0884 = 959.97 → 960, not 959).
         // opus_encode_float rejects any count that isn't an exact Opus frame size.
         let outN    = Int((Double(srcN) * ratio).rounded())
         let outSize = outN * targetCh

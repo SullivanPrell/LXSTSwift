@@ -230,7 +230,7 @@ final class LineSinkBackendTests: XCTestCase {
     func testLineSinkHandleFrameWithoutStartIsNoOp() {
         let backend = MockAudioBackend()
         let sink = LineSink(backend: backend)
-        // No start() — player is nil
+        // No start()—player is nil
         let frame = AudioFrame(samples: [0.5], channelCount: 1, sampleRate: 48000)
         sink.handleFrame(frame, from: nil)  // must not crash
     }

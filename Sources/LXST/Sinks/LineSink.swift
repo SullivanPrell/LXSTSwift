@@ -75,14 +75,14 @@ public final class LineSink: LocalSink {
     }
 
     /// Recover when the underlying device re-negotiates its channel map while a
-    /// stream is running — a Bluetooth headset switching profile, or a USB
-    /// interface being re-plugged, will do this.
+    /// stream is running—a Bluetooth headset switching profile, or a USB
+    /// interface being re-plugged, does this.
     ///
     /// Python (LXST 0.5.0, commit 621d496) re-reads `self.backend.device.channels`
     /// in its playback loop and adopts it, so the per-frame
     /// `frame[:, 0:self.channels]` truncation stays correct. Swift truncates in
     /// `AVAudioPlayerAdapter.play` against the *player's* format instead, and
-    /// that format is fixed at `startPlayback` — so adopting the new count here
+    /// that format is fixed at `startPlayback`—so adopting the new count here
     /// also means rebuilding the player, or the sink keeps feeding a player
     /// built for the old geometry.
     ///
@@ -90,14 +90,14 @@ public final class LineSink: LocalSink {
     /// rebuild falls back to a player at the previous geometry. Committing the
     /// new count unconditionally meant a `startPlayback` that threw (an
     /// AVAudioEngine route change still in flight is exactly when that happens)
-    /// left `player == nil` while the guard below reported "no change" forever —
-    /// permanent one-way silence for the rest of the call. Python cannot hit
+    /// left `player == nil` while the guard below reported "no change" forever—permanent
+    /// one-way silence for the rest of the call. Python cannot hit
     /// that: it never touches the player at all.
     private func adoptDeviceChannelMapIfChanged() {
         guard let backend else { return }
         let deviceChannels = backend.channelCount
         // `channels == nil` means "not yet adopted", which must trigger the
-        // adopt path rather than short-circuit it — `LineSink.init` does not set
+        // adopt path rather than short-circuit it—`LineSink.init` does not set
         // `channels`, so nil is the normal production state and treating it as
         // "already matches" made this whole method unreachable outside tests.
         guard deviceChannels > 0, deviceChannels != channels else { return }
@@ -121,7 +121,7 @@ public final class LineSink: LocalSink {
             channels = deviceChannels
         } else {
             // The restart failed (an AVAudioEngine route change still in flight
-            // will do this). Come back up at the PREVIOUS geometry rather than
+            // does this). Come back up at the PREVIOUS geometry rather than
             // leaving `player` nil, and leave `channels` untouched so the next
             // frame retries the adopt. Committing the new count here would make
             // the guard above report "no change" forever and the sink would stay

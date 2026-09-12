@@ -116,7 +116,7 @@ final class PipelineTests: XCTestCase {
     //
     // Pipeline wiring creates several back-references (source.pipeline,
     // codec.source, sink.source on Packetizer/OpusFileSink). These must be
-    // `weak` — Swift's ARC has no cyclic collector, so a strong back-reference
+    // `weak`—Swift's ARC has no cyclic collector, so a strong back-reference
     // here is a permanent leak (unlike Python, where the cyclic GC eventually
     // reclaims the equivalent reference loops that `release()` was added to
     // pre-empt).

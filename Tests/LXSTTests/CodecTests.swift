@@ -215,8 +215,8 @@ final class CodecTests: XCTestCase {
 
     /// Codec2 is fixed at 8 kHz, so the reference converts on the way out
     /// (`Codec2.py:115-117`). `bugs/018`: this test used to run with `codec.sink` nil and assert
-    /// the *native* 320 samples, so the missing conversion — and the relabelling that stood in
-    /// for it — was unobservable.
+    /// the *native* 320 samples, so the missing conversion—and the relabelling that stood in
+    /// for it—was unobservable.
     func testCodec2EncodeDecodeRoundTripPreservesFrameLength() throws {
         let c = Codec2Codec(mode: .mode2400)
         let sink = RateSink(sampleRate: 48000, channels: 1)
@@ -239,7 +239,7 @@ final class CodecTests: XCTestCase {
         let sink = RateSink(sampleRate: 48000, channels: 1)
         c.sink = sink
 
-        // 400 ms of a 400 Hz tone at 8 kHz — a signal codec2 can actually model.
+        // 400 ms of a 400 Hz tone at 8 kHz—a signal codec2 can actually model.
         let n = 3200
         let samples = (0..<n).map { Float(sin(2 * .pi * 400 * Double($0) / 8000)) * 0.5 }
         let frame = AudioFrame(samples: samples, channelCount: 1, sampleRate: 8000)
@@ -250,7 +250,7 @@ final class CodecTests: XCTestCase {
         assertEnergyIsSpreadAcrossTheFrame(decoded)
     }
 
-    /// A sink at the codec's own rate must not be resampled — the reference gates the conversion
+    /// A sink at the codec's own rate must not be resampled—the reference gates the conversion
     /// on `self.sink.samplerate != self.OUTPUT_RATE` (`Codec2.py:116`).
     func testCodec2DecodeAtTheCodecsOwnRateIsUnconverted() throws {
         let c = Codec2Codec(mode: .mode2400)
@@ -287,7 +287,7 @@ final class CodecTests: XCTestCase {
     }
 
     func testOpusEncodeOutputIsCompact() throws {
-        // Real Opus output is smaller than raw PCM — verifies libopus is linked
+        // Real Opus output is smaller than raw PCM—verifies libopus is linked
         let codec = OpusCodec(profile: .voiceLow)
         let frame = AudioFrame(samples: [Float](repeating: 0.1, count: 160),
                                channelCount: 1, sampleRate: 8000)
@@ -298,12 +298,12 @@ final class CodecTests: XCTestCase {
     }
 
     /// Decoding is configured from the **sink**, not from the codec's own profile
-    /// (Python: `Opus.py:174` — `set_sampling_frequency(self.sink.samplerate)`).
+    /// (Python: `Opus.py:174`—`set_sampling_frequency(self.sink.samplerate)`).
     ///
     /// `bugs/017`: this test used to run with `codec.sink` nil, so the profile's rate was
     /// simultaneously the decode rate and the reported rate and it asserted only
     /// `sampleCount > 0`. That construction cannot fail. A `voiceLow` codec playing into a
-    /// 48 kHz sink is exactly what a real call does — `LinkSource` builds a bare `OpusCodec()`
+    /// 48 kHz sink is exactly what a real call does—`LinkSource` builds a bare `OpusCodec()`
     /// (8 kHz) for any 0x01 frame, whatever rate the sender chose.
     func testOpusDecodeRoundTrip() throws {
         let codec = OpusCodec(profile: .voiceLow)          // 8 kHz
@@ -344,7 +344,7 @@ final class CodecTests: XCTestCase {
     }
 
     /// Channel count comes from the sink where the sink declares one
-    /// (Python: `Opus.py:169-170` — `if self.sink and self.sink.channels`), and the rate is the
+    /// (Python: `Opus.py:169-170`—`if self.sink and self.sink.channels`), and the rate is the
     /// sink's independently of that.
     ///
     /// Previously ran sink-less and asserted the channel count
@@ -365,7 +365,7 @@ final class CodecTests: XCTestCase {
     }
 
     /// The reference's fallback when the sink declares no channel count: keep the profile's
-    /// (`Opus.py:171` — `output_channels = self.output_channels if ... else self.channels`).
+    /// (`Opus.py:171`—`output_channels = self.output_channels if ... else self.channels`).
     func testOpusDecodeKeepsProfileChannelsWhenTheSinkDeclaresNone() throws {
         let codec = OpusCodec(profile: .voiceMax)          // stereo
         let sink  = RateSink(sampleRate: 24000, channels: nil)

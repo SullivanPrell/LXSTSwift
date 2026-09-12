@@ -108,7 +108,7 @@ final class OpusFileSinkQueueTests: XCTestCase {
     }
 }
 
-// MARK: - Lifecycle (no output path — digest thread guards against nil path)
+// MARK: - Lifecycle (no output path—digest thread guards against nil path)
 
 final class OpusFileSinkLifecycleTests: XCTestCase {
 
@@ -194,7 +194,7 @@ final class OpusFileSinkFileWriteTests: XCTestCase {
         sink.stop()
 
         let data = try? Data(contentsOf: url)
-        // File must have more than just the header (9 bytes) — at least one frame written
+        // File must have more than just the header (9 bytes)—at least one frame written
         XCTAssertGreaterThan(data?.count ?? 0, 9,
                              "File must contain encoded Opus data beyond the header")
     }

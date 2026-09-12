@@ -71,7 +71,7 @@ public final class Loopback: Source, Sink {
 
     /// Returns whether the downstream sink can take frames from `source`.
     ///
-    /// Python: `Loopback.can_receive(from_source=None)` — delegates to downstream sink
+    /// Python: `Loopback.can_receive(from_source=None)`—delegates to downstream sink
     public func canReceive(from source: (any Source)?) -> Bool {
         downstreamSink?.canReceive(from: source) ?? true
     }
@@ -82,7 +82,7 @@ public final class Loopback: Source, Sink {
     }
 }
 
-// Internal setter for sampleRate — used by Pipeline wiring.
+// Internal setter for sampleRate—used by Pipeline wiring.
 // Python: `if isinstance(sink, Loopback): sink.samplerate = source.samplerate`
 extension Loopback {
     internal func setSampleRate(_ rate: Double) { sampleRate = rate }

@@ -10,7 +10,7 @@
 
 import Foundation
 
-/// Raw PCM codec — encodes/decodes uncompressed audio with a bitdepth/channel sub-header.
+/// Raw PCM codec—encodes/decodes uncompressed audio with a bitdepth/channel sub-header.
 ///
 /// Wire format: `[sub_header_byte][raw_samples_bytes...]`
 ///
@@ -18,7 +18,7 @@ import Foundation
 ///   bits 7-6: bitdepth (RawBitDepth raw value)
 ///   bits 5-0: channels - 1  (0..31 → 1..32 channels)
 ///
-/// Python: `LXST.Codecs.Raw` — header byte RAW = 0x00
+/// Python: `LXST.Codecs.Raw`—header byte RAW = 0x00
 public final class RawCodec: Codec {
     /// Codec identifier carried in the frame header.
     public static let headerByte: UInt8 = codecRaw
@@ -90,7 +90,7 @@ public final class RawCodec: Codec {
         var out = Data()
         // Sub-header byte
         out.append(Self.subHeader(bitDepth: bitDepth, channelCount: ch))
-        // Samples as Float32 little-endian (we always use float32 internally)
+        // Samples as Float32 little-endian (float32 is always used internally)
         let sampleCount = frame.sampleCount
         for i in 0..<sampleCount {
             for c in 0..<ch {
@@ -115,7 +115,7 @@ public final class RawCodec: Codec {
         let totalSamples = body.count / bytesPerSample
         var samples = [Float](repeating: 0, count: totalSamples)
         body.withUnsafeBytes { ptr in
-            // We read as float32 regardless (expand from float16 not needed for tests)
+            // Read as float32 regardless (expand from float16 not needed for tests)
             if bytesPerSample == 4 {
                 let floats = ptr.bindMemory(to: Float.self)
                 for i in 0..<totalSamples { samples[i] = floats[i] }

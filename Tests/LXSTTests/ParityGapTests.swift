@@ -65,7 +65,7 @@ final class ParityGapTests: XCTestCase {
     // NOTE: LineSource.linear_gain parity (Python: Sources.py:180, 10**(gain_db/10))
     // is asserted through the LIVE paths in PowerDBGainParityTests. Helper-only
     // tests of linearGain used to live here and passed for months while every
-    // production gain site inlined the wrong 10^(dB/20) formula — do not re-add
+    // production gain site inlined the wrong 10^(dB/20) formula—do not re-add
     // tests that exercise the conversion helper in isolation.
 
     // MARK: - Loopback.canReceive (Python: Loopback.can_receive delegates to sink)
@@ -125,12 +125,12 @@ final class ParityGapTests: XCTestCase {
 
     // MARK: - Codec2 decode adopts the wire mode-header byte
     // Python: Codec2.decode reads frame_bytes[0], maps HEADER_MODES[frame_header],
-    // and set_mode(frame_mode) before decoding — so a receiver decodes whatever
+    // and set_mode(frame_mode) before decoding—so a receiver decodes whatever
     // mode the sender used, not just its own current mode.
     //
     // NOTE on assertions: libcodec2's low-bitrate synthesis uses randomised
-    // phase (a shared libc RNG) for unvoiced frames, so two decoders — even two
-    // *native* same-mode ones — do not produce bit-identical PCM from the same
+    // phase (a shared libc RNG) for unvoiced frames, so two decoders—even two
+    // *native* same-mode ones—do not produce bit-identical PCM from the same
     // bytes. The deterministic, parity-relevant facts are therefore the adopted
     // MODE and the frame GEOMETRY (sample count), not the exact sample values.
     // Before the fix the geometry was wrong: a different-mode frame either
@@ -140,13 +140,13 @@ final class ParityGapTests: XCTestCase {
     // Every test below runs the receiver with a 48 kHz sink attached, the rate a real playback
     // path uses. Sink-less, codec2's 8 kHz was simultaneously the decode rate and the reported
     // rate, so these asserted 320 samples against the one rate in play and could not observe
-    // `bugs/018` — the missing 8 kHz → sink conversion — at all. The mode-adoption property they
+    // `bugs/018`—the missing 8 kHz → sink conversion—at all. The mode-adoption property they
     // exist for is unchanged; only the rate they are measured at is.
 
     private func playbackSink() -> RateSink { RateSink(sampleRate: 48000, channels: 1) }
 
     /// A receiver at the DEFAULT mode (2400) must decode a frame the sender
-    /// encoded at a *different* mode (3200 — a different bytes-per-frame), by
+    /// encoded at a *different* mode (3200—a different bytes-per-frame), by
     /// reading the wire header and adopting that mode.
     func testCodec2DecodeAdoptsWireModeHeaderDifferentBPF() throws {
         let sender = Codec2Codec(mode: .mode3200)
@@ -217,7 +217,7 @@ final class ParityGapTests: XCTestCase {
                       codecRate: codec2OutputRate, durationMs: 40)
     }
 
-    /// An unrecognised header byte keeps the current mode and decodes the rest,
+    /// An unrecognized header byte keeps the current mode and decodes the rest,
     /// exactly like Python (`else: frame_mode = self.mode`).
     func testCodec2DecodeUnknownHeaderKeepsCurrentMode() throws {
         // Encode at 2400, then overwrite the header byte with an invalid mode

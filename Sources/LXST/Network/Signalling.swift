@@ -16,7 +16,7 @@ import Foundation
 ///
 /// Signals are plain integers, mirroring Python where a signal is either a
 /// status code (`0x00`–`0x06`) or the composite `PREFERRED_PROFILE + profile`
-/// (e.g. `0xFF + 0x40 = 0x13F`) — which exceeds a single byte, so `Int` (not
+/// (for example, `0xFF + 0x40 = 0x13F`)—which exceeds a single byte, so `Int` (not
 /// `UInt8`) is required for the value to round-trip.
 /// Python: `SignallingReceiver.proxy`
 public protocol SignallingHandler: AnyObject {
@@ -25,7 +25,7 @@ public protocol SignallingHandler: AnyObject {
 
 // MARK: - SignallingReceiver
 
-/// Manages inband signalling on a Link — sending and receiving signal events.
+/// Manages inband signalling on a Link—sending and receiving signal events.
 ///
 /// Python: `LXST.Network.SignallingReceiver`
 /// Open so that `Telephone` can inherit from it (Python: `class Telephone(SignallingReceiver)`).
@@ -56,9 +56,9 @@ open class SignallingReceiver {
     /// else:                    signalling_data = {FIELD_SIGNALLING: signal}
     /// RNS.Packet(destination, mp.packb(signalling_data), create_receipt=False).send()
     /// ```
-    /// A whole list of composite codes (e.g. `[PREFERRED_PROFILE+profile,
+    /// A whole list of composite codes (for example, `[PREFERRED_PROFILE+profile,
     /// PREFERRED_MODE+mode]`) rides in one `FIELD_SIGNALLING` array, matching the
-    /// "Combined signalling" change in LXST 0.5.0. We msgpack-encode the list and
+    /// "Combined signalling" change in LXST 0.5.0. The list is msgpack-encoded and
     /// transmit it over the link, so the payload is encrypted with the link key
     /// and routed by transport.
     public func signal(_ signals: [Int], to destination: any LXSTDestination, immediate: Bool = true) {
@@ -69,7 +69,7 @@ open class SignallingReceiver {
         }
     }
 
-    /// Convenience single-signal overload — wraps `signal` in a one-element list,
+    /// Convenience single-signal overload—wraps `signal` in a one-element list,
     /// exactly as Python does for a non-list argument.
     public func signal(_ signal: Int, to destination: any LXSTDestination, immediate: Bool = true) {
         self.signal([signal], to: destination, immediate: immediate)
@@ -85,7 +85,7 @@ open class SignallingReceiver {
 
     // MARK: - Wire codec
 
-    /// Encode `{fieldSignalling: [signal, ...]}` as msgpack — the exact payload
+    /// Encode `{fieldSignalling: [signal, ...]}` as msgpack—the exact payload
     /// Python builds via `mp.packb({FIELD_SIGNALLING:[signal]})`.
     static func encodeSignals(_ signals: [Int]) -> Data {
         MsgPack.encode(.map([
