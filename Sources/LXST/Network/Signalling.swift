@@ -71,16 +71,16 @@ open class SignallingReceiver {
 
     // MARK: - Wire codec
 
-    /// Encode `{FIELD_SIGNALLING: [signal, ...]}` as msgpack — the exact payload
+    /// Encode `{fieldSignalling: [signal, ...]}` as msgpack — the exact payload
     /// Python builds via `mp.packb({FIELD_SIGNALLING:[signal]})`.
     static func encodeSignals(_ signals: [Int]) -> Data {
         MsgPack.encode(.map([
-            (.int(Int64(FIELD_SIGNALLING)), .array(signals.map { .int(Int64($0)) }))
+            (.int(Int64(fieldSignalling)), .array(signals.map { .int(Int64($0)) }))
         ]))
     }
 
     /// Decode the integer signal list from a received packet. Returns nil if the
-    /// packet carries no `FIELD_SIGNALLING` field. A scalar value is wrapped in a
+    /// packet carries no `fieldSignalling` field. A scalar value is wrapped in a
     /// single-element list (Python: `if type(signalling)==list ... else [signalling]`).
     static func decodeSignals(_ data: Data) -> [Int]? {
         guard let unpacked = try? MsgPack.decode(data),
@@ -92,7 +92,7 @@ open class SignallingReceiver {
             case .uint(let n): key = Int(n)
             default: continue
             }
-            guard key == Int(FIELD_SIGNALLING) else { continue }
+            guard key == Int(fieldSignalling) else { continue }
             return signalValues(from: v)
         }
         return nil

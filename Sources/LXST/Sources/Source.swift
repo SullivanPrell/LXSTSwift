@@ -45,10 +45,10 @@ open class LocalSource: Source {
     // thread. Guard it with a lock so the read/write can't race
     // (ThreadSanitizer-clean). Same pattern as `Mixer`.
     private let runLock = NSLock()
-    private var _shouldRun = false
+    private var unsafeShouldRun = false
     public var shouldRun: Bool {
-        get { runLock.lock(); defer { runLock.unlock() }; return _shouldRun }
-        set { runLock.lock(); _shouldRun = newValue; runLock.unlock() }
+        get { runLock.lock(); defer { runLock.unlock() }; return unsafeShouldRun }
+        set { runLock.lock(); unsafeShouldRun = newValue; runLock.unlock() }
     }
 
     public init() {}
@@ -83,10 +83,10 @@ open class RemoteSource: Source {
     // (`Pipeline.running`) while start()/stop() write it (stop() runs on the
     // Reticulum callback thread during hangup). Guard it with a lock.
     private let runLock = NSLock()
-    private var _shouldRun = false
+    private var unsafeShouldRun = false
     public var shouldRun: Bool {
-        get { runLock.lock(); defer { runLock.unlock() }; return _shouldRun }
-        set { runLock.lock(); _shouldRun = newValue; runLock.unlock() }
+        get { runLock.lock(); defer { runLock.unlock() }; return unsafeShouldRun }
+        set { runLock.lock(); unsafeShouldRun = newValue; runLock.unlock() }
     }
 
     public init() {}

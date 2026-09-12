@@ -234,17 +234,17 @@ public final class EchoSuppressor: Filter, ReferenceSink {
     ///   where m = (-total) % factor; state = buf[-(L-1):]; total += len(x)
     func decimate(_ x: [Float], state: inout [Float], total: inout Int) -> [Float] {
         if x.isEmpty { return [] }
-        let L = decimTaps.count
+        let tapCount = decimTaps.count
         var buf = state
         buf.append(contentsOf: x)
-        // Valid convolution: y[j] = sum_m buf[j+m] * taps[L-1-m], j in 0..<x.count
-        let yCount = buf.count - L + 1        // == x.count
+        // Valid convolution: y[j] = sum_m buf[j+m] * taps[tapCount-1-m], j in 0..<x.count
+        let yCount = buf.count - tapCount + 1        // == x.count
         var y = [Float](repeating: 0, count: yCount)
         buf.withUnsafeBufferPointer { bp in
             decimTaps.withUnsafeBufferPointer { tp in
                 for j in 0..<yCount {
                     var acc: Float = 0
-                    for m in 0..<L { acc += bp[j + m] * tp[L - 1 - m] }
+                    for m in 0..<tapCount { acc += bp[j + m] * tp[tapCount - 1 - m] }
                     y[j] = acc
                 }
             }
@@ -257,7 +257,7 @@ public final class EchoSuppressor: Filter, ReferenceSink {
             while idx < yCount { out.append(y[idx]); idx += decimFactor }
         }
         total += x.count
-        state = Array(buf.suffix(L - 1))
+        state = Array(buf.suffix(tapCount - 1))
         return out
     }
 
@@ -362,18 +362,18 @@ public final class EchoSuppressor: Filter, ReferenceSink {
     private func appendCircular(_ buffer: inout [Float], _ writePos: inout Int, _ valid: inout Int,
                                 _ size: Int, _ mono: [Float]) {
         var m = mono
-        var N = m.count
-        if N > size { m = Array(m.suffix(size)); N = size }
-        let end = writePos + N
+        var count = m.count
+        if count > size { m = Array(m.suffix(size)); count = size }
+        let end = writePos + count
         if end <= size {
-            for i in 0..<N { buffer[writePos + i] = m[i] }
+            for i in 0..<count { buffer[writePos + i] = m[i] }
         } else {
             let part1 = size - writePos
             for i in 0..<part1 { buffer[writePos + i] = m[i] }
             for i in 0..<(end - size) { buffer[i] = m[part1 + i] }
         }
         writePos = end % size
-        valid = min(valid + N, size)
+        valid = min(valid + count, size)
     }
 
     private func appendReference(_ mono: [Float]) {
@@ -385,24 +385,24 @@ public final class EchoSuppressor: Filter, ReferenceSink {
     }
 
     private func appendMicHistoryDs(_ mono: [Float]) {
-        let N = mono.count
-        if N >= correlationSamplesDs {
+        let count = mono.count
+        if count >= correlationSamplesDs {
             let tail = Array(mono.suffix(correlationSamplesDs))
             for i in 0..<correlationSamplesDs { micHistDs[i] = tail[i] }
             micHistWriteDs = 0
             micHistValidDs = correlationSamplesDs
             return
         }
-        let end = micHistWriteDs + N
+        let end = micHistWriteDs + count
         if end <= correlationSamplesDs {
-            for i in 0..<N { micHistDs[micHistWriteDs + i] = mono[i] }
+            for i in 0..<count { micHistDs[micHistWriteDs + i] = mono[i] }
         } else {
             let part1 = correlationSamplesDs - micHistWriteDs
             for i in 0..<part1 { micHistDs[micHistWriteDs + i] = mono[i] }
             for i in 0..<(end - correlationSamplesDs) { micHistDs[i] = mono[part1 + i] }
         }
         micHistWriteDs = end % correlationSamplesDs
-        micHistValidDs = min(micHistValidDs + N, correlationSamplesDs)
+        micHistValidDs = min(micHistValidDs + count, correlationSamplesDs)
     }
 
     private func readCircular(_ buffer: [Float], _ writePos: Int, _ size: Int,
@@ -492,8 +492,8 @@ public final class EchoSuppressor: Filter, ReferenceSink {
         let sr = frame.sampleRate
         let channelCount = max(frame.channelCount, 1)
         let monoRaw = EchoSuppressor.toMono(frame)
-        let N = monoRaw.count
-        if N == 0 { return frame }
+        let frameSamples = monoRaw.count
+        if frameSamples == 0 { return frame }
 
         // Downsample for delay estimation, then pre-emphasise both paths.
         let monoDs = decimate(monoRaw, state: &decimStateMic, total: &decimTotalMic)
@@ -515,7 +515,7 @@ public final class EchoSuppressor: Filter, ReferenceSink {
         let refValidSnapshot = refValid
         let samplerateSnapshot = samplerate
         lock.unlock()
-        if refValidSnapshot < N + 100 { return frame }
+        if refValidSnapshot < frameSamples + 100 { return frame }
         if let cur = samplerateSnapshot, cur != sr { return frame }
 
         let doEstimate = (frameCount % estimateEveryN) == 0
@@ -543,12 +543,12 @@ public final class EchoSuppressor: Filter, ReferenceSink {
         if let ds = delaySamplesValue {
             let intDelay = Int((ds).rounded())
             lock.lock()
-            refDelayed = getDelayedReference(intDelay, N)
+            refDelayed = getDelayedReference(intDelay, frameSamples)
             lock.unlock()
         }
 
         // 2. Echo detection and gating.
-        guard let refD = refDelayed, refD.count == N else { return frame }
+        guard let refD = refDelayed, refD.count == frameSamples else { return frame }
 
         let micEnergy = meanSquare(monoPre)
         let refEnergy = meanSquare(refD)
@@ -598,7 +598,7 @@ public final class EchoSuppressor: Filter, ReferenceSink {
 
         let shouldGate = echoCorrelated && !nearEndActive
 
-        let frameDurationMs = Double(N) / sr * 1000.0
+        let frameDurationMs = Double(frameSamples) / sr * 1000.0
         let attackCoeff = 1.0 - exp(-frameDurationMs / attackMs)
         let releaseCoeff = 1.0 - exp(-frameDurationMs / releaseMs)
 
@@ -611,7 +611,7 @@ public final class EchoSuppressor: Filter, ReferenceSink {
             hangoverSamples = Int(hangoverMs / 1000.0 * sr)
         } else if hangoverSamples > 0 {
             targetGain = 0.0
-            hangoverSamples -= N
+            hangoverSamples -= frameSamples
         } else {
             targetGain = 1.0
         }
@@ -633,11 +633,11 @@ public final class EchoSuppressor: Filter, ReferenceSink {
 
         // Comfort-noise injection when fully gated.
         if cngEnabled && currentGain < 0.05 {
-            let cng = getCng(N)
+            let cng = getCng(frameSamples)
             if channelCount == 1 {
-                for i in 0..<N { outSamples[i] += cng[i] }
+                for i in 0..<frameSamples { outSamples[i] += cng[i] }
             } else {
-                for i in 0..<N {
+                for i in 0..<frameSamples {
                     for ch in 0..<channelCount {
                         let idx = i * channelCount + ch
                         outSamples[idx] = min(1.0, max(-1.0, outSamples[idx] + cng[i]))
@@ -652,19 +652,19 @@ public final class EchoSuppressor: Filter, ReferenceSink {
     // MARK: - Delay estimation
 
     private func estimateDelay(refWindow: [Float], micWindow: [Float]) {
-        let M = refWindow.count
-        let Nc = micWindow.count
-        let L = M - Nc + 1
-        if L <= 0 { return }
+        let refCount = refWindow.count
+        let micCount = micWindow.count
+        let lagCount = refCount - micCount + 1
+        if lagCount <= 0 { return }
 
         // Cross-correlation c[k] = sum_j refWindow[k+j] * micWindow[j].
-        var c = [Float](repeating: 0, count: L)
+        var c = [Float](repeating: 0, count: lagCount)
         refWindow.withUnsafeBufferPointer { rp in
             micWindow.withUnsafeBufferPointer { mp in
                 guard let ref = rp.baseAddress, let mic = mp.baseAddress else { return }
-                for k in 0..<L {
+                for k in 0..<lagCount {
                     var dp: Float = 0
-                    vDSP_dotpr(ref + k, 1, mic, 1, &dp, vDSP_Length(Nc))
+                    vDSP_dotpr(ref + k, 1, mic, 1, &dp, vDSP_Length(micCount))
                     c[k] = dp
                 }
             }
@@ -674,18 +674,18 @@ public final class EchoSuppressor: Filter, ReferenceSink {
         if micNorm == 0 { return }
 
         // Sliding window energies via cumulative sum of squares.
-        var cumsum = [Double](repeating: 0, count: M + 1)
-        for i in 0..<M { cumsum[i + 1] = cumsum[i] + Double(refWindow[i]) * Double(refWindow[i]) }
+        var cumsum = [Double](repeating: 0, count: refCount + 1)
+        for i in 0..<refCount { cumsum[i + 1] = cumsum[i] + Double(refWindow[i]) * Double(refWindow[i]) }
 
-        var absCorr = [Double](repeating: 0, count: L)
-        for k in 0..<L {
-            let wn = (cumsum[k + Nc] - cumsum[k]).squareRoot()
+        var absCorr = [Double](repeating: 0, count: lagCount)
+        for k in 0..<lagCount {
+            let wn = (cumsum[k + micCount] - cumsum[k]).squareRoot()
             absCorr[k] = wn == 0 ? 0 : abs(Double(c[k]) / (micNorm * wn))
         }
 
         // Accumulate (reversed) into the decaying correlation accumulator.
         for i in 0..<corrAccDs.count { corrAccDs[i] *= accForget }
-        for i in 0..<L { corrAccDs[i] += absCorr[L - 1 - i] }
+        for i in 0..<lagCount { corrAccDs[i] += absCorr[lagCount - 1 - i] }
         let accScale = 1.0 - accForget
         var accNorm = [Double](repeating: 0, count: corrAccDs.count)
         for i in 0..<corrAccDs.count { accNorm[i] = corrAccDs[i] * accScale }

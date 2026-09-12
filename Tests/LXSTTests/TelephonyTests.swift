@@ -11,7 +11,7 @@ final class TelephonyTests: XCTestCase {
     // MARK: - Primitive name
 
     func testPrimitiveName() {
-        XCTAssertEqual(LXST_TELEPHONY_PRIMITIVE, "telephony")
+        XCTAssertEqual(lxstTelephonyPrimitive, "telephony")
     }
 
     // MARK: - Signalling status codes (Python: Signalling.STATUS_*)
@@ -41,7 +41,7 @@ final class TelephonyTests: XCTestCase {
     // MARK: - PREFERRED_PROFILE marker (Python: Signalling.PREFERRED_PROFILE = 0xFF)
 
     func testSignallingPreferredProfile() {
-        XCTAssertEqual(SIGNALLING_PREFERRED_PROFILE, 0xFF,
+        XCTAssertEqual(signallingPreferredProfile, 0xFF,
                        "PREFERRED_PROFILE must be 0xFF")
     }
 

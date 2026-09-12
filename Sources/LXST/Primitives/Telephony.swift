@@ -3,7 +3,7 @@ import Foundation
 // MARK: - PRIMITIVE_NAME
 
 /// Python: `LXST.Primitives.Telephony.PRIMITIVE_NAME = "telephony"`
-public let LXST_TELEPHONY_PRIMITIVE = "telephony"
+public let lxstTelephonyPrimitive = "telephony"
 
 // MARK: - SignallingStatus
 
@@ -29,13 +29,13 @@ public enum SignallingStatus: UInt8, Equatable, CaseIterable {
 
 /// Marker byte added to `TelephonyProfile.rawValue` to signal a preferred codec profile.
 /// Python: `Signalling.PREFERRED_PROFILE = 0xFF`
-public let SIGNALLING_PREFERRED_PROFILE: UInt8 = 0xFF
+public let signallingPreferredProfile: UInt8 = 0xFF
 
 /// Marker byte added to `CallMode.rawValue` to signal a preferred call mode
 /// (full/half duplex). Composite values (`0xF1`, `0xF2`) sit below
 /// `PREFERRED_PROFILE` (0xFF) so profile and mode composites never overlap.
 /// Python: `Signalling.PREFERRED_MODE = 0xF0`
-public let SIGNALLING_PREFERRED_MODE: UInt8 = 0xF0
+public let signallingPreferredMode: UInt8 = 0xF0
 
 // MARK: - CallMode
 
@@ -159,9 +159,9 @@ public enum TelephonyProfile: UInt8, CaseIterable {
     /// Python: `get_codec(profile)` — returns a fresh codec instance
     public var codec: any Codec {
         switch self {
-        case .bandwidthUltraLow: return Codec2Codec(mode: .codec2_700c)
-        case .bandwidthVeryLow:  return Codec2Codec(mode: .codec2_1600)
-        case .bandwidthLow:      return Codec2Codec(mode: .codec2_3200)
+        case .bandwidthUltraLow: return Codec2Codec(mode: .mode700C)
+        case .bandwidthVeryLow:  return Codec2Codec(mode: .mode1600)
+        case .bandwidthLow:      return Codec2Codec(mode: .mode3200)
         case .qualityMedium:     return OpusCodec(profile: .voiceMedium)
         case .qualityHigh:       return OpusCodec(profile: .voiceHigh)
         case .qualityMax:        return OpusCodec(profile: .voiceMax)
@@ -357,8 +357,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         // Create local delivery destination
         if let dest = try? Destination(identity: identity,
                                        direction: .in, kind: .single,
-                                       appName: APP_NAME,
-                                       aspects: [LXST_TELEPHONY_PRIMITIVE]) {
+                                       appName: appName,
+                                       aspects: [lxstTelephonyPrimitive]) {
             dest.setProofStrategy(.proveNone)
             dest.onLinkEstablished = { [weak self] link in
                 self?.incomingLinkEstablished(link)
@@ -514,7 +514,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
                 callStatus = status
             }
         }
-        // Inherited SignallingReceiver.signal — encodes {FIELD_SIGNALLING: signals}
+        // Inherited SignallingReceiver.signal — encodes {fieldSignalling: signals}
         // and sends it over the link (encrypted with the link key, routed by transport).
         self.signal(signals, to: link)
     }
@@ -560,8 +560,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         callStatus = .calling
         let callDest = try? Destination(identity: identity,
                                         direction: .out, kind: .single,
-                                        appName: APP_NAME,
-                                        aspects: [LXST_TELEPHONY_PRIMITIVE])
+                                        appName: appName,
+                                        aspects: [lxstTelephonyPrimitive])
         guard let dest = callDest else { return }
 
         let link = try? Link.initiate(destination: dest, transport: transport)
@@ -674,7 +674,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         targetBufferFrames = profile.bufferFrames
         if !fromSignalling, let link = activeCall?.link {
             // Python: self.signal(Signalling.PREFERRED_PROFILE + self.active_call.profile, ...)
-            let composite = Int(SIGNALLING_PREFERRED_PROFILE) + Int(profile.rawValue)
+            let composite = Int(signallingPreferredProfile) + Int(profile.rawValue)
             sendSignal(composite, on: link)
         }
         reconfigureTransmitPipeline()
@@ -698,7 +698,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         call.callMode = mode
         if !fromSignalling {
             // Python: self.signal(Signalling.PREFERRED_MODE + self.active_call.call_mode, ...)
-            let composite = Int(SIGNALLING_PREFERRED_MODE) + Int(mode.rawValue)
+            let composite = Int(signallingPreferredMode) + Int(mode.rawValue)
             sendSignal(composite, on: call.link)
         }
         selectCallMode(mode)
@@ -737,7 +737,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
             // preferred codec/duplex-mode is recorded while ringing.
             // Python: first guard of signalling_received (threshold lowered to
             // PREFERRED_MODE in LXST 0.5.0 to allow mode signalling before answer).
-            if call.isIncoming, !call.answered, signal < Int(SIGNALLING_PREFERRED_MODE) {
+            if call.isIncoming, !call.answered, signal < Int(signallingPreferredMode) {
                 return
             }
 
@@ -745,8 +745,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
             // PREFERRED_PROFILE (0xFF) + profile (0x10..0x80) exceeds a single byte.
             // Checked before the mode branch because profile composites (>= 0xFF)
             // are also >= PREFERRED_MODE (0xF0); mode composites (0xF1/0xF2) are not.
-            if signal >= Int(SIGNALLING_PREFERRED_PROFILE) {
-                let profileRaw = signal - Int(SIGNALLING_PREFERRED_PROFILE)
+            if signal >= Int(signallingPreferredProfile) {
+                let profileRaw = signal - Int(signallingPreferredProfile)
                 if profileRaw >= 0, profileRaw <= 0xFF,
                    let profile = TelephonyProfile(rawValue: UInt8(profileRaw)) {
                     if callStatus == .established {
@@ -760,8 +760,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 
             // Mode-preference composite signal (Python: signal >= PREFERRED_MODE).
             // PREFERRED_MODE (0xF0) + mode (0x01/0x02) = 0xF1/0xF2.
-            if signal >= Int(SIGNALLING_PREFERRED_MODE) {
-                let modeRaw = signal - Int(SIGNALLING_PREFERRED_MODE)
+            if signal >= Int(signallingPreferredMode) {
+                let modeRaw = signal - Int(signallingPreferredMode)
                 if modeRaw >= 0, modeRaw <= 0xFF,
                    let mode = CallMode(rawValue: UInt8(modeRaw)) {
                     if callStatus == .established {
@@ -794,9 +794,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
                 if call.isOutgoing {
                     // Python (combined signalling, LXST 0.5.0):
                     // self.signal([PREFERRED_PROFILE+profile, PREFERRED_MODE+call_mode], ...)
-                    let profileComposite = Int(SIGNALLING_PREFERRED_PROFILE) +
+                    let profileComposite = Int(signallingPreferredProfile) +
                                            Int((call.profile ?? .qualityMedium).rawValue)
-                    let modeComposite    = Int(SIGNALLING_PREFERRED_MODE) +
+                    let modeComposite    = Int(signallingPreferredMode) +
                                            Int((call.callMode ?? .defaultMode).rawValue)
                     sendSignal([profileComposite, modeComposite], on: call.link)
                 }
@@ -937,11 +937,11 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// Locking wrapper for callers that do NOT already hold `pipelineLock`
     /// (the `.ringing` and incoming-caller-identified paths). Callers already
     /// holding the lock (`openPipelines`, `resetDiallingPipelines`) must call
-    /// `_prepareDiallingPipelinesLocked()` directly to avoid re-entering the
+    /// `prepareDiallingPipelinesLocked()` directly to avoid re-entering the
     /// non-recursive lock.
     private func prepareDiallingPipelines() {
         pipelineLock.lock(); defer { pipelineLock.unlock() }
-        _prepareDiallingPipelinesLocked()
+        prepareDiallingPipelinesLocked()
     }
 
     /// Builds the receive-side dialling pipeline. Caller MUST hold `pipelineLock`.
@@ -949,7 +949,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// nil-check-then-assign order (audioOutput → receiveMixer → dialTone →
     /// receivePipeline) and every constructor argument are unchanged, so audio/wire
     /// behavior is identical; only the lock discipline around it changed.
-    private func _prepareDiallingPipelinesLocked() {
+    private func prepareDiallingPipelinesLocked() {
         selectCallProfile(activeCall?.profile ?? .qualityMedium)
         selectCallMode(activeCall?.callMode)   // Python: self.__select_call_mode(self.active_call.call_mode)
         if audioOutput    == nil { audioOutput    = LineSink(device: speakerDevice, backend: makeAudioBackend?()) }
@@ -978,7 +978,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         dialTone       = nil
         receivePipeline = nil
         receiveMixer   = nil
-        _prepareDiallingPipelinesLocked()
+        prepareDiallingPipelinesLocked()
         pipelineLock.unlock()
     }
 
@@ -999,7 +999,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         }
         activeCall?.echoSuppressor = suppressor
         activeCall?.filters = filters
-        _prepareDiallingPipelinesLocked()   // openPipelines already holds pipelineLock
+        prepareDiallingPipelinesLocked()   // openPipelines already holds pipelineLock
 
         guard let call = activeCall,
               let rMixer = receiveMixer,

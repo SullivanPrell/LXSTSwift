@@ -130,13 +130,13 @@ final class MixerTests: XCTestCase {
 
     final class MockReferenceSink: ReferenceSink {
         let lock = NSLock()
-        private var _frames: [AudioFrame] = []
-        private var _rates: [Double] = []
+        private var unsafeFrames: [AudioFrame] = []
+        private var unsafeRates: [Double] = []
         var onReceive: (() -> Void)?
-        var frames: [AudioFrame] { lock.lock(); defer { lock.unlock() }; return _frames }
-        var rates: [Double] { lock.lock(); defer { lock.unlock() }; return _rates }
+        var frames: [AudioFrame] { lock.lock(); defer { lock.unlock() }; return unsafeFrames }
+        var rates: [Double] { lock.lock(); defer { lock.unlock() }; return unsafeRates }
         func handleReference(_ frame: AudioFrame, samplerate: Double) {
-            lock.lock(); _frames.append(frame); _rates.append(samplerate); lock.unlock()
+            lock.lock(); unsafeFrames.append(frame); unsafeRates.append(samplerate); lock.unlock()
             onReceive?()
         }
     }
@@ -149,10 +149,10 @@ final class MixerTests: XCTestCase {
         var channels:   Int?   = 1
         var sampleRate: Double = 48000
         private let lock = NSLock()
-        private var _count = 0
-        var count: Int { lock.lock(); defer { lock.unlock() }; return _count }
+        private var unsafeCount = 0
+        var count: Int { lock.lock(); defer { lock.unlock() }; return unsafeCount }
         func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
-            lock.lock(); _count += 1; lock.unlock()
+            lock.lock(); unsafeCount += 1; lock.unlock()
         }
     }
 

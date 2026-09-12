@@ -10,7 +10,7 @@ import Foundation
 ///
 /// Python: `LXST.Codecs.Raw` — header byte RAW = 0x00
 public final class RawCodec: Codec {
-    public static let headerByte: UInt8 = CODEC_RAW
+    public static let headerByte: UInt8 = codecRaw
 
     /// Python: `Raw.BITDEPTHS = ["float16","float32","float64","float128"]`
     public static let bitDepths: [String] = ["float16", "float32", "float64", "float128"]

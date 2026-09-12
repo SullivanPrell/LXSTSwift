@@ -97,11 +97,11 @@ public enum OpusProfile: UInt8, CaseIterable {
 // MARK: - Opus codec constants (Python class-level)
 
 /// Python: `Opus.FRAME_QUANTA_MS = 2.5`
-public let OPUS_FRAME_QUANTA_MS: Double = 2.5
+public let opusFrameQuantaMs: Double = 2.5
 /// Python: `Opus.FRAME_MAX_MS = 60`
-public let OPUS_FRAME_MAX_MS: Double = 60
+public let opusFrameMaxMs: Double = 60
 /// Python: `Opus.VALID_FRAME_MS = [2.5, 5, 10, 20, 40, 60]`
-public let OPUS_VALID_FRAME_MS: [Double] = [2.5, 5, 10, 20, 40, 60]
+public let opusValidFrameMs: [Double] = [2.5, 5, 10, 20, 40, 60]
 
 // MARK: - OpusCodec
 
@@ -112,24 +112,24 @@ public let OPUS_VALID_FRAME_MS: [Double] = [2.5, 5, 10, 20, 40, 60]
 /// `opus_encode_float()` to produce a real Opus bitstream.
 /// Decode: calls `opus_decode_float()` and returns an AudioFrame.
 public final class OpusCodec: Codec {
-    public static let headerByte: UInt8 = CODEC_OPUS
+    public static let headerByte: UInt8 = codecOpus
 
     public var preferredSampleRate: Double? { profile.sampleRate }
-    public var frameQuantaMs:       Double? { OPUS_FRAME_QUANTA_MS }
-    public var frameMaxMs:          Double? { OPUS_FRAME_MAX_MS }
-    public var validFrameMs:        [Double] { OPUS_VALID_FRAME_MS }
+    public var frameQuantaMs:       Double? { opusFrameQuantaMs }
+    public var frameMaxMs:          Double? { opusFrameMaxMs }
+    public var validFrameMs:        [Double] { opusValidFrameMs }
     /// Output channel count. Python: `Opus.channels` — `decode` overwrites it from the sink
     /// (`Opus.py:169-172`), so this is the *decode* side's value; `inputChannels` is the encode
     /// side's, exactly as Python keeps `channels` and `input_channels` apart.
     public var channels: Int? {
-        get { _channels }
+        get { storedChannels }
         set {
-            guard newValue != _channels else { return }
-            _channels = newValue
+            guard newValue != storedChannels else { return }
+            storedChannels = newValue
             invalidateState()
         }
     }
-    private var _channels: Int?
+    private var storedChannels: Int?
 
     /// Python: `Opus.input_channels` — what `encode` shapes its input to. Kept separate from
     /// `channels` so a decode on the same instance cannot silently re-shape a later encode.
@@ -159,7 +159,7 @@ public final class OpusCodec: Codec {
     /// Python: `def __init__(self, profile=PROFILE_VOICE_LOW)`
     public init(profile: OpusProfile = .voiceLow) {
         self.profile          = profile
-        self._channels        = profile.channels
+        self.storedChannels        = profile.channels
         self.inputChannels    = profile.channels
         self.outputSampleRate = profile.sampleRate
         self.bitrateCeiling   = profile.bitrateCeiling
@@ -176,7 +176,7 @@ public final class OpusCodec: Codec {
         guard newProfile != profile else { return }
         profile          = newProfile
         // Python `set_profile` sets both `channels` and `input_channels` from the profile.
-        _channels        = newProfile.channels
+        storedChannels        = newProfile.channels
         inputChannels    = newProfile.channels
         outputSampleRate = newProfile.sampleRate
         bitrateCeiling   = newProfile.bitrateCeiling
@@ -268,7 +268,7 @@ public final class OpusCodec: Codec {
         decoderChannels = ch
         // Python: `self.channels = output_channels` (Opus.py:172). Assigned to the backing store
         // rather than through the setter, which would take `lock` again to invalidate.
-        _channels = ch
+        storedChannels = ch
         return (rate, ch)
     }
 
@@ -313,7 +313,7 @@ public final class OpusCodec: Codec {
         // Max output: 60 ms at the decoder's rate, sized from that rate rather than the
         // profile's — an 8 kHz profile serving a 48 kHz sink needs six times the room, and
         // `opus_decode_float` returns OPUS_BUFFER_TOO_SMALL rather than truncating.
-        let maxSamplesPerCh = Int(rate * OPUS_FRAME_MAX_MS / 1000.0) + 64
+        let maxSamplesPerCh = Int(rate * opusFrameMaxMs / 1000.0) + 64
         let maxTotal = maxSamplesPerCh * ch
         var pcm = [Float](repeating: 0, count: maxTotal)
 

@@ -72,8 +72,8 @@ final class PipelineTests: XCTestCase {
         let lb   = Loopback()
         let sink = MockSink()
         _    = try Pipeline(source: lb, codec: NullCodec(), sink: sink)
-        XCTAssertTrue(lb._sink === sink as AnyObject,
-                      "Pipeline must wire loopback._sink = sink")
+        XCTAssertTrue(lb.downstreamSink === sink as AnyObject,
+                      "Pipeline must wire loopback.downstreamSink = sink")
     }
 
     // MARK: - Dynamic codec switch mid-stream (Python: @codec.setter)

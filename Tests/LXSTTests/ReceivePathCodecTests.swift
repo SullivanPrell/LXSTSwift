@@ -50,7 +50,7 @@ final class ReceivePathCodecTests: XCTestCase {
                                                 channelCount: 1, sampleRate: 24000))
 
         let sink  = RateSink(sampleRate: 48000, channels: 1)
-        let codec = try received(CODEC_OPUS, sink: sink)
+        let codec = try received(codecOpus, sink: sink)
         XCTAssertEqual((codec as? OpusCodec)?.profile, .voiceLow,
                        "sanity: nothing negotiates a profile onto the receive codec — Python "
                        + "builds `frame_codec()` bare too (Network.py:127-128)")
@@ -61,14 +61,14 @@ final class ReceivePathCodecTests: XCTestCase {
 
     /// The same for Codec2, whose default mode is 2400 and whose rate is fixed at 8 kHz.
     func testACodec2ReceiveCodecDecodesAtTheSinkRateOnItsFirstFrame() throws {
-        let sender = Codec2Codec(mode: .codec2_700c)        // Telephone .bandwidthUltraLow
+        let sender = Codec2Codec(mode: .mode700C)        // Telephone .bandwidthUltraLow
         let wire = try sender.encode(AudioFrame(samples: [Float](repeating: 0.1, count: 3200),
                                                 channelCount: 1, sampleRate: 8000))  // 400 ms
 
         let sink  = RateSink(sampleRate: 48000, channels: 1)
-        let codec = try received(CODEC_CODEC2, sink: sink)
+        let codec = try received(codecCodec2, sink: sink)
 
         assertDecoded(try codec.decode(wire), playableBy: sink,
-                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 400)
+                      codecRate: codec2OutputRate, durationMs: 400)
     }
 }

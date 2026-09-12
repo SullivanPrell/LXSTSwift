@@ -99,7 +99,7 @@ final class NetworkTests: XCTestCase {
     /// The composite `PREFERRED_PROFILE + profile` (0xFF + 0x40 = 0x13F) exceeds a
     /// single byte and must encode as a msgpack uint16, matching Python.
     func testSignallingEncodeProfileCompositeWireBytes() {
-        let composite = Int(SIGNALLING_PREFERRED_PROFILE) + Int(TelephonyProfile.qualityMedium.rawValue)
+        let composite = Int(signallingPreferredProfile) + Int(TelephonyProfile.qualityMedium.rawValue)
         XCTAssertEqual(composite, 0x13F)
         let data = SignallingReceiver.encodeSignals([composite])
         // map(1) key(0x00) array(1) uint16(0xCD) 0x01 0x3F
@@ -116,18 +116,18 @@ final class NetworkTests: XCTestCase {
     /// the wire as a plain int. The old code forced it through UInt8, so 0x13F
     /// wrapped to 0x3F and the profile signal was lost.
     func testSignallingRoundTripProfileComposite() {
-        let composite = Int(SIGNALLING_PREFERRED_PROFILE) + Int(TelephonyProfile.qualityHigh.rawValue) // 0x14F
+        let composite = Int(signallingPreferredProfile) + Int(TelephonyProfile.qualityHigh.rawValue) // 0x14F
         XCTAssertGreaterThan(composite, 0xFF, "Composite must exceed a single byte")
         let data = SignallingReceiver.encodeSignals([composite])
         let decoded = SignallingReceiver.decodeSignals(data)
         XCTAssertEqual(decoded, [0x14F])
         // And it must decode back to the originating profile (Telephone's logic):
-        XCTAssertEqual(decoded?.first.map { $0 - Int(SIGNALLING_PREFERRED_PROFILE) },
+        XCTAssertEqual(decoded?.first.map { $0 - Int(signallingPreferredProfile) },
                        Int(TelephonyProfile.qualityHigh.rawValue))
     }
 
     func testSignallingRoundTripMultipleSignals() {
-        let composite = Int(SIGNALLING_PREFERRED_PROFILE) + Int(TelephonyProfile.latencyLow.rawValue)
+        let composite = Int(signallingPreferredProfile) + Int(TelephonyProfile.latencyLow.rawValue)
         let data = SignallingReceiver.encodeSignals([Int(SignallingStatus.ringing.rawValue), composite])
         XCTAssertEqual(SignallingReceiver.decodeSignals(data), [0x04, composite])
     }
@@ -135,15 +135,15 @@ final class NetworkTests: XCTestCase {
     /// Python wraps a scalar `FIELD_SIGNALLING` value in a single-element list.
     func testSignallingDecodeScalarWrapsInList() {
         let data = MsgPack.encode(.map([
-            (.int(Int64(FIELD_SIGNALLING)), .uint(UInt64(SignallingStatus.busy.rawValue)))
+            (.int(Int64(fieldSignalling)), .uint(UInt64(SignallingStatus.busy.rawValue)))
         ]))
         XCTAssertEqual(SignallingReceiver.decodeSignals(data), [0x00])
     }
 
     func testSignallingDecodeNonSignallingReturnsNil() {
-        // A frames packet carries no FIELD_SIGNALLING field.
+        // A frames packet carries no fieldSignalling field.
         let data = MsgPack.encode(.map([
-            (.int(Int64(FIELD_FRAMES)), .bytes(Data([0xFF, 0x01])))
+            (.int(Int64(fieldFrames)), .bytes(Data([0xFF, 0x01])))
         ]))
         XCTAssertNil(SignallingReceiver.decodeSignals(data))
     }
@@ -159,7 +159,7 @@ final class NetworkTests: XCTestCase {
             }
         }
         let receiver = Capturing()
-        let composite = Int(SIGNALLING_PREFERRED_PROFILE) + Int(TelephonyProfile.qualityMax.rawValue)
+        let composite = Int(signallingPreferredProfile) + Int(TelephonyProfile.qualityMax.rawValue)
         let data = SignallingReceiver.encodeSignals([Int(SignallingStatus.ringing.rawValue), composite])
 
         receiver.processSignallingData(data, from: nil)

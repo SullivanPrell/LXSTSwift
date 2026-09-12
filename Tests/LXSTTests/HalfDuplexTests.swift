@@ -14,15 +14,15 @@ final class HalfDuplexTests: XCTestCase {
     // MARK: - Signalling.PREFERRED_MODE constant
 
     func testPreferredModeConstant() {
-        XCTAssertEqual(SIGNALLING_PREFERRED_MODE, 0xF0,
+        XCTAssertEqual(signallingPreferredMode, 0xF0,
                        "Python: Signalling.PREFERRED_MODE = 0xF0")
     }
 
     /// Mode composites (0xF1/0xF2) must sit strictly below PREFERRED_PROFILE
     /// (0xFF) so the receive handler can distinguish them from profile composites.
     func testModeCompositesBelowProfileMarker() {
-        XCTAssertLessThan(Int(SIGNALLING_PREFERRED_MODE) + Int(CallMode.halfDuplex.rawValue),
-                          Int(SIGNALLING_PREFERRED_PROFILE),
+        XCTAssertLessThan(Int(signallingPreferredMode) + Int(CallMode.halfDuplex.rawValue),
+                          Int(signallingPreferredProfile),
                           "Mode composites must be < PREFERRED_PROFILE to avoid overlap")
     }
 
@@ -57,11 +57,11 @@ final class HalfDuplexTests: XCTestCase {
     // MARK: - Combined signalling wire round-trip (Python: 61c2c2b)
 
     /// A combined `[PREFERRED_PROFILE+profile, PREFERRED_MODE+mode]` list must
-    /// encode into one FIELD_SIGNALLING array and decode back to the same two
+    /// encode into one fieldSignalling array and decode back to the same two
     /// composite ints — exactly what a Python 0.5.0 caller emits at ringing.
     func testCombinedProfileAndModeSignalRoundTrip() {
-        let profileComposite = Int(SIGNALLING_PREFERRED_PROFILE) + Int(TelephonyProfile.qualityHigh.rawValue)
-        let modeComposite    = Int(SIGNALLING_PREFERRED_MODE) + Int(CallMode.halfDuplex.rawValue)
+        let profileComposite = Int(signallingPreferredProfile) + Int(TelephonyProfile.qualityHigh.rawValue)
+        let modeComposite    = Int(signallingPreferredMode) + Int(CallMode.halfDuplex.rawValue)
         let data = SignallingReceiver.encodeSignals([profileComposite, modeComposite])
         let decoded = SignallingReceiver.decodeSignals(data)
         XCTAssertEqual(decoded, [profileComposite, modeComposite],
@@ -71,12 +71,12 @@ final class HalfDuplexTests: XCTestCase {
     /// The decoded mode composite must map back to the correct CallMode.
     func testModeCompositeDecodesToMode() {
         for mode in CallMode.available {
-            let composite = Int(SIGNALLING_PREFERRED_MODE) + Int(mode.rawValue)
+            let composite = Int(signallingPreferredMode) + Int(mode.rawValue)
             let data = SignallingReceiver.encodeSignals([composite])
             guard let decoded = SignallingReceiver.decodeSignals(data)?.first else {
                 return XCTFail("mode composite failed to decode")
             }
-            let modeRaw = decoded - Int(SIGNALLING_PREFERRED_MODE)
+            let modeRaw = decoded - Int(signallingPreferredMode)
             XCTAssertEqual(CallMode(rawValue: UInt8(modeRaw)), mode,
                            "PREFERRED_MODE composite must decode back to \(mode)")
         }
@@ -85,10 +85,10 @@ final class HalfDuplexTests: XCTestCase {
     // MARK: - SignallingReceiver.signal list overload (Python: 61c2c2b)
 
     /// The list-accepting `signal(_:to:)` overload must encode the whole list
-    /// into a single FIELD_SIGNALLING array (not one packet per code).
+    /// into a single fieldSignalling array (not one packet per code).
     func testSignalListOverloadEncodesAllCodes() {
-        let signals = [0x04, Int(SIGNALLING_PREFERRED_PROFILE) + 0x40,
-                       Int(SIGNALLING_PREFERRED_MODE) + Int(CallMode.halfDuplex.rawValue)]
+        let signals = [0x04, Int(signallingPreferredProfile) + 0x40,
+                       Int(signallingPreferredMode) + Int(CallMode.halfDuplex.rawValue)]
         let data = SignallingReceiver.encodeSignals(signals)
         XCTAssertEqual(SignallingReceiver.decodeSignals(data), signals,
                        "signal([...]) must carry every code in one packet")

@@ -28,10 +28,10 @@ public final class ToneSource: Source {
     // is stopped from a different thread than the one running the loop). Guard it
     // with a lock so the read/write can't race. Same pattern as `Mixer`.
     private let runLock = NSLock()
-    private var _shouldRun = false
+    private var unsafeShouldRun = false
     public private(set) var shouldRun: Bool {
-        get { runLock.lock(); defer { runLock.unlock() }; return _shouldRun }
-        set { runLock.lock(); _shouldRun = newValue; runLock.unlock() }
+        get { runLock.lock(); defer { runLock.unlock() }; return unsafeShouldRun }
+        set { runLock.lock(); unsafeShouldRun = newValue; runLock.unlock() }
     }
 
     // MARK: - Tone parameters

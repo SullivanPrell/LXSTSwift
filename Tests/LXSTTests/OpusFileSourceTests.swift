@@ -240,20 +240,20 @@ private final class FrameCollector: Sink {
     var sampleRate: Double = 0
 
     private let lock = NSLock()
-    private var _frameCount = 0
-    private var _lastFrame: AudioFrame?
+    private var unsafeFrameCount = 0
+    private var unsafeLastFrame: AudioFrame?
 
     var frameCount: Int {
-        lock.withLock { _frameCount }
+        lock.withLock { unsafeFrameCount }
     }
     var lastFrame: AudioFrame? {
-        lock.withLock { _lastFrame }
+        lock.withLock { unsafeLastFrame }
     }
 
     func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
         lock.withLock {
-            _frameCount += 1
-            _lastFrame = frame
+            unsafeFrameCount += 1
+            unsafeLastFrame = frame
         }
     }
 }

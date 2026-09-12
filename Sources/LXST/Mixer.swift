@@ -44,32 +44,32 @@ public final class Mixer: Source, Sink {
     // adds no audio-path contention. It is also never held together with
     // `insertLock`, so the two locks cannot deadlock.
     private let stateLock = NSLock()
-    private var _gain:          Float = 0.0
-    private var _muted:         Bool  = false
-    private var _shouldRun:     Bool  = false
-    private var _referenceOuts: [any ReferenceSink] = []
+    private var unsafeGain:          Float = 0.0
+    private var unsafeMuted:         Bool  = false
+    private var unsafeShouldRun:     Bool  = false
+    private var unsafeReferenceOuts: [any ReferenceSink] = []
 
     /// dB offset applied to the mixed output. Python: `gain = 0.0`
     public var gain: Float {
-        get { stateLock.lock(); defer { stateLock.unlock() }; return _gain }
-        set { stateLock.lock(); _gain = newValue; stateLock.unlock() }
+        get { stateLock.lock(); defer { stateLock.unlock() }; return unsafeGain }
+        set { stateLock.lock(); unsafeGain = newValue; stateLock.unlock() }
     }
     /// Whether this mixer is muted. Python: `muted = False`
     public var muted: Bool {
-        get { stateLock.lock(); defer { stateLock.unlock() }; return _muted }
-        set { stateLock.lock(); _muted = newValue; stateLock.unlock() }
+        get { stateLock.lock(); defer { stateLock.unlock() }; return unsafeMuted }
+        set { stateLock.lock(); unsafeMuted = newValue; stateLock.unlock() }
     }
     /// Whether the mix loop is running. Python: `should_run`.
     public private(set) var shouldRun: Bool {
-        get { stateLock.lock(); defer { stateLock.unlock() }; return _shouldRun }
-        set { stateLock.lock(); _shouldRun = newValue; stateLock.unlock() }
+        get { stateLock.lock(); defer { stateLock.unlock() }; return unsafeShouldRun }
+        set { stateLock.lock(); unsafeShouldRun = newValue; stateLock.unlock() }
     }
 
     /// Reference outputs — each receives every mixed (pre-codec) frame, for use
     /// as an echo-cancellation reference signal. Python: `Mixer.reference_outs`
     public var referenceOuts: [any ReferenceSink] {
-        get { stateLock.lock(); defer { stateLock.unlock() }; return _referenceOuts }
-        set { stateLock.lock(); _referenceOuts = newValue; stateLock.unlock() }
+        get { stateLock.lock(); defer { stateLock.unlock() }; return unsafeReferenceOuts }
+        set { stateLock.lock(); unsafeReferenceOuts = newValue; stateLock.unlock() }
     }
 
     private var incomingFrames: [ObjectIdentifier: [AudioFrame]] = [:]
@@ -90,7 +90,7 @@ public final class Mixer: Source, Sink {
         self.sampleRate    = sampleRate ?? 48000
         self.codec  = codec
         self.sink   = sink
-        self._gain  = gain
+        self.unsafeGain  = gain
     }
 
     // MARK: - Gain and mute (Python: set_gain, mute, unmute)

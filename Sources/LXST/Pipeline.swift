@@ -12,15 +12,15 @@ public final class Pipeline {
     /// The active codec. Assigning a new value switches codecs mid-stream.
     /// Python: `@codec.setter` — replaces codec without dropping frames.
     public var codec: any Codec {
-        get { source.codec ?? _codec }
+        get { source.codec ?? storedCodec }
         set {
-            _codec         = newValue
+            storedCodec         = newValue
             source.codec   = newValue
             newValue.sink  = sink
             newValue.source = source
         }
     }
-    private var _codec: any Codec
+    private var storedCodec: any Codec
 
     /// Whether the pipeline is currently running.
     /// Python: `Pipeline.running` property.
@@ -32,7 +32,7 @@ public final class Pipeline {
     public init(source: any Source, codec: any Codec, sink: any Sink) throws {
         self.source = source
         self.sink   = sink
-        self._codec = codec
+        self.storedCodec = codec
 
         // Wire up references (matches Python @codec.setter order)
         source.pipeline = self
@@ -47,7 +47,7 @@ public final class Pipeline {
         }
         // Python: `if isinstance(source, Loopback): source._sink = sink`
         if let loopback = source as? Loopback {
-            loopback._sink = sink
+            loopback.downstreamSink = sink
         }
         // Python: `if isinstance(sink, Packetizer): sink.source = source`
         if let pkt = sink as? Packetizer {

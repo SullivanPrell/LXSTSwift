@@ -3,7 +3,7 @@ import Foundation
 /// Pass-through codec — encode and decode are identity operations.
 /// Python: `LXST.Codecs.Null` — header byte NULL = 0xFF
 public final class NullCodec: Codec {
-    public static let headerByte: UInt8 = CODEC_NULL
+    public static let headerByte: UInt8 = codecNull
 
     public var preferredSampleRate: Double? { nil }
     public var frameQuantaMs: Double?       { nil }

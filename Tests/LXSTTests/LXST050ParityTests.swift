@@ -40,7 +40,7 @@ final class LXST050ParityTests: XCTestCase {
     func testCodecDescriptionsMatchPythonFormat() {
         XCTAssertEqual(NullCodec().description, "<LXST/NullCodec>")
         XCTAssertEqual(OpusCodec(profile: .voiceLow).description, "<LXST/Opus @ Voice, Low>")
-        XCTAssertEqual(Codec2Codec(mode: .codec2_3200).description, "<LXST/Codec2 @ 3.20 Kbps>")
+        XCTAssertEqual(Codec2Codec(mode: .mode3200).description, "<LXST/Codec2 @ 3.20 Kbps>")
 
         // Raw: channels * bitdepth * 48000 → 1 * 16 * 48000 = 768000 bps
         let raw = RawCodec()

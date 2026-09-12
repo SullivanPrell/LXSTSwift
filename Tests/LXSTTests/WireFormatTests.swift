@@ -5,69 +5,69 @@ import XCTest
 /// Every value is verified against the Python 0.4.6 reference.
 final class WireFormatTests: XCTestCase {
 
-    // MARK: - APP_NAME
+    // MARK: - appName
 
     func testAppName() {
-        XCTAssertEqual(APP_NAME, "lxst",
-                       "APP_NAME must be 'lxst' (Python: LXST.APP_NAME = 'lxst')")
+        XCTAssertEqual(appName, "lxst",
+                       "appName must be 'lxst' (Python: LXST.APP_NAME = 'lxst')")
     }
 
     // MARK: - Field keys (Python: LXST.Network.FIELD_SIGNALLING / FIELD_FRAMES)
 
     func testFieldSignalling() {
-        XCTAssertEqual(FIELD_SIGNALLING, 0x00,
-                       "FIELD_SIGNALLING must be 0x00")
+        XCTAssertEqual(fieldSignalling, 0x00,
+                       "fieldSignalling must be 0x00")
     }
 
     func testFieldFrames() {
-        XCTAssertEqual(FIELD_FRAMES, 0x01,
-                       "FIELD_FRAMES must be 0x01")
+        XCTAssertEqual(fieldFrames, 0x01,
+                       "fieldFrames must be 0x01")
     }
 
     // MARK: - Codec header bytes (Python: LXST.Codecs.NULL/RAW/OPUS/CODEC2)
 
     func testCodecNullHeaderByte() {
-        XCTAssertEqual(CODEC_NULL,   0xFF, "NULL codec header must be 0xFF")
+        XCTAssertEqual(codecNull,   0xFF, "NULL codec header must be 0xFF")
     }
     func testCodecRawHeaderByte() {
-        XCTAssertEqual(CODEC_RAW,    0x00, "RAW codec header must be 0x00")
+        XCTAssertEqual(codecRaw,    0x00, "RAW codec header must be 0x00")
     }
     func testCodecOpusHeaderByte() {
-        XCTAssertEqual(CODEC_OPUS,   0x01, "OPUS codec header must be 0x01")
+        XCTAssertEqual(codecOpus,   0x01, "OPUS codec header must be 0x01")
     }
     func testCodecCodec2HeaderByte() {
-        XCTAssertEqual(CODEC_CODEC2, 0x02, "CODEC2 codec header must be 0x02")
+        XCTAssertEqual(codecCodec2, 0x02, "CODEC2 codec header must be 0x02")
     }
 
     // MARK: - Codec type class headerByte properties
 
     func testNullCodecStaticHeaderByte() {
-        XCTAssertEqual(NullCodec.headerByte,   CODEC_NULL)
+        XCTAssertEqual(NullCodec.headerByte,   codecNull)
     }
     func testRawCodecStaticHeaderByte() {
-        XCTAssertEqual(RawCodec.headerByte,    CODEC_RAW)
+        XCTAssertEqual(RawCodec.headerByte,    codecRaw)
     }
     func testOpusCodecStaticHeaderByte() {
-        XCTAssertEqual(OpusCodec.headerByte,   CODEC_OPUS)
+        XCTAssertEqual(OpusCodec.headerByte,   codecOpus)
     }
     func testCodec2CodecStaticHeaderByte() {
-        XCTAssertEqual(Codec2Codec.headerByte, CODEC_CODEC2)
+        XCTAssertEqual(Codec2Codec.headerByte, codecCodec2)
     }
 
     // MARK: - codecHeaderByte() / codecType() dispatch
 
     func testCodecHeaderByteDispatch() {
-        XCTAssertEqual(codecHeaderByte(for: NullCodec.self),   CODEC_NULL)
-        XCTAssertEqual(codecHeaderByte(for: RawCodec.self),    CODEC_RAW)
-        XCTAssertEqual(codecHeaderByte(for: OpusCodec.self),   CODEC_OPUS)
-        XCTAssertEqual(codecHeaderByte(for: Codec2Codec.self), CODEC_CODEC2)
+        XCTAssertEqual(codecHeaderByte(for: NullCodec.self),   codecNull)
+        XCTAssertEqual(codecHeaderByte(for: RawCodec.self),    codecRaw)
+        XCTAssertEqual(codecHeaderByte(for: OpusCodec.self),   codecOpus)
+        XCTAssertEqual(codecHeaderByte(for: Codec2Codec.self), codecCodec2)
     }
 
     func testCodecTypeDispatch() {
-        XCTAssertTrue(codecType(for: CODEC_NULL)   === NullCodec.self)
-        XCTAssertTrue(codecType(for: CODEC_RAW)    === RawCodec.self)
-        XCTAssertTrue(codecType(for: CODEC_OPUS)   === OpusCodec.self)
-        XCTAssertTrue(codecType(for: CODEC_CODEC2) === Codec2Codec.self)
+        XCTAssertTrue(codecType(for: codecNull)   === NullCodec.self)
+        XCTAssertTrue(codecType(for: codecRaw)    === RawCodec.self)
+        XCTAssertTrue(codecType(for: codecOpus)   === OpusCodec.self)
+        XCTAssertTrue(codecType(for: codecCodec2) === Codec2Codec.self)
     }
 
     func testCodecTypeReturnsNilForUnknown() {

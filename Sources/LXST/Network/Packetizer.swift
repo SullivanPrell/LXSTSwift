@@ -62,7 +62,7 @@ public final class Packetizer: RemoteSink {
 
         // Determine codec from the source
         let codec = source?.codec ?? self.source?.codec
-        let headerByte = codec.map { type(of: $0).headerByte } ?? CODEC_NULL
+        let headerByte = codec.map { type(of: $0).headerByte } ?? codecNull
 
         do {
             let encoded = try codec?.encode(frame) ?? {
@@ -76,9 +76,9 @@ public final class Packetizer: RemoteSink {
             var frameBytes = Data([headerByte])
             frameBytes.append(encoded)
 
-            // Msgpack: {FIELD_FRAMES: frameBytes}
+            // Msgpack: {fieldFrames: frameBytes}
             let packetData = MsgPack.encode(.map([
-                (.int(Int64(FIELD_FRAMES)), .bytes(frameBytes))
+                (.int(Int64(fieldFrames)), .bytes(frameBytes))
             ]))
 
             if let link = dest as? Link {

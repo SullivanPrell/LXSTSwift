@@ -124,9 +124,9 @@ final class CodecTests: XCTestCase {
     }
 
     func testOpusFrameConstants() {
-        XCTAssertEqual(OPUS_FRAME_QUANTA_MS, 2.5)
-        XCTAssertEqual(OPUS_FRAME_MAX_MS,    60.0)
-        XCTAssertEqual(OPUS_VALID_FRAME_MS,  [2.5, 5.0, 10.0, 20.0, 40.0, 60.0])
+        XCTAssertEqual(opusFrameQuantaMs, 2.5)
+        XCTAssertEqual(opusFrameMaxMs,    60.0)
+        XCTAssertEqual(opusValidFrameMs,  [2.5, 5.0, 10.0, 20.0, 40.0, 60.0])
     }
 
     func testOpusCodecDefaultProfile() {
@@ -137,55 +137,55 @@ final class CodecTests: XCTestCase {
 
     func testOpusCodecFrameQuantaMs() {
         let c = OpusCodec()
-        XCTAssertEqual(c.frameQuantaMs, OPUS_FRAME_QUANTA_MS)
-        XCTAssertEqual(c.frameMaxMs,    OPUS_FRAME_MAX_MS)
-        XCTAssertEqual(c.validFrameMs,  OPUS_VALID_FRAME_MS)
+        XCTAssertEqual(c.frameQuantaMs, opusFrameQuantaMs)
+        XCTAssertEqual(c.frameMaxMs,    opusFrameMaxMs)
+        XCTAssertEqual(c.validFrameMs,  opusValidFrameMs)
     }
 
     // MARK: - Codec2 constants (Python: Codec2.CODEC2_* and MODE_HEADERS)
 
     func testCodec2ModeValues() {
-        XCTAssertEqual(Codec2Mode.codec2_700c.rawValue, 700)
-        XCTAssertEqual(Codec2Mode.codec2_1200.rawValue, 1200)
-        XCTAssertEqual(Codec2Mode.codec2_1300.rawValue, 1300)
-        XCTAssertEqual(Codec2Mode.codec2_1400.rawValue, 1400)
-        XCTAssertEqual(Codec2Mode.codec2_1600.rawValue, 1600)
-        XCTAssertEqual(Codec2Mode.codec2_2400.rawValue, 2400)
-        XCTAssertEqual(Codec2Mode.codec2_3200.rawValue, 3200)
+        XCTAssertEqual(Codec2Mode.mode700C.rawValue, 700)
+        XCTAssertEqual(Codec2Mode.mode1200.rawValue, 1200)
+        XCTAssertEqual(Codec2Mode.mode1300.rawValue, 1300)
+        XCTAssertEqual(Codec2Mode.mode1400.rawValue, 1400)
+        XCTAssertEqual(Codec2Mode.mode1600.rawValue, 1600)
+        XCTAssertEqual(Codec2Mode.mode2400.rawValue, 2400)
+        XCTAssertEqual(Codec2Mode.mode3200.rawValue, 3200)
     }
 
     func testCodec2ModeHeaderBytes() {
         // Python: Codec2.MODE_HEADERS
-        XCTAssertEqual(Codec2Mode.codec2_700c.headerByte, 0x00)
-        XCTAssertEqual(Codec2Mode.codec2_1200.headerByte, 0x01)
-        XCTAssertEqual(Codec2Mode.codec2_1300.headerByte, 0x02)
-        XCTAssertEqual(Codec2Mode.codec2_1400.headerByte, 0x03)
-        XCTAssertEqual(Codec2Mode.codec2_1600.headerByte, 0x04)
-        XCTAssertEqual(Codec2Mode.codec2_2400.headerByte, 0x05)
-        XCTAssertEqual(Codec2Mode.codec2_3200.headerByte, 0x06)
+        XCTAssertEqual(Codec2Mode.mode700C.headerByte, 0x00)
+        XCTAssertEqual(Codec2Mode.mode1200.headerByte, 0x01)
+        XCTAssertEqual(Codec2Mode.mode1300.headerByte, 0x02)
+        XCTAssertEqual(Codec2Mode.mode1400.headerByte, 0x03)
+        XCTAssertEqual(Codec2Mode.mode1600.headerByte, 0x04)
+        XCTAssertEqual(Codec2Mode.mode2400.headerByte, 0x05)
+        XCTAssertEqual(Codec2Mode.mode3200.headerByte, 0x06)
     }
 
     func testCodec2ModeFromHeaderByte() {
         // Python: Codec2.HEADER_MODES
-        XCTAssertEqual(Codec2Mode.from(headerByte: 0x00), .codec2_700c)
-        XCTAssertEqual(Codec2Mode.from(headerByte: 0x06), .codec2_3200)
+        XCTAssertEqual(Codec2Mode.from(headerByte: 0x00), .mode700C)
+        XCTAssertEqual(Codec2Mode.from(headerByte: 0x06), .mode3200)
         XCTAssertNil(Codec2Mode.from(headerByte: 0x07))
     }
 
     func testCodec2Constants() {
-        XCTAssertEqual(CODEC2_INPUT_RATE,     8000.0)  // Python: Codec2.INPUT_RATE
-        XCTAssertEqual(CODEC2_OUTPUT_RATE,    8000.0)  // Python: Codec2.OUTPUT_RATE
-        XCTAssertEqual(CODEC2_FRAME_QUANTA_MS, 40.0)  // Python: Codec2.FRAME_QUANTA_MS
+        XCTAssertEqual(codec2InputRate,     8000.0)  // Python: Codec2.INPUT_RATE
+        XCTAssertEqual(codec2OutputRate,    8000.0)  // Python: Codec2.OUTPUT_RATE
+        XCTAssertEqual(codec2FrameQuantaMs, 40.0)  // Python: Codec2.FRAME_QUANTA_MS
     }
 
     func testCodec2DefaultMode() {
         // Python: `def __init__(self, mode=CODEC2_2400)`
         let c = Codec2Codec()
-        XCTAssertEqual(c.mode, .codec2_2400)
+        XCTAssertEqual(c.mode, .mode2400)
     }
 
     func testCodec2EncodeProducesNonEmptyData() throws {
-        let c = Codec2Codec(mode: .codec2_2400)
+        let c = Codec2Codec(mode: .mode2400)
         // One 40 ms frame @ 8 kHz = 320 samples
         let samples = [Float](repeating: 0.1, count: 320)
         let frame   = AudioFrame(samples: samples, channelCount: 1, sampleRate: 8000)
@@ -195,11 +195,11 @@ final class CodecTests: XCTestCase {
     }
 
     func testCodec2EncodedFirstByteIsModeHeader() throws {
-        let c = Codec2Codec(mode: .codec2_2400)
+        let c = Codec2Codec(mode: .mode2400)
         let samples = [Float](repeating: 0.0, count: 320)
         let frame   = AudioFrame(samples: samples, channelCount: 1, sampleRate: 8000)
         let encoded = try c.encode(frame)
-        XCTAssertEqual(encoded[encoded.startIndex], Codec2Mode.codec2_2400.headerByte,
+        XCTAssertEqual(encoded[encoded.startIndex], Codec2Mode.mode2400.headerByte,
                        "First byte of encoded data must be the mode header byte (0x05 for 2400)")
     }
 
@@ -208,7 +208,7 @@ final class CodecTests: XCTestCase {
     /// the *native* 320 samples, so the missing conversion — and the relabelling that stood in
     /// for it — was unobservable.
     func testCodec2EncodeDecodeRoundTripPreservesFrameLength() throws {
-        let c = Codec2Codec(mode: .codec2_2400)
+        let c = Codec2Codec(mode: .mode2400)
         let sink = RateSink(sampleRate: 48000, channels: 1)
         c.sink = sink
         // One 40 ms frame @ 8 kHz = 320 samples
@@ -218,14 +218,14 @@ final class CodecTests: XCTestCase {
         let decoded = try c.decode(encoded)
 
         assertDecoded(decoded, playableBy: sink,
-                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 40)
+                      codecRate: codec2OutputRate, durationMs: 40)
     }
 
     /// The conversion has to be a conversion, not a pad. `bugs/018`'s worked example at
     /// `bandwidthUltraLow` is "3200 real samples at the head, 16000 samples of silence", which
     /// satisfies any assertion that only counts samples.
     func testCodec2DecodeFillsTheWholeFrameNotJustItsHead() throws {
-        let c = Codec2Codec(mode: .codec2_3200)
+        let c = Codec2Codec(mode: .mode3200)
         let sink = RateSink(sampleRate: 48000, channels: 1)
         c.sink = sink
 
@@ -236,21 +236,21 @@ final class CodecTests: XCTestCase {
         let decoded = try c.decode(try c.encode(frame))
 
         assertDecoded(decoded, playableBy: sink,
-                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 400)
+                      codecRate: codec2OutputRate, durationMs: 400)
         assertEnergyIsSpreadAcrossTheFrame(decoded)
     }
 
     /// A sink at the codec's own rate must not be resampled — the reference gates the conversion
     /// on `self.sink.samplerate != self.OUTPUT_RATE` (`Codec2.py:116`).
     func testCodec2DecodeAtTheCodecsOwnRateIsUnconverted() throws {
-        let c = Codec2Codec(mode: .codec2_2400)
-        c.sink = RateSink(sampleRate: CODEC2_OUTPUT_RATE, channels: 1)
+        let c = Codec2Codec(mode: .mode2400)
+        c.sink = RateSink(sampleRate: codec2OutputRate, channels: 1)
         let frame = AudioFrame(samples: [Float](repeating: 0.2, count: 320),
                                channelCount: 1, sampleRate: 8000)
         let decoded = try c.decode(try c.encode(frame))
 
         XCTAssertEqual(decoded.sampleCount, 320, "an 8 kHz sink gets codec2's native output")
-        XCTAssertEqual(decoded.sampleRate, CODEC2_OUTPUT_RATE)
+        XCTAssertEqual(decoded.sampleRate, codec2OutputRate)
     }
 
     func testCodec2AllModesEncodeWithoutError() throws {

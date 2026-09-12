@@ -27,11 +27,11 @@ final class PowerDBGainParityTests: XCTestCase {
         var channels:   Int?   = 1
         var sampleRate: Double = 48000
         private let lock = NSLock()
-        private var _frames: [AudioFrame] = []
+        private var unsafeFrames: [AudioFrame] = []
         var onReceive: (() -> Void)?
-        var frames: [AudioFrame] { lock.lock(); defer { lock.unlock() }; return _frames }
+        var frames: [AudioFrame] { lock.lock(); defer { lock.unlock() }; return unsafeFrames }
         func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
-            lock.lock(); _frames.append(frame); lock.unlock()
+            lock.lock(); unsafeFrames.append(frame); lock.unlock()
             onReceive?()
         }
     }

@@ -23,7 +23,7 @@ public final class Loopback: Source, Sink {
     public var channels: Int? = nil
 
     // Internal downstream sink (set by Pipeline when wired as a sink)
-    internal var _sink: (any Sink)?
+    internal var downstreamSink: (any Sink)?
 
     /// Python: `def __init__(self, target_frame_ms=70, codec=None, sink=None)`
     public init(targetFrameMs: Double = 70,
@@ -31,24 +31,24 @@ public final class Loopback: Source, Sink {
                 sink: (any Sink)? = nil) {
         self.targetFrameMs = targetFrameMs
         self.codec  = codec
-        self._sink  = sink
+        self.downstreamSink  = sink
     }
 
     // MARK: - Source lifecycle
 
     public func start() { shouldRun = true }
     public func stop()  { shouldRun = false }
-    public func release() { stop(); codec = nil; sink = nil; _sink = nil }
+    public func release() { stop(); codec = nil; sink = nil; downstreamSink = nil }
 
     // MARK: - Sink protocol
 
     /// Python: `Loopback.can_receive(from_source=None)` — delegates to downstream sink
     public func canReceive(from source: (any Source)?) -> Bool {
-        _sink?.canReceive(from: source) ?? true
+        downstreamSink?.canReceive(from: source) ?? true
     }
 
     public func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
-        _sink?.handleFrame(frame, from: self)
+        downstreamSink?.handleFrame(frame, from: self)
     }
 }
 

@@ -106,9 +106,9 @@ final class ParityGapTests: XCTestCase {
     // MARK: - Codec2Codec.setMode
 
     func testCodec2SetMode() {
-        let c = Codec2Codec(mode: .codec2_2400)
-        c.setMode(.codec2_700c)
-        XCTAssertEqual(c.mode, .codec2_700c,
+        let c = Codec2Codec(mode: .mode2400)
+        c.setMode(.mode700C)
+        XCTAssertEqual(c.mode, .mode700C,
                        "setMode must update the active mode")
     }
 
@@ -138,26 +138,26 @@ final class ParityGapTests: XCTestCase {
     /// encoded at a *different* mode (3200 — a different bytes-per-frame), by
     /// reading the wire header and adopting that mode.
     func testCodec2DecodeAdoptsWireModeHeaderDifferentBPF() throws {
-        let sender = Codec2Codec(mode: .codec2_3200)
+        let sender = Codec2Codec(mode: .mode3200)
         let input  = [Float](repeating: 0.15, count: 320)   // 40 ms @ 8 kHz
         let frame  = AudioFrame(samples: input, channelCount: 1, sampleRate: 8000)
         let wire   = try sender.encode(frame)
-        XCTAssertEqual(wire[wire.startIndex], Codec2Mode.codec2_3200.headerByte,
+        XCTAssertEqual(wire[wire.startIndex], Codec2Mode.mode3200.headerByte,
                        "sanity: wire header announces mode 3200 (0x06)")
 
-        let receiver = Codec2Codec()   // default .codec2_2400
+        let receiver = Codec2Codec()   // default .mode2400
         let sink     = playbackSink()
         receiver.sink = sink
         let decoded  = try receiver.decode(wire)
 
-        XCTAssertEqual(receiver.mode, .codec2_3200,
+        XCTAssertEqual(receiver.mode, .mode3200,
                        "decode must adopt the wire header's mode (Python: set_mode)")
         // Adopting mode 3200 (160 samples/frame) for two frames' worth of bytes
         // must recover the original 40 ms. The pre-fix decoder threw.
         assertDecoded(decoded, playableBy: sink,
-                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 40)
+                      codecRate: codec2OutputRate, durationMs: 40)
 
-        let native = Codec2Codec(mode: .codec2_3200)
+        let native = Codec2Codec(mode: .mode3200)
         native.sink = sink
         XCTAssertEqual(decoded.sampleCount, try native.decode(wire).sampleCount,
                        "sample count must match a native mode-3200 decode")
@@ -167,22 +167,22 @@ final class ParityGapTests: XCTestCase {
     /// the receiver's default (2400), so a mis-adopted mode would also yield the
     /// wrong sample count.
     func testCodec2DecodeAdoptsWireModeHeaderDifferentSPF() throws {
-        let sender = Codec2Codec(mode: .codec2_700c)
+        let sender = Codec2Codec(mode: .mode700C)
         let input  = [Float](repeating: -0.2, count: 320)
         let frame  = AudioFrame(samples: input, channelCount: 1, sampleRate: 8000)
         let wire   = try sender.encode(frame)
 
-        let receiver = Codec2Codec()   // default .codec2_2400
+        let receiver = Codec2Codec()   // default .mode2400
         let sink     = playbackSink()
         receiver.sink = sink
         let decoded  = try receiver.decode(wire)
 
-        XCTAssertEqual(receiver.mode, .codec2_700c,
+        XCTAssertEqual(receiver.mode, .mode700C,
                        "decode must adopt mode 700C from the wire header")
         assertDecoded(decoded, playableBy: sink,
-                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 40)
+                      codecRate: codec2OutputRate, durationMs: 40)
 
-        let native = Codec2Codec(mode: .codec2_700c)
+        let native = Codec2Codec(mode: .mode700C)
         native.sink = sink
         XCTAssertEqual(decoded.sampleCount, try native.decode(wire).sampleCount,
                        "sample count must match a native mode-700C decode")
@@ -191,19 +191,19 @@ final class ParityGapTests: XCTestCase {
     /// A frame already at the receiver's current mode still decodes (regression
     /// guard: the header path must not disturb the common same-mode case).
     func testCodec2DecodeSameModeStillWorks() throws {
-        let c     = Codec2Codec(mode: .codec2_2400)
+        let c     = Codec2Codec(mode: .mode2400)
         let input = [Float](repeating: 0.2, count: 320)
         let frame = AudioFrame(samples: input, channelCount: 1, sampleRate: 8000)
         let wire  = try c.encode(frame)
 
-        let receiver = Codec2Codec(mode: .codec2_2400)
+        let receiver = Codec2Codec(mode: .mode2400)
         let sink     = playbackSink()
         receiver.sink = sink
         let decoded  = try receiver.decode(wire)
-        XCTAssertEqual(receiver.mode, .codec2_2400,
+        XCTAssertEqual(receiver.mode, .mode2400,
                        "same-mode decode must leave the mode unchanged")
         assertDecoded(decoded, playableBy: sink,
-                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 40)
+                      codecRate: codec2OutputRate, durationMs: 40)
     }
 
     /// An unrecognised header byte keeps the current mode and decodes the rest,
@@ -212,20 +212,20 @@ final class ParityGapTests: XCTestCase {
         // Encode at 2400, then overwrite the header byte with an invalid mode
         // marker (0x07 is not in HEADER_MODES). The remaining bytes are still a
         // valid 2400 payload, so a receiver at 2400 must decode them as 2400.
-        let c     = Codec2Codec(mode: .codec2_2400)
+        let c     = Codec2Codec(mode: .mode2400)
         let input = [Float](repeating: 0.1, count: 320)
         let frame = AudioFrame(samples: input, channelCount: 1, sampleRate: 8000)
         var wire  = try c.encode(frame)
         wire[wire.startIndex] = 0x07   // unknown header
 
-        let receiver = Codec2Codec(mode: .codec2_2400)
+        let receiver = Codec2Codec(mode: .mode2400)
         let sink     = playbackSink()
         receiver.sink = sink
         let decoded  = try receiver.decode(wire)
-        XCTAssertEqual(receiver.mode, .codec2_2400,
+        XCTAssertEqual(receiver.mode, .mode2400,
                        "unknown header must leave the current mode unchanged")
         assertDecoded(decoded, playableBy: sink,
-                      codecRate: CODEC2_OUTPUT_RATE, durationMs: 40)
+                      codecRate: codec2OutputRate, durationMs: 40)
     }
 
     // MARK: - get_backend() module-level function

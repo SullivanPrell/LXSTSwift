@@ -6,26 +6,26 @@ import CCodec2
 /// Codec2 voice mode, matching Python `Codec2.CODEC2_*` constants exactly.
 /// Python: `LXST.Codecs.Codec2`
 public enum Codec2Mode: Int, CaseIterable {
-    case codec2_700c = 700    // Python: CODEC2_700C
-    case codec2_1200 = 1200   // Python: CODEC2_1200
-    case codec2_1300 = 1300   // Python: CODEC2_1300
-    case codec2_1400 = 1400   // Python: CODEC2_1400
-    case codec2_1600 = 1600   // Python: CODEC2_1600
-    case codec2_2400 = 2400   // Python: CODEC2_2400
-    case codec2_3200 = 3200   // Python: CODEC2_3200
+    case mode700C = 700    // Python: CODEC2_700C
+    case mode1200 = 1200   // Python: CODEC2_1200
+    case mode1300 = 1300   // Python: CODEC2_1300
+    case mode1400 = 1400   // Python: CODEC2_1400
+    case mode1600 = 1600   // Python: CODEC2_1600
+    case mode2400 = 2400   // Python: CODEC2_2400
+    case mode3200 = 3200   // Python: CODEC2_3200
 
     /// C-library mode constant (codec2.h: CODEC2_MODE_*).
     /// Python: `Codec2.MODE_HEADERS` maps Python mode int → header byte,
     /// but the C library uses its own ordering. We map our enum → C constant.
     internal var cMode: Int32 {
         switch self {
-        case .codec2_3200: return CODEC2_MODE_3200   // 0
-        case .codec2_2400: return CODEC2_MODE_2400   // 1
-        case .codec2_1600: return CODEC2_MODE_1600   // 2
-        case .codec2_1400: return CODEC2_MODE_1400   // 3
-        case .codec2_1300: return CODEC2_MODE_1300   // 4
-        case .codec2_1200: return CODEC2_MODE_1200   // 5
-        case .codec2_700c: return CODEC2_MODE_700C   // 8
+        case .mode3200: return CODEC2_MODE_3200   // 0
+        case .mode2400: return CODEC2_MODE_2400   // 1
+        case .mode1600: return CODEC2_MODE_1600   // 2
+        case .mode1400: return CODEC2_MODE_1400   // 3
+        case .mode1300: return CODEC2_MODE_1300   // 4
+        case .mode1200: return CODEC2_MODE_1200   // 5
+        case .mode700C: return CODEC2_MODE_700C   // 8
         }
     }
 
@@ -33,13 +33,13 @@ public enum Codec2Mode: Int, CaseIterable {
     /// Python: `Codec2.MODE_HEADERS`
     public var headerByte: UInt8 {
         switch self {
-        case .codec2_700c: return 0x00
-        case .codec2_1200: return 0x01
-        case .codec2_1300: return 0x02
-        case .codec2_1400: return 0x03
-        case .codec2_1600: return 0x04
-        case .codec2_2400: return 0x05
-        case .codec2_3200: return 0x06
+        case .mode700C: return 0x00
+        case .mode1200: return 0x01
+        case .mode1300: return 0x02
+        case .mode1400: return 0x03
+        case .mode1600: return 0x04
+        case .mode2400: return 0x05
+        case .mode3200: return 0x06
         }
     }
 
@@ -53,11 +53,11 @@ public enum Codec2Mode: Int, CaseIterable {
 // MARK: - Codec2 constants (Python class-level)
 
 /// Python: `Codec2.INPUT_RATE = 8000`
-public let CODEC2_INPUT_RATE: Double = 8000
+public let codec2InputRate: Double = 8000
 /// Python: `Codec2.OUTPUT_RATE = 8000`
-public let CODEC2_OUTPUT_RATE: Double = 8000
+public let codec2OutputRate: Double = 8000
 /// Python: `Codec2.FRAME_QUANTA_MS = 40`
-public let CODEC2_FRAME_QUANTA_MS: Double = 40
+public let codec2FrameQuantaMs: Double = 40
 
 // MARK: - Codec2Codec
 
@@ -68,20 +68,20 @@ public let CODEC2_FRAME_QUANTA_MS: Double = 40
 /// Wire format for encoded bytes:
 ///   [mode_header_byte (1B)][codec2_encoded_bytes (N B)]
 ///
-/// Default mode: `.codec2_2400` (Python: `def __init__(self, mode=CODEC2_2400)`)
+/// Default mode: `.mode2400` (Python: `def __init__(self, mode=CODEC2_2400)`)
 public final class Codec2Codec: Codec {
-    public static let headerByte: UInt8 = CODEC_CODEC2
+    public static let headerByte: UInt8 = codecCodec2
 
-    public var preferredSampleRate: Double? { CODEC2_INPUT_RATE }
-    public var frameQuantaMs:       Double? { CODEC2_FRAME_QUANTA_MS }
+    public var preferredSampleRate: Double? { codec2InputRate }
+    public var frameQuantaMs:       Double? { codec2FrameQuantaMs }
     public var frameMaxMs:          Double? { nil }
-    public var validFrameMs:        [Double] { [CODEC2_FRAME_QUANTA_MS] }
+    public var validFrameMs:        [Double] { [codec2FrameQuantaMs] }
     public var channels: Int? = 1
     public weak var source: (any Source)? = nil
     public var sink:   (any Sink)?   = nil
 
     public private(set) var mode: Codec2Mode
-    public private(set) var outputSampleRate: Double = CODEC2_OUTPUT_RATE
+    public private(set) var outputSampleRate: Double = codec2OutputRate
 
     private var state: OpaquePointer?
     private let lock = NSLock()
@@ -91,7 +91,7 @@ public final class Codec2Codec: Codec {
     private var bytesPerFrame:   Int = 0
 
     /// Python: `def __init__(self, mode=CODEC2_2400)`
-    public init(mode: Codec2Mode = .codec2_2400) {
+    public init(mode: Codec2Mode = .mode2400) {
         self.mode = mode
     }
 
@@ -138,7 +138,7 @@ public final class Codec2Codec: Codec {
         let state = try ensureState()
 
         // Resample to 8 kHz mono if needed
-        let pcm16 = toInt16Mono(frame: frame, targetRate: CODEC2_INPUT_RATE)
+        let pcm16 = toInt16Mono(frame: frame, targetRate: codec2InputRate)
 
         // Encode one frame at a time
         var encoded = Data([mode.headerByte])   // prepend mode header byte
@@ -214,11 +214,11 @@ public final class Codec2Codec: Codec {
         // Note the sink is read through the protocol, not `as? LocalSink`: the receive path's
         // sink is a `Mixer`, which conforms to `Sink` directly, so the narrowing this replaces
         // meant the sink's rate was never consulted in a real call. Python type-checks nothing.
-        guard let sinkRate = sink?.sampleRate, sinkRate != CODEC2_OUTPUT_RATE else {
-            return AudioFrame(samples: allSamples, channelCount: 1, sampleRate: CODEC2_OUTPUT_RATE)
+        guard let sinkRate = sink?.sampleRate, sinkRate != codec2OutputRate else {
+            return AudioFrame(samples: allSamples, channelCount: 1, sampleRate: codec2OutputRate)
         }
         return AudioFrame(samples: Self.resampleMono(allSamples,
-                                                     from: CODEC2_OUTPUT_RATE, to: sinkRate),
+                                                     from: codec2OutputRate, to: sinkRate),
                           channelCount: 1,
                           sampleRate: sinkRate)
     }
