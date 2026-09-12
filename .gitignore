@@ -13,3 +13,4 @@ DerivedData/
 # Binaries are fetched from Releases via binaryTarget(url:).
 Resources/*.xcframework/
 Resources/*.xcframework.zip
+__pycache__/
