@@ -1,4 +1,14 @@
 #!/bin/bash
+#===----------------------------------------------------------------------===#
+# Copyright (c) 2026 LXSTSwift contributors.
+#
+# Licensed under the Reticulum License. See LICENSE in the repository root for
+# the full license text, and NOTICE for attribution of the upstream project
+# this file is derived from.
+#
+# SPDX-License-Identifier: LicenseRef-Reticulum
+#===----------------------------------------------------------------------===#
+
 # build-opus.sh — build opus.xcframework from a pinned upstream version.
 #
 # Produces Resources/opus.xcframework with slices:

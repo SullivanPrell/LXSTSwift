@@ -1,4 +1,14 @@
 #!/bin/bash
+#===----------------------------------------------------------------------===#
+# Copyright (c) 2026 LXSTSwift contributors.
+#
+# Licensed under the Reticulum License. See LICENSE in the repository root for
+# the full license text, and NOTICE for attribution of the upstream project
+# this file is derived from.
+#
+# SPDX-License-Identifier: LicenseRef-Reticulum
+#===----------------------------------------------------------------------===#
+
 # build-codec2.sh — build codec2.xcframework from a pinned upstream version.
 #
 # Produces Resources/codec2.xcframework with slices:

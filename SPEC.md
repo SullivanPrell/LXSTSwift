@@ -17,7 +17,7 @@ end-to-end encryption inherited from the underlying stack.
 
 ---
 
-## 2. Package Layout
+## 2. Package layout
 
 ```
 LXSTSwift/
@@ -83,7 +83,7 @@ LXSTSwift/
 
 ---
 
-## 3. Wire Protocol
+## 3. Wire protocol
 
 ### 3.1 Packet structure
 
@@ -305,7 +305,7 @@ Mixing: additive sum of all incoming frames, normalised to Float32 [-1, 1], with
 
 ---
 
-## 5. Network Layer
+## 5. Network layer
 
 ### 5.1 Packetizer
 
@@ -505,7 +505,7 @@ public final class FilePlayer {
 
 ## 7. Filters
 
-Python: `LXST.Filters` — all implement `handle_frame(frame, samplerate)`.
+Python: `LXST.Filters`—all implement `handle_frame(frame, samplerate)`.
 
 ```swift
 public protocol Filter: AnyObject {
@@ -641,7 +641,7 @@ Generates sine waves at `frequency` Hz with optional ease-in ramp.
 
 ---
 
-## 10. Audio Backend
+## 10. Audio backend
 
 ```swift
 public protocol AudioBackend: AnyObject {
@@ -664,14 +664,14 @@ public protocol AudioPlayer: AnyObject {
 }
 ```
 
-**Concrete:** `AVAudioEngineBackend` — `AVAudioEngine` input tap for capture;
+**Concrete:** `AVAudioEngineBackend`—`AVAudioEngine` input tap for capture;
 `AVAudioPlayerNode` for playback. `#if canImport(AVFAudio)` guard for Linux safety.
 
 `LineSource` and `LineSink` accept an `AudioBackend?` parameter; nil → `AVAudioEngineBackend()`.
 
 ---
 
-## 11. LXST Module Constants
+## 11. LXST module constants
 
 ```swift
 public let APP_NAME = "lxst"   // Python: LXST.APP_NAME = "lxst"
@@ -679,11 +679,11 @@ public let APP_NAME = "lxst"   // Python: LXST.APP_NAME = "lxst"
 
 ---
 
-## 12. Code Style
+## 12. Code style
 
 - All public API documented with `///` doc comments referencing Python source
-- `AudioFrame` is the canonical currency — `Data` only at encode/decode call sites
-- All audio processing on `DispatchQueue(label: "lxst.audio.*")` — never on main thread
+- `AudioFrame` is the canonical currency—`Data` only at encode/decode call sites
+- All audio processing on `DispatchQueue(label: "lxst.audio.*")`—never on main thread
 - Mixer uses `NSLock` for thread-safe frame queue access
 - `@MainActor` only for state change callbacks
 - No force-unwraps in production code
@@ -692,7 +692,7 @@ public let APP_NAME = "lxst"   // Python: LXST.APP_NAME = "lxst"
 
 ---
 
-## 13. Testing Strategy
+## 13. Testing strategy
 
 All tests use `XCTest`. **No real audio hardware.** All I/O via mock backends.
 
@@ -708,9 +708,9 @@ All tests use `XCTest`. **No real audio hardware.** All I/O via mock backends.
 | `PrimitivesTests`   | TelephonyProfile golden values; FileRecorder/FilePlayer init (no I/O) |
 
 **Mock patterns:**
-- `MockAudioBackend` — pushes `[AudioFrame]` to capture handler; `MockPlayer` records played frames
-- `MockSink` — records all received frames
-- `MockSource` — `feed(frame:)` pushes a frame through codec→sink
+- `MockAudioBackend`—pushes `[AudioFrame]` to capture handler; `MockPlayer` records played frames
+- `MockSink`—records all received frames
+- `MockSource`—`feed(frame:)` pushes a frame through codec→sink
 
 **Coverage target: ≥ 80% line coverage on all non-AVAudio code**
 
@@ -723,11 +723,11 @@ All tests use `XCTest`. **No real audio hardware.** All I/O via mock backends.
 - `AudioFrame` sample-rate conversion handled **before** codec encode (source responsibility)
 - Codec2 mode header bytes match Python `MODE_HEADERS` dict byte-for-byte
 - Opus bitrate ceilings match Python `profile_bitrate_ceiling` exactly (not approximations)
-- `maxBytesPerFrame = ceil((bitrateCeiling / 8) * (frameDurationMs / 1000))` — identical formula
+- `maxBytesPerFrame = ceil((bitrateCeiling / 8) * (frameDurationMs / 1000))`—identical formula
 - Every new public type gets at least one positive and one negative test
 
 ### Ask first
-- Adding a codec not in the Python reference (e.g., AAC, MP3)
+- Adding a codec not in the Python reference (for example, AAC, MP3)
 - Changing the Packetizer msgpack key layout (breaks wire compat)
 - Making `LineSource`/`LineSink` require iOS 17+ or macOS 14+ APIs
 
@@ -739,9 +739,9 @@ All tests use `XCTest`. **No real audio hardware.** All I/O via mock backends.
 
 ---
 
-## 15. Open Questions / Deferred
+## 15. Open questions and deferred items
 
-- **vDSP filter implementations:** Define `Filter` protocol and constants in v1; full vDSP BandPass/HighPass/LowPass/AGC implementations to follow
-- **RPC / shared instance:** Not applicable — Swift uses in-process references  
-- **`rnphone` utility:** Out of scope
-- **Codec2 XCFramework build:** Needs `lib/libcodec2.a` slices pre-built for arm64-ios + arm64/x86_64-mac; until available, `Codec2Codec.encode/decode` throws `CodecError.notImplemented`
+- **vDSP filter implementations:** define the `Filter` protocol and constants in v1; full vDSP BandPass/HighPass/LowPass/AGC implementations to follow
+- **RPC / shared instance:** not applicable—Swift uses in-process references  
+- **`rnphone` utility:** out of scope
+- **Codec2 XCFramework build:** needs `lib/libcodec2.a` slices pre-built for arm64-ios + arm64/x86_64-mac; until available, `Codec2Codec.encode/decode` throws `CodecError.notImplemented`

@@ -7,6 +7,8 @@ LXSTSwift targets **wire compatibility with Python LXST**
 
 - **Test-driven**: failing test first, implement to green, commit. Keep the full
   `swift test` suite green (no regressions).
+- **Tests are XCTest**, not swift-testing.
+- **Style**: [Google Swift Style Guide](https://google.github.io/swift/).
 - **Mind retain cycles**: the audio graph (Pipeline ↔ Source ↔ Codec ↔ Sink)
   uses `weak` references in the right places, mirroring Python's `release()`.
   Always `release()` a pipeline when done, and prefer `weak self` in audio
@@ -29,7 +31,7 @@ RETICULUM_LOCAL_DEPS=1 swift test
 
 ## The codec binaries (codec2 / opus)
 
-`codec2.xcframework` and `opus.xcframework` are **not committed to git** — they
+`codec2.xcframework` and `opus.xcframework` are **not committed to git**—they
 are built from **pinned source** and published as GitHub **Release** assets, then
 consumed via `binaryTarget(url:checksum:)` in `Package.swift`. Pinned versions:
 **codec2 1.2.0**, **opus v1.6.1**.
@@ -56,12 +58,28 @@ Override the pinned tag with `OPUS_VERSION=` / `CODEC2_VERSION=`, or point at a
 local checkout with `OPUS_SRC=` / `CODEC2_SRC=`. Prerequisites: `cmake` + Xcode
 with the iOS SDK.
 
-> Building codec2 yourself is exactly the LGPL §6 "relink" right — see
+> Building codec2 yourself is exactly the LGPL §6 "relink" right—see
 > [docs/THIRD-PARTY.md](docs/THIRD-PARTY.md).
 >
 > **Note:** `opus_encoder_ctl` is variadic and can't be called from Swift, so the
 > encoder uses libopus auto-bitrate (`OPUS_AUTO`), which suffices for all LXST
 > stream types.
+
+## Style checks
+
+```sh
+make fmt      # swift format, license headers
+make check    # what CI runs: format, license headers, Vale prose lint
+```
+
+Vale lints Swift comments as prose, and finds them by scanning for `//`. A `//` inside
+a string literal therefore lints code, and acting on that finding would edit it. After
+a comment-only change, confirm the code is unchanged:
+
+```sh
+git status --porcelain | awk '{print $NF}' | grep '\.swift$' \
+    | xargs python3 .vale/tools/verify_code_unchanged.py
+```
 
 ## Submitting changes
 

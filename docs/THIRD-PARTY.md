@@ -2,7 +2,7 @@
 
 LXSTSwift is a Swift port of, and a derivative work of, the original LXST:
 
-> **LXST** — Copyright (c) Mark Qvist — Reticulum License
+> **LXST**—Copyright (c) Mark Qvist—Reticulum License
 > https://github.com/markqvist/LXST
 
 LXSTSwift adopts the same **Reticulum License** (see [`LICENSE`](../LICENSE)) for
@@ -15,11 +15,11 @@ codec libraries, under their own licenses, reproduced below.
 > *Build binaries* workflow and distributed as Release assets (not committed to
 > git), consumed via checksummed `binaryTarget(url:)`.
 
-## codec2 — GNU LGPL v2.1
+## codec2—GNU LGPL v2.1
 
 `Resources/codec2.xcframework` is a prebuilt static library of **codec2**:
 
-> codec2 — Copyright (C) David Rowe and contributors
+> codec2—Copyright (C) David Rowe and contributors
 > https://github.com/drowe67/codec2
 
 codec2 is licensed under the **GNU Lesser General Public License, version 2.1**.
@@ -34,7 +34,7 @@ codec2**. Because the codec2 source is publicly available and the xcframework in
 this repository can be regenerated from it, that right is fully exercisable:
 
 1. Obtain and modify the codec2 source from <https://github.com/drowe67/codec2>.
-2. Rebuild `codec2.xcframework` — see [CONTRIBUTING.md](../CONTRIBUTING.md#rebuilding-the-codec-binaries).
+2. Rebuild `codec2.xcframework`—see [CONTRIBUTING.md](../CONTRIBUTING.md#rebuilding-the-codec-binaries).
 3. Replace `Resources/codec2.xcframework` and rebuild LXSTSwift (and any app
    embedding it).
 
@@ -43,7 +43,7 @@ modified or statically embedded beyond the prebuilt library object.
 
 ---
 
-## opus — BSD 3-Clause
+## opus—BSD 3-Clause
 
 `Resources/opus.xcframework` is a prebuilt static library of **libopus**:
 

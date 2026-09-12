@@ -1,14 +1,14 @@
 # LXSTSwift
 
 > **Reticulum and LXST are the work of [Mark Qvist](https://github.com/markqvist).** This is an
-> independent, community Swift implementation of LXST — **not an official Reticulum project**.
+> independent, community Swift implementation of LXST—**not an official Reticulum project**.
 > The canonical project and reference (Python) implementation live at
 > **[github.com/markqvist/LXST](https://github.com/markqvist/LXST)**, part of the broader
 > **[Reticulum](https://github.com/markqvist/Reticulum)** network created by Mark; please look
 > there first to understand the protocol itself.
 
-A Swift port of [LXST](https://github.com/markqvist/LXST) — the **Lightweight
-Extensible Signal Transport** — for real-time, end-to-end encrypted voice and
+A Swift port of [LXST](https://github.com/markqvist/LXST)—the **Lightweight
+Extensible Signal Transport**—for real-time, end-to-end encrypted voice and
 audio over Reticulum.
 
 [![Platforms](https://img.shields.io/badge/platforms-iOS%2016%2B%20%7C%20macOS%2013%2B-blue)](#requirements)
@@ -17,7 +17,7 @@ audio over Reticulum.
 [![Coverage](https://img.shields.io/badge/coverage-58%25-yellow)](#testing)
 [![License](https://img.shields.io/badge/license-Reticulum-lightgrey)](LICENSE)
 
-LXST carries live audio (and other signals) over Reticulum links — the protocol
+LXST carries live audio (and other signals) over Reticulum links—the protocol
 behind voice calls in the Reticulum ecosystem. LXSTSwift implements it with real
 audio I/O via **AVFoundation**, **Opus** and **Codec2** codecs, a streaming
 pipeline, and a high-level **Telephone** session manager for placing and
@@ -27,9 +27,9 @@ This is part of the [ReticulumSwift stack](https://github.com/SullivanPrell/Reti
 
 ## Status
 
-LXSTSwift implements the LXST 0.4.6 protocol — audio capture and playback via
+LXSTSwift implements the LXST 0.4.6 protocol—audio capture and playback via
 AVAudioEngine, Opus and Codec2 codecs, a streaming pipeline, file record/playback,
-filters (high/low/band-pass, AGC), and the Telephone primitive — and is
+filters (high/low/band-pass, AGC), and the Telephone primitive—and is
 wire-compatible with the Python reference. Covered by 245 unit tests (~58% line
 coverage; the audio-hardware paths are exercised on-device rather than in unit tests).
 
@@ -39,7 +39,7 @@ coverage; the audio-hardware paths are exercised on-device rather than in unit t
 - Depends on [ReticulumSwift](https://github.com/SullivanPrell/ReticulumSwift) 1.0.0+
 - The codec2 / opus binaries are fetched automatically by SwiftPM from GitHub
   Releases (checksummed `binaryTarget`s), built from pinned source by the
-  *Build binaries* workflow — a normal `git clone` + `swift build` is all you need.
+  *Build binaries* workflow—a normal `git clone` + `swift build` is all you need.
 
 ## Installation
 
@@ -52,7 +52,7 @@ targets: [
 ]
 ```
 
-## Quick start — placing a call
+## Quick start—placing a call
 
 ```swift
 import ReticulumSwift
@@ -83,7 +83,7 @@ playback are wired up automatically while a call is active. Use
 `muteTransmit()` / `muteReceive()` and `setTransmitGain()` / `setReceiveGain()`
 to control audio.
 
-## Lower level — the pipeline
+## Lower level—the pipeline
 
 For non-telephony streaming (tones, files, custom sources/sinks), compose a
 `Pipeline` of `Source → Codec → Sink`:
@@ -107,10 +107,10 @@ spec is in [SPEC.md](SPEC.md).
 
 ## Documentation
 
-- [docs/USAGE.md](docs/USAGE.md) — pipeline, sources/sinks, codecs, filters, telephony
-- [SPEC.md](SPEC.md) — wire protocol and component specification
-- [docs/THIRD-PARTY.md](docs/THIRD-PARTY.md) — codec2 (LGPL) / opus (BSD) notices
-- [CONTRIBUTING.md](CONTRIBUTING.md) — dev workflow and rebuilding the codec binaries
+- [docs/USAGE.md](docs/USAGE.md)—pipeline, sources/sinks, codecs, filters, telephony
+- [SPEC.md](SPEC.md)—wire protocol and component specification
+- [docs/THIRD-PARTY.md](docs/THIRD-PARTY.md)—codec2 (LGPL) / opus (BSD) notices
+- [CONTRIBUTING.md](CONTRIBUTING.md)—dev workflow and rebuilding the codec binaries
 
 ## Testing
 
@@ -122,7 +122,7 @@ RETICULUM_LOCAL_DEPS=1 swift test     # develop against a sibling ReticulumSwift
 ## License
 
 LXSTSwift's own source is under the **Reticulum License** (no harm-capable
-systems; no AI/ML training datasets) — see [LICENSE](LICENSE). It redistributes
+systems; no AI/ML training datasets)—see [LICENSE](LICENSE). It redistributes
 prebuilt **codec2** (LGPL v2.1) and **opus** (BSD) binaries; see
 [NOTICE](NOTICE) and [docs/THIRD-PARTY.md](docs/THIRD-PARTY.md). LXSTSwift is a
 derivative work of [LXST](https://github.com/markqvist/LXST) by Mark Qvist.
