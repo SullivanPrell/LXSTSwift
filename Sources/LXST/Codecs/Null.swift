@@ -13,18 +13,29 @@ import Foundation
 /// Pass-through codec — encode and decode are identity operations.
 /// Python: `LXST.Codecs.Null` — header byte NULL = 0xFF
 public final class NullCodec: Codec {
+    /// Codec identifier carried in the frame header.
     public static let headerByte: UInt8 = codecNull
 
+    /// Sample rate this codec prefers to be fed, in Hz.
     public var preferredSampleRate: Double? { nil }
+    /// Frame duration this codec encodes, in milliseconds.
     public var frameQuantaMs: Double?       { nil }
+    /// Longest frame this codec encodes, in milliseconds.
     public var frameMaxMs: Double?          { nil }
+    /// Frame durations this codec accepts, in milliseconds.
     public var validFrameMs: [Double]       { [] }
+    /// Channel count, or `nil` to follow the source.
     public var channels: Int? = nil
+    /// Source feeding this codec.
     public weak var source: (any Source)? = nil
+    /// Sink frames are handed to.
     public var sink:   (any Sink)?   = nil
 
+    /// Creates a pass-through codec.
     public init() {}
 
+    /// Passes the frame through without encoding it.
+    ///
     /// Python: `Null.encode(frame) -> frame`
     public func encode(_ frame: AudioFrame) throws -> Data {
         // Serialise as raw Float32 (little-endian) for round-trip symmetry
@@ -35,6 +46,8 @@ public final class NullCodec: Codec {
         return data
     }
 
+    /// Passes the data through without decoding it.
+    ///
     /// Python: `Null.decode(frame) -> frame`
     public func decode(_ data: Data) throws -> AudioFrame {
         guard data.count % 4 == 0 else { throw CodecError.invalidFrame }

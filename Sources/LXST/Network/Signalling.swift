@@ -30,8 +30,11 @@ public protocol SignallingHandler: AnyObject {
 /// Python: `LXST.Network.SignallingReceiver`
 /// Open so that `Telephone` can inherit from it (Python: `class Telephone(SignallingReceiver)`).
 open class SignallingReceiver {
+    /// Handler received signalling is forwarded to.
     public var proxy: (any SignallingHandler)?
 
+    /// Creates a receiver forwarding to `proxy`.
+    ///
     /// Python: `def __init__(self, proxy=None)`
     public init(proxy: (any SignallingHandler)? = nil) {
         self.proxy = proxy

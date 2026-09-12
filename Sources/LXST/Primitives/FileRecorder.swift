@@ -13,6 +13,7 @@ import Foundation
 /// Records audio to an Opus file.
 /// Python: `LXST.Primitives.Recorders.FileRecorder`
 public final class FileRecorder {
+    /// Whether recording is running.
     public private(set) var running: Bool = false
     /// Alias for `running`.
     ///
@@ -27,6 +28,8 @@ public final class FileRecorder {
     private var skip: Double
     private var filters: [any Filter]
 
+    /// Creates a recorder writing `path` from `device`.
+    ///
     /// Python: `FileRecorder.__init__(path, device, profile, gain, ease_in, skip, filters)`
     public init(path:    URL?            = nil,
                 device:  String?         = nil,
@@ -44,15 +47,23 @@ public final class FileRecorder {
         self.filters = filters
     }
 
+    /// Sets the capture device to record from.
+    ///
     /// Python: `set_source(device=None)`
     public func setSource(_ device: String?) { self.device = device }
 
+    /// Sets the file recordings are written to.
+    ///
     /// Python: `set_output_path(path)`
     public func setOutputPath(_ path: URL) { self.path = path }
 
+    /// Begins recording.
+    ///
     /// Python: `FileRecorder.record()` — alias for start()
     public func record() { start() }
 
+    /// Starts recording.
     public func start() { running = true }
+    /// Stops recording.
     public func stop()  { running = false }
 }

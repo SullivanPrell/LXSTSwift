@@ -33,6 +33,8 @@ import XCTest
 ///   - sink:       the sink attached to the codec at decode time
 ///   - codecRate:  the codec's own rate — the rate a broken decoder would produce
 ///   - durationMs: the duration the encoded payload represents, known independently of both rates
+///   - file:       the file the assertion is reported against
+///   - line:       the line the assertion is reported against
 func assertDecoded(_ frame: AudioFrame,
                    playableBy sink: any Sink,
                    codecRate: Double,

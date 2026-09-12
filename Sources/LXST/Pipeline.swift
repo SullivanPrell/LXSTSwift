@@ -16,7 +16,9 @@ import Foundation
 ///
 /// Python: `LXST.Pipeline.Pipeline`
 public final class Pipeline {
+    /// Source at the head of the pipeline.
     public let source: any Source
+    /// Sink at the tail of the pipeline.
     public let sink:   any Sink
 
     /// The active codec.
@@ -69,11 +71,13 @@ public final class Pipeline {
         }
     }
 
+    /// Starts the source and its downstream stages.
     public func start() {
         guard !running else { return }
         source.start()
     }
 
+    /// Stops the source and its downstream stages.
     public func stop() {
         guard running else { return }
         source.stop()
@@ -94,6 +98,7 @@ public final class Pipeline {
 
 // MARK: - PipelineError
 
+/// Failures raised while building or running a pipeline.
 public enum PipelineError: Error {
     /// Python: `PipelineError("Audio pipeline initialised with invalid source")`
     case invalidSource

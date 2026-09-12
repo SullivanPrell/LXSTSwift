@@ -16,6 +16,8 @@ import Foundation
 /// Python uses numpy float32 arrays of shape (sampleCount, channelCount);
 /// Swift uses a flat `[Float]` with interleaved channel layout.
 public struct AudioFrame: Equatable {
+    /// Sample buffer for one frame.
+    ///
     /// Interleaved samples: `[ch0[0], ch1[0], ch0[1], ch1[1], ...]`
     public let samples: [Float]
     /// Number of channels.
@@ -29,6 +31,7 @@ public struct AudioFrame: Equatable {
     /// Duration of this frame in milliseconds.
     public var durationMs: Double { Double(sampleCount) / sampleRate * 1000 }
 
+    /// Creates a frame from its samples and format.
     public init(samples: [Float], channelCount: Int, sampleRate: Double) {
         self.samples     = samples
         self.channelCount = channelCount

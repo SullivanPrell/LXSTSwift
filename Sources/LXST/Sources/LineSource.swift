@@ -18,7 +18,10 @@ import Foundation
 /// Python: `LXST.Sources.LineSource`
 /// Default frame_ms: 80 (Python: `DEFAULT_FRAME_MS = 80`)
 public final class LineSource: LocalSource {
+    /// Default frame duration, in milliseconds.
     public static let defaultFrameMs: Double = 80
+    /// Maximum frames buffered before delivery.
+    ///
     /// Python: `LineSource.MAX_FRAMES = 128`
     public static let maxFrames: Int = 128
 
@@ -30,9 +33,13 @@ public final class LineSource: LocalSource {
         DBGain.linear(gainDB)
     }
 
+    /// Filters applied to captured audio.
     public var filters: [any Filter] = []
+    /// Gain applied to captured audio, in decibels.
     public var gain: Float = 0.0
+    /// Fade-in length applied at start, in seconds.
     public var easeIn: Double = 0.0
+    /// Audio discarded at start, in seconds.
     public var skip: Double = 0.0
 
     /// Called when `startCapture` throws (e.g. "could not make an audio connection").
@@ -42,6 +49,8 @@ public final class LineSource: LocalSource {
 
     private var backend: (any AudioBackend)?
 
+    /// Creates a source capturing from `device`.
+    ///
     /// Python: `LineSource.__init__(preferred_device, target_frame_ms, codec, sink, filters, gain, ease_in, skip)`
     public init(device: String? = nil,
                 targetFrameMs: Double = LineSource.defaultFrameMs,

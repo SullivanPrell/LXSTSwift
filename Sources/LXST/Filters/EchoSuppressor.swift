@@ -33,29 +33,53 @@ import Accelerate
 public final class EchoSuppressor: Filter, ReferenceSink {
 
     // MARK: - Defaults (Python DEFAULT_*)
+    /// Default longest echo delay searched for, in milliseconds.
     public static let defaultMaxDelayMs          = 550.0
+    /// Default width of the delay tracking window, in milliseconds.
     public static let defaultTrackWindowMs       = 150.0
+    /// Default correlation frame length, in milliseconds.
     public static let defaultCorrelationFrameMs  = 120.0
+    /// Default correlation below which no delay is accepted.
     public static let defaultCorrelationThreshold = 0.070
+    /// Default near-end level below which a frame counts as silent.
     public static let defaultRmsThreshold        = 0.002
+    /// Default smoothing factor for the level averages.
     public static let defaultEmaAlpha            = 0.2
+    /// Default pre-emphasis coefficient applied before correlation.
     public static let defaultPreemphAlpha        = 0.95
+    /// Default forgetting factor for the correlation accumulator.
     public static let defaultAccForget           = 0.92
+    /// Default coupling estimation window, in seconds.
     public static let defaultCouplingWindowS     = 5.0
+    /// Default percentile of the coupling window taken as the estimate.
     public static let defaultCouplingPercentile  = 15.0
+    /// Default coupling below which suppression stays off, in decibels.
     public static let defaultCouplingThresholdDb = -30.0
+    /// Default gate ratio applied while suppressing, in decibels.
     public static let defaultGateRatioDb         = -3.0
+    /// Default correlation above which a frame counts as echo.
     public static let defaultCorrThreshold       = 0.13
+    /// Default near-end excess energy that declares double talk, in decibels.
     public static let defaultDtdEnergyDb         = 3.0
+    /// Default hangover held after suppression ends, in milliseconds.
     public static let defaultHangoverMs          = 150.0
+    /// Default gain attack time, in milliseconds.
     public static let defaultAttackMs            = 5.0
+    /// Default gain release time, in milliseconds.
     public static let defaultReleaseMs           = 80.0
+    /// Default far-end level below which the reference counts as silent.
     public static let defaultRefRmsThreshold     = 0.0001
+    /// Coupling estimates required before suppression engages.
     public static let requiredCouplingHistory    = 4
+    /// Default number of frames between delay estimates.
     public static let defaultEstimateEveryN      = 2
+    /// Default for whether comfort noise is generated.
     public static let defaultCngEnabled          = true
+    /// Default comfort-noise gain.
     public static let defaultCngGain             = 0.0015
+    /// Default comfort-noise colouring coefficient.
     public static let defaultCngColor            = 0.98
+    /// Default comfort-noise block length, in samples.
     public static let defaultCngBlockSize        = 16384
 
     // MARK: - Parameters
@@ -155,6 +179,7 @@ public final class EchoSuppressor: Filter, ReferenceSink {
     private var gaussianSpare: Float? = nil
     private var rng = SystemRandomNumberGenerator()
 
+    /// Creates a suppressor with the given tuning.
     public init(maxDelayMs: Double = defaultMaxDelayMs,
                 trackWindowMs: Double = defaultTrackWindowMs,
                 correlationFrameMs: Double = defaultCorrelationFrameMs,
@@ -201,10 +226,15 @@ public final class EchoSuppressor: Filter, ReferenceSink {
     }
 
     // MARK: - Introspection (Python properties)
+    /// Estimated echo delay in milliseconds, or `nil` before one is found.
     public var delayMs: Double? { delayMsValue }
+    /// Estimated echo delay in samples, or `nil` before one is found.
     public var delaySamples: Double? { delaySamplesValue }
+    /// Correlation confidence in the current delay estimate.
     public var confidence: Double { delayConfidence }
+    /// Estimated echo coupling, in decibels.
     public var couplingDb: Double { couplingDbValue }
+    /// Gain currently applied to the near-end signal.
     public var gain: Double { currentGain }
 
     // MARK: - Helpers
@@ -479,6 +509,7 @@ public final class EchoSuppressor: Filter, ReferenceSink {
 
     // MARK: - ReferenceSink
 
+    /// Takes a far-end reference frame captured at `sr`.
     public func handleReference(_ frame: AudioFrame, samplerate sr: Double) {
         let mono = EchoSuppressor.toMono(frame)
 
@@ -501,6 +532,7 @@ public final class EchoSuppressor: Filter, ReferenceSink {
 
     // MARK: - Filter
 
+    /// Returns `frame` with any detected echo suppressed.
     public func handleFrame(_ frame: AudioFrame) -> AudioFrame {
         let sr = frame.sampleRate
         let channelCount = max(frame.channelCount, 1)

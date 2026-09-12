@@ -15,16 +15,24 @@ import COpus
 /// Python: `LXST.Sources.OpusFileSource`
 /// Default frame_ms: 100 (Python: `DEFAULT_FRAME_MS = 100`)
 public final class OpusFileSource: LocalSource {
+    /// Default frame duration, in milliseconds.
     public static let defaultFrameMs: Double = 100
+    /// Maximum frames buffered before delivery.
+    ///
     /// Python: `OpusFileSource.MAX_FRAMES = 128`
     public static let maxFrames: Int = 128
 
+    /// File audio is read from.
     public let filePath: URL
+    /// Whether the file restarts when it ends.
     public let loop: Bool
+    /// Whether frames are emitted in real time.
     public let timed: Bool
 
     private var ingestThread: Thread?
 
+    /// Creates a source reading Opus from `filePath`.
+    ///
     /// Python: `OpusFileSource.__init__(file_path, target_frame_ms, loop, codec, sink, timed)`
     public init(filePath: URL,
                 targetFrameMs: Double = OpusFileSource.defaultFrameMs,
@@ -41,6 +49,8 @@ public final class OpusFileSource: LocalSource {
         self.sink  = sink
     }
 
+    /// Whether the source is running.
+    ///
     /// Python: `@property running` — alias for shouldRun
     public var running: Bool { shouldRun }
 

@@ -24,10 +24,16 @@ import COpus
 /// `OpusFileSource` reads both v1 (assumes 48000 Hz / 1 ch) and v2 headers.
 public final class OpusFileSink: LocalSink {
     // MARK: - Python class constants
+    /// Frames buffered before writing starts.
+    ///
     /// Python: `OpusFileSink.AUTOSTART_MIN = 1`
     public static let autoStartMin: Int = 1
+    /// Maximum frames buffered before writing.
+    ///
     /// Python: `OpusFileSink.MAX_FRAMES = 64`
     public static let maxFrames: Int = 64
+    /// Seconds of inactivity after which the file is finalized.
+    ///
     /// Python: `OpusFileSink.FINALIZE_TIMEOUT = 2`
     public static let finalizeTimeout: Int = 2
 
@@ -37,8 +43,11 @@ public final class OpusFileSink: LocalSink {
 
     // MARK: - Properties
 
+    /// File frames are written to.
     public var outputPath: URL?
+    /// Whether frames are decoded on arrival.
     public var autodigest: Bool     = true
+    /// Opus profile frames are written with.
     public var profile:    OpusProfile = .audioMax
 
     /// Number of frames waiting to be written.
@@ -48,6 +57,7 @@ public final class OpusFileSink: LocalSink {
     }
 
     // Set by Pipeline when wired. Python: `sink.source = source`
+    /// Source feeding this sink.
     public weak var source: (any Source)?
 
     // MARK: - Private state
@@ -63,6 +73,8 @@ public final class OpusFileSink: LocalSink {
 
     // MARK: - Init
 
+    /// Creates a sink writing Opus to `path`.
+    ///
     /// Python: `OpusFileSink.__init__(path=None, autodigest=True, profile=Opus.PROFILE_AUDIO_MAX)`
     public init(path: URL? = nil,
                 autodigest: Bool = true,

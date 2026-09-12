@@ -58,7 +58,9 @@ public enum OpusProfile: UInt8, CaseIterable {
         }
     }
 
-    /// Output sample rate in Hz. Python: `Opus.profile_samplerate(profile)`
+    /// Output sample rate in Hz.
+    ///
+    /// Python: `Opus.profile_samplerate(profile)`
     public var sampleRate: Double {
         switch self {
         case .voiceLow, .audioMin:      return 8000
@@ -107,10 +109,16 @@ public enum OpusProfile: UInt8, CaseIterable {
 
 // MARK: - Opus codec constants (Python class-level)
 
+/// Shortest frame Opus encodes, in milliseconds.
+///
 /// Python: `Opus.FRAME_QUANTA_MS = 2.5`
 public let opusFrameQuantaMs: Double = 2.5
+/// Longest frame Opus encodes, in milliseconds.
+///
 /// Python: `Opus.FRAME_MAX_MS = 60`
 public let opusFrameMaxMs: Double = 60
+/// Frame durations Opus accepts, in milliseconds.
+///
 /// Python: `Opus.VALID_FRAME_MS = [2.5, 5, 10, 20, 40, 60]`
 public let opusValidFrameMs: [Double] = [2.5, 5, 10, 20, 40, 60]
 
@@ -123,11 +131,16 @@ public let opusValidFrameMs: [Double] = [2.5, 5, 10, 20, 40, 60]
 /// `opus_encode_float()` to produce a real Opus bitstream.
 /// Decode: calls `opus_decode_float()` and returns an AudioFrame.
 public final class OpusCodec: Codec {
+    /// Codec identifier carried in the frame header.
     public static let headerByte: UInt8 = codecOpus
 
+    /// Sample rate this codec prefers to be fed, in Hz.
     public var preferredSampleRate: Double? { profile.sampleRate }
+    /// Shortest frame this codec encodes, in milliseconds.
     public var frameQuantaMs:       Double? { opusFrameQuantaMs }
+    /// Longest frame this codec encodes, in milliseconds.
     public var frameMaxMs:          Double? { opusFrameMaxMs }
+    /// Frame durations this codec accepts, in milliseconds.
     public var validFrameMs:        [Double] { opusValidFrameMs }
     /// Output channel count.
     ///
@@ -158,11 +171,16 @@ public final class OpusCodec: Codec {
     /// every profile.
     private static let sinklessOutputChannels = 2
 
+    /// Source feeding this codec.
     public weak var source: (any Source)? = nil
+    /// Sink frames are handed to.
     public var sink:      (any Sink)?   = nil
 
+    /// Opus profile currently in use.
     public private(set) var profile: OpusProfile
+    /// Sample rate decoded frames carry, in Hz.
     public private(set) var outputSampleRate: Double
+    /// Highest bitrate the encoder may use, in bits per second.
     public private(set) var bitrateCeiling: Int
 
     private var encoder: OpaquePointer?
@@ -175,6 +193,8 @@ public final class OpusCodec: Codec {
     private var decoderChannels: Int?
     private let lock = NSLock()
 
+    /// Creates a codec encoding at `profile`.
+    ///
     /// Python: `def __init__(self, profile=PROFILE_VOICE_LOW)`
     public init(profile: OpusProfile = .voiceLow) {
         self.profile          = profile

@@ -20,8 +20,11 @@ import Foundation
 ///
 /// Python: `LXST.Codecs.Raw` — header byte RAW = 0x00
 public final class RawCodec: Codec {
+    /// Codec identifier carried in the frame header.
     public static let headerByte: UInt8 = codecRaw
 
+    /// Bit-depth names the raw codec accepts.
+    ///
     /// Python: `Raw.BITDEPTHS = ["float16","float32","float64","float128"]`
     public static let bitDepths: [String] = ["float16", "float32", "float64", "float128"]
 
@@ -29,17 +32,27 @@ public final class RawCodec: Codec {
     /// Python: `min(max(channels, 1), 32)`
     public static let maxChannels: Int = 32
 
+    /// Sample rate this codec prefers to be fed, in Hz.
     public var preferredSampleRate: Double? { nil }
+    /// Frame duration this codec encodes, in milliseconds.
     public var frameQuantaMs: Double?       { nil }
+    /// Longest frame this codec encodes, in milliseconds.
     public var frameMaxMs: Double?          { nil }
+    /// Frame durations this codec accepts, in milliseconds.
     public var validFrameMs: [Double]       { [] }
 
+    /// Channel count, or `nil` to follow the source.
+    ///
     /// Python: `def __init__(self, channels=None, bitdepth=16)`
     public var channels: Int?
+    /// Sample depth in bits.
     public var bitDepth: Int = 16        // Python: bitdepth = 16 (default)
+    /// Source feeding this codec.
     public weak var source: (any Source)? = nil
+    /// Sink frames are handed to.
     public var sink:   (any Sink)?   = nil
 
+    /// Creates a raw codec with the given channel count and sample depth.
     public init(channels: Int? = nil, bitDepth: Int = 16) {
         self.channels = channels.map { min(max($0, 1), Self.maxChannels) }
         self.bitDepth = bitDepth
@@ -58,16 +71,19 @@ public final class RawCodec: Codec {
         return (depthBits << 6) | chBits
     }
 
+    /// Returns the sample depth encoded in a sub-header byte.
     public static func bitDepth(fromSubHeader byte: UInt8) -> RawBitDepth {
         RawBitDepth(rawValue: byte >> 6) ?? .float16
     }
 
+    /// Returns the channel count encoded in a sub-header byte.
     public static func channelCount(fromSubHeader byte: UInt8) -> Int {
         Int(byte & 0x3F) + 1
     }
 
     // MARK: - Codec
 
+    /// Encodes `frame` to raw interleaved samples.
     public func encode(_ frame: AudioFrame) throws -> Data {
         let ch = channels ?? frame.channelCount
         let frameCh = frame.channelCount
@@ -86,6 +102,7 @@ public final class RawCodec: Codec {
         return out
     }
 
+    /// Decodes raw interleaved samples into a frame.
     public func decode(_ data: Data) throws -> AudioFrame {
         guard data.count >= 1 else { throw CodecError.invalidFrame }
         let subH = data[data.startIndex]

@@ -40,6 +40,7 @@ public enum AudioBackendError: Error, Equatable {
 
 // MARK: - AudioPlayer protocol
 
+/// Playback handle returned by an audio backend.
 public protocol AudioPlayer: AnyObject {
     func play(_ frame: AudioFrame)
     func flush()
@@ -50,20 +51,26 @@ public protocol AudioPlayer: AnyObject {
 /// Concrete audio backend using AVAudioEngine.
 /// Wrapped in `#if canImport(AVFAudio)` for Linux safety.
 #if canImport(AVFAudio)
+/// Audio backend built on `AVAudioEngine`.
 public final class AVAudioEngineBackend: AudioBackend {
+    /// Capture sample rate in Hz.
     public var sampleRate:   Double = 48000
+    /// Capture channel count.
     public var channelCount: Int    = 1
+    /// Capture sample depth in bits.
     public var bitDepth:     Int    = 32
 
     private var engine:        AVAudioEngine?
     private var playerNode:    AVAudioPlayerNode?
     private var captureHandler: ((AudioFrame) -> Void)?
 
+    /// Creates a backend capturing at `sampleRate` and `channelCount`.
     public init(sampleRate: Double = 48000, channelCount: Int = 1) {
         self.sampleRate   = sampleRate
         self.channelCount = channelCount
     }
 
+    /// Starts capture, delivering each buffer to `handler`.
     public func startCapture(framesPerBuffer: Int,
                               handler: @escaping (AudioFrame) -> Void) throws {
         captureHandler = handler
@@ -111,12 +118,14 @@ public final class AVAudioEngineBackend: AudioBackend {
         try engine.start()
     }
 
+    /// Stops capture and tears down the input tap.
     public func stopCapture() {
         engine?.inputNode.removeTap(onBus: 0)
         engine?.stop()
         engine = nil
     }
 
+    /// Starts playback and returns the player frames are written to.
     public func startPlayback(sampleRate: Double,
                                channelCount: Int) throws -> any AudioPlayer {
         let engine = AVAudioEngine()
@@ -139,6 +148,7 @@ public final class AVAudioEngineBackend: AudioBackend {
         return AVAudioPlayerAdapter(player: player, format: format)
     }
 
+    /// Stops playback and tears down the output node.
     public func stopPlayback() {
         playerNode?.stop()
         engine?.stop()

@@ -19,18 +19,28 @@ import Foundation
 /// Params: autodigest (default true), low_latency (default false)
 public final class LineSink: LocalSink {
     // MARK: - Python class constants
+    /// Maximum frames buffered before playback.
+    ///
     /// Python: `LineSink.MAX_FRAMES = 6`
     public static let maxFrames:    Int = 6
+    /// Frames buffered before playback starts.
+    ///
     /// Python: `LineSink.AUTOSTART_MIN = 1`
     public static let autoStartMin: Int = 1
+    /// Frames of silence after which playback stops.
+    ///
     /// Python: `LineSink.FRAME_TIMEOUT = 8`
     public static let frameTimeout: Int = 8
 
+    /// Whether frames are decoded on arrival.
     public var autodigest: Bool  = true
+    /// Whether playback runs in low-latency mode.
     public var lowLatency: Bool  = false
 
     private var wantsLowLatency: Bool = false
 
+    /// Switches playback to low-latency mode.
+    ///
     /// Python: `LineSink.enable_low_latency()`
     public func enableLowLatency() {
         wantsLowLatency = true
@@ -46,6 +56,8 @@ public final class LineSink: LocalSink {
     /// failed channel-map rebuild does not leave the sink silent.
     var currentPlayerForTesting: (any AudioPlayer)? { player }
 
+    /// Creates a sink playing on `device`.
+    ///
     /// Python: `LineSink.__init__(preferred_device=None, autodigest=True, low_latency=False)`
     public init(device: String? = nil,
                 autodigest: Bool = true,

@@ -56,6 +56,7 @@ public protocol Codec: AnyObject {
 
 // MARK: - Codec errors
 
+/// Failures raised by codec encode and decode.
 public enum CodecError: Error, Equatable {
     /// Profile or mode value is not supported.
     case unsupportedProfile

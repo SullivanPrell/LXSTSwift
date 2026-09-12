@@ -47,9 +47,12 @@ public extension Sink {
 /// Base for sinks that deliver audio to local hardware or files.
 /// Python: `LXST.Sinks.LocalSink`
 open class LocalSink: Sink {
+    /// Channel count, or `nil` to follow the source.
     public var channels:   Int?   = nil
+    /// Sample rate this sink consumes, in Hz.
     public var sampleRate: Double = 48000
 
+    /// Creates a local sink.
     public init() {}
 
     open func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {}
@@ -62,9 +65,12 @@ open class LocalSink: Sink {
 /// Base for sinks that send audio over the network.
 /// Python: `LXST.Sinks.RemoteSink`
 open class RemoteSink: Sink {
+    /// Channel count, or `nil` to follow the source.
     public var channels:   Int?   = nil
+    /// Sample rate this sink consumes, in Hz.
     public var sampleRate: Double = 48000
 
+    /// Creates a remote sink.
     public init() {}
 
     open func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {}

@@ -15,9 +15,12 @@ import Foundation
 /// Python: `LXST.Network.LinkSource`
 public final class LinkSource: RemoteSource {
 
+    /// Link audio is received from.
     public let link: Link
+    /// Handler signalling packets are forwarded to.
     public var signallingProxy: (any SignallingHandler)?
 
+    /// Creates a source reading audio from `link`.
     public init(link: Link,
                 signallingProxy: (any SignallingHandler)? = nil,
                 sink: (any Sink)? = nil) {

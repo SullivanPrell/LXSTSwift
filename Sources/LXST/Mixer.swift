@@ -27,19 +27,29 @@ public protocol ReferenceSink: AnyObject {
 public final class Mixer: Source, Sink {
 
     // MARK: - Python class constants
+    /// Maximum frames buffered per source.
+    ///
     /// Python: `Mixer.MAX_FRAMES = 8`
     public static let maxFrames: Int = 8
 
     // MARK: - Source protocol
+    /// Codec frames are encoded with.
     public var codec:          (any Codec)?  = nil
+    /// Sink frames are handed to.
     public var sink:           (any Sink)?   = nil
+    /// Pipeline this stage belongs to.
     public weak var pipeline:  Pipeline?     = nil
+    /// Output sample rate in Hz.
     public private(set) var sampleRate:    Double
+    /// Output channel count.
     public private(set) var channelCount:  Int    = 1
+    /// Sample depth in bits.
     public private(set) var bitDepth:      Int    = 32
+    /// Target output frame duration, in milliseconds.
     public private(set) var targetFrameMs: Double
 
     // MARK: - Sink protocol
+    /// Channel count, or `nil` to follow the source.
     public var channels: Int? = nil
 
     // MARK: - Mixer control-plane state (thread-safe)
@@ -94,6 +104,8 @@ public final class Mixer: Source, Sink {
     private let insertLock = NSLock()
     private var mixerThread: Thread?
 
+    /// Creates a mixer producing frames of `targetFrameMs`.
+    ///
     /// Python: `def __init__(self, target_frame_ms=40, samplerate=None, codec=None, sink=None, gain=0.0)`
     public init(targetFrameMs: Double = 40,
                 sampleRate: Double? = nil,
@@ -114,11 +126,15 @@ public final class Mixer: Source, Sink {
         self.gain = gain ?? 0.0
     }
 
+    /// Mutes the mixer output, or unmutes it when `mute` is false.
+    ///
     /// Python: `mute(mute=True)`
     public func mute(_ mute: Bool = true) {
         self.muted = mute
     }
 
+    /// Unmutes the mixer output, or mutes it when `unmute` is false.
+    ///
     /// Python: `unmute(unmute=True)`
     public func unmute(_ unmute: Bool = true) {
         self.muted = !unmute
@@ -126,6 +142,8 @@ public final class Mixer: Source, Sink {
 
     // MARK: - Per-source frame limit (Python: set_source_max_frames)
 
+    /// Sets how many frames are buffered for `source`.
+    ///
     /// Python: `set_source_max_frames(source, max_frames)`
     public func setSourceMaxFrames(_ maxFrames: Int, for source: any Source) {
         insertLock.lock()
@@ -144,6 +162,8 @@ public final class Mixer: Source, Sink {
 
     // MARK: - Sink: receive a frame from a source
 
+    /// Mixes `frame` from `source` into the output.
+    ///
     /// Python: `handle_frame(frame, source, decoded=False)`
     public func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
         guard let source else { return }
@@ -160,6 +180,7 @@ public final class Mixer: Source, Sink {
 
     // MARK: - Source lifecycle
 
+    /// Starts the mixing loop.
     public func start() {
         guard !shouldRun else { return }
         shouldRun = true
@@ -169,7 +190,9 @@ public final class Mixer: Source, Sink {
         mixerThread = t
     }
 
+    /// Stops the mixing loop.
     public func stop() { shouldRun = false }
+    /// Stops the mixer and drops its codec and sink.
     public func release() { stop(); codec = nil; sink = nil }
 
     // MARK: - Mixing loop (Python: _mixer_job)

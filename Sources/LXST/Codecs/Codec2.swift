@@ -63,10 +63,16 @@ public enum Codec2Mode: Int, CaseIterable {
 
 // MARK: - Codec2 constants (Python class-level)
 
+/// Input sample rate Codec2 expects, in Hz.
+///
 /// Python: `Codec2.INPUT_RATE = 8000`
 public let codec2InputRate: Double = 8000
+/// Output sample rate Codec2 produces, in Hz.
+///
 /// Python: `Codec2.OUTPUT_RATE = 8000`
 public let codec2OutputRate: Double = 8000
+/// Frame duration Codec2 encodes, in milliseconds.
+///
 /// Python: `Codec2.FRAME_QUANTA_MS = 40`
 public let codec2FrameQuantaMs: Double = 40
 
@@ -81,17 +87,27 @@ public let codec2FrameQuantaMs: Double = 40
 ///
 /// Default mode: `.mode2400` (Python: `def __init__(self, mode=CODEC2_2400)`)
 public final class Codec2Codec: Codec {
+    /// Codec identifier carried in the frame header.
     public static let headerByte: UInt8 = codecCodec2
 
+    /// Sample rate this codec prefers to be fed, in Hz.
     public var preferredSampleRate: Double? { codec2InputRate }
+    /// Frame duration this codec encodes, in milliseconds.
     public var frameQuantaMs:       Double? { codec2FrameQuantaMs }
+    /// Longest frame this codec encodes, in milliseconds.
     public var frameMaxMs:          Double? { nil }
+    /// Frame durations this codec accepts, in milliseconds.
     public var validFrameMs:        [Double] { [codec2FrameQuantaMs] }
+    /// Channel count this codec encodes.
     public var channels: Int? = 1
+    /// Source feeding this codec.
     public weak var source: (any Source)? = nil
+    /// Sink frames are handed to.
     public var sink:   (any Sink)?   = nil
 
+    /// Codec2 mode currently in use.
     public private(set) var mode: Codec2Mode
+    /// Sample rate decoded frames carry, in Hz.
     public private(set) var outputSampleRate: Double = codec2OutputRate
 
     private var state: OpaquePointer?
@@ -101,6 +117,8 @@ public final class Codec2Codec: Codec {
     private var samplesPerFrame: Int = 0
     private var bytesPerFrame:   Int = 0
 
+    /// Creates a codec encoding at `mode`.
+    ///
     /// Python: `def __init__(self, mode=CODEC2_2400)`
     public init(mode: Codec2Mode = .mode2400) {
         self.mode = mode

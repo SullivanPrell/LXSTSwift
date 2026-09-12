@@ -39,10 +39,13 @@ func prettySpeed(_ bitsPerSecond: Double) -> String {
 // Purely cosmetic — these strings never travel on the wire.
 
 extension NullCodec: CustomStringConvertible {
+    /// Textual description of the codec.
     public var description: String { "<LXST/NullCodec>" }
 }
 
 extension RawCodec: CustomStringConvertible {
+    /// Textual description of the codec and its settings.
+    ///
     /// Python: `<LXST/Raw @ {prettyspeed(channels*bitdepth*48000)}>`
     public var description: String {
         let ch = channels ?? 1
@@ -51,6 +54,8 @@ extension RawCodec: CustomStringConvertible {
 }
 
 extension Codec2Codec: CustomStringConvertible {
+    /// Textual description of the codec and its settings.
+    ///
     /// Python: `<LXST/Codec2 @ {prettyspeed(self.mode)}>` — the Codec2 mode
     /// constant *is* the bitrate in bits per second, and `Codec2Mode`'s raw
     /// value carries the same number.
@@ -60,6 +65,8 @@ extension Codec2Codec: CustomStringConvertible {
 }
 
 extension OpusCodec: CustomStringConvertible {
+    /// Textual description of the codec and its profile.
+    ///
     /// Python: `<LXST/Opus @ {profile_name(self.profile)}>`
     public var description: String { "<LXST/Opus @ \(profile.displayName)>" }
 }

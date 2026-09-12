@@ -48,6 +48,8 @@ public final class Packetizer: RemoteSink {
     /// Called on transmit failure. Python: `failure_callback`
     public var onFailure: (() -> Void)?
 
+    /// Creates a packetizer sending to `destination`.
+    ///
     /// Python: `def __init__(self, destination, failure_callback=None)`
     public init(destination: (any LXSTDestination)? = nil,
                 onFailure: (() -> Void)? = nil) {
@@ -64,6 +66,8 @@ public final class Packetizer: RemoteSink {
     /// Resume transmitting frames. Python: `Packetizer.unsquelch()`
     public func unsquelch() { squelched = false }
 
+    /// Packetizes `frame` and sends it to the destination.
+    ///
     /// Python: `Packetizer.handle_frame(frame, source=None)`
     public override func handleFrame(_ frame: AudioFrame, from source: (any Source)?) {
         guard let dest = destination else { return }

@@ -26,12 +26,15 @@ public protocol Filter: AnyObject {
 /// Simple high-pass filter using a first-order IIR.
 /// Python: `LXST.Filters.HighPass(cut)`
 public final class HighPass: Filter {
+    /// Cutoff frequency in Hz.
     public let cut: Double   // cutoff frequency in Hz
     private var prevInput:  Float = 0
     private var prevOutput: Float = 0
 
+    /// Creates a high-pass filter cutting below `cut`.
     public init(cut: Double) { self.cut = cut }
 
+    /// Returns `frame` with frequencies below the cutoff attenuated.
     public func handleFrame(_ frame: AudioFrame) -> AudioFrame {
         let rc  = Float(1.0 / (2.0 * Double.pi * cut))
         let dt  = Float(1.0 / frame.sampleRate)
@@ -51,11 +54,14 @@ public final class HighPass: Filter {
 /// Simple low-pass filter using a first-order IIR.
 /// Python: `LXST.Filters.LowPass(cut)`
 public final class LowPass: Filter {
+    /// Cutoff frequency in Hz.
     public let cut: Double
     private var prev: Float = 0
 
+    /// Creates a low-pass filter cutting above `cut`.
     public init(cut: Double) { self.cut = cut }
 
+    /// Returns `frame` with frequencies above the cutoff attenuated.
     public func handleFrame(_ frame: AudioFrame) -> AudioFrame {
         let rc    = Float(1.0 / (2.0 * Double.pi * cut))
         let dt    = Float(1.0 / frame.sampleRate)
@@ -74,11 +80,14 @@ public final class LowPass: Filter {
 /// Band-pass filter: high-pass followed by low-pass.
 /// Python: `LXST.Filters.BandPass(low_cut, high_cut)`
 public final class BandPass: Filter {
+    /// Lower cutoff frequency in Hz.
     public let lowCut:  Double
+    /// Upper cutoff frequency in Hz.
     public let highCut: Double
     private let hp: HighPass
     private let lp: LowPass
 
+    /// Creates a band-pass filter passing between `lowCut` and `highCut`.
     public init(lowCut: Double, highCut: Double) {
         self.lowCut  = lowCut
         self.highCut = highCut
@@ -86,6 +95,7 @@ public final class BandPass: Filter {
         self.lp      = LowPass(cut: highCut)
     }
 
+    /// Returns `frame` with frequencies outside the band attenuated.
     public func handleFrame(_ frame: AudioFrame) -> AudioFrame {
         lp.handleFrame(hp.handleFrame(frame))
     }
@@ -97,22 +107,34 @@ public final class BandPass: Filter {
 /// Python: `LXST.Filters.AGC(target_level=-12.0, max_gain=12.0, attack_time=0.0001,
 ///                            release_time=0.002, hold_time=0.001)`
 public final class AGC: Filter {
+    /// Default output target level, in decibels relative to full scale.
+    ///
     /// Python: default target level
     public static let defaultTargetLevel:  Double = -12.0
+    /// Default maximum gain, in decibels.
     public static let defaultMaxGain:      Double =  12.0
+    /// Default gain attack time, in seconds.
     public static let defaultAttackTime:   Double =   0.0001
+    /// Default gain release time, in seconds.
     public static let defaultReleaseTime:  Double =   0.002
+    /// Default gain hold time, in seconds.
     public static let defaultHoldTime:     Double =   0.001
 
+    /// Output target level, in decibels relative to full scale.
     public let targetLevel:  Double
+    /// Maximum gain, in decibels.
     public let maxGain:      Double
+    /// Gain attack time, in seconds.
     public let attackTime:   Double
+    /// Gain release time, in seconds.
     public let releaseTime:  Double
+    /// Gain hold time, in seconds.
     public let holdTime:     Double
 
     private var currentGain: Float = 1.0
     private var holdSamples: Int   = 0
 
+    /// Creates a gain control with the given tuning.
     public init(targetLevel:  Double = defaultTargetLevel,
                 maxGain:      Double = defaultMaxGain,
                 attackTime:   Double = defaultAttackTime,
@@ -125,6 +147,7 @@ public final class AGC: Filter {
         self.holdTime     = holdTime
     }
 
+    /// Returns `frame` with its level driven toward the target.
     public func handleFrame(_ frame: AudioFrame) -> AudioFrame {
         guard !frame.samples.isEmpty else { return frame }
 
