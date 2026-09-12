@@ -293,8 +293,9 @@ public final class OpusCodec: Codec {
         var outBuf = [UInt8](repeating: 0, count: maxBytes)
 
         let n = Int(pcm.count / targetCh)   // samples per channel
-        let encoded = pcm.withUnsafeBufferPointer { ptr in
-            opus_encode_float(enc, ptr.baseAddress!, Int32(n), &outBuf, Int32(maxBytes))
+        let encoded = pcm.withUnsafeBufferPointer { ptr -> Int32 in
+            guard let base = ptr.baseAddress else { return 0 }
+            return opus_encode_float(enc, base, Int32(n), &outBuf, Int32(maxBytes))
         }
         guard encoded > 0 else { throw CodecError.invalidFrame }
         return Data(outBuf.prefix(Int(encoded)))
@@ -316,9 +317,10 @@ public final class OpusCodec: Codec {
         let maxTotal = maxSamplesPerCh * ch
         var pcm = [Float](repeating: 0, count: maxTotal)
 
-        let decoded = data.withUnsafeBytes { ptr in
-            opus_decode_float(dec, ptr.bindMemory(to: UInt8.self).baseAddress!,
-                              Int32(data.count), &pcm, Int32(maxSamplesPerCh), 0)
+        let decoded = data.withUnsafeBytes { ptr -> Int32 in
+            guard let base = ptr.bindMemory(to: UInt8.self).baseAddress else { return 0 }
+            return opus_decode_float(dec, base, Int32(data.count), &pcm,
+                                     Int32(maxSamplesPerCh), 0)
         }
         guard decoded > 0 else { throw CodecError.invalidFrame }
 

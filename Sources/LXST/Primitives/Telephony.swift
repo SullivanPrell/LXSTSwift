@@ -960,8 +960,8 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
                                                                 targetFrameMs: targetFrameTimeMs,
                                                                 codec: NullCodec(),
                                                                 sink: receiveMixer) }
-        if receivePipeline == nil {
-            receivePipeline = try? Pipeline(source: receiveMixer!, codec: NullCodec(), sink: audioOutput!)
+        if receivePipeline == nil, let mixer = receiveMixer, let output = audioOutput {
+            receivePipeline = try? Pipeline(source: mixer, codec: NullCodec(), sink: output)
         }
     }
 

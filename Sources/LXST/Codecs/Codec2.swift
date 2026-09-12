@@ -111,8 +111,14 @@ public final class Codec2Codec: Codec {
 
     // MARK: - Lazy encoder/decoder setup
 
-    private func ensureState() throws {
-        guard state == nil else { return }
+    /// Returns the live codec2 state, creating it if this is the first use.
+    ///
+    /// The state is returned rather than only stored so callers hold a non-optional
+    /// pointer; reading `state` back after this call would reintroduce an optional the
+    /// function has already ruled out.
+    @discardableResult
+    private func ensureState() throws -> OpaquePointer {
+        if let state { return state }
         guard let s = codec2_create(mode.cMode) else {
             throw CodecError.encoderNotConfigured
         }
@@ -120,6 +126,7 @@ public final class Codec2Codec: Codec {
         samplesPerFrame = Int(codec2_samples_per_frame(s))
         let bits        = Int(codec2_bits_per_frame(s))
         bytesPerFrame   = (bits + 7) / 8   // round up to whole bytes
+        return s
     }
 
     // MARK: - Encode
@@ -128,7 +135,7 @@ public final class Codec2Codec: Codec {
     /// Wire output: `[mode_header_byte][codec2_encoded_bytes]`
     public func encode(_ frame: AudioFrame) throws -> Data {
         lock.lock(); defer { lock.unlock() }
-        try ensureState()
+        let state = try ensureState()
 
         // Resample to 8 kHz mono if needed
         let pcm16 = toInt16Mono(frame: frame, targetRate: CODEC2_INPUT_RATE)
@@ -136,11 +143,13 @@ public final class Codec2Codec: Codec {
         // Encode one frame at a time
         var encoded = Data([mode.headerByte])   // prepend mode header byte
         let stride = samplesPerFrame
+        guard stride > 0, bytesPerFrame > 0 else { throw CodecError.encoderNotConfigured }
         var offset = 0
         while offset + stride <= pcm16.count {
             var outBytes = [UInt8](repeating: 0, count: bytesPerFrame)
             pcm16[offset ..< offset + stride].withUnsafeBufferPointer { ptr in
-                codec2_encode(state!, &outBytes, UnsafeMutablePointer(mutating: ptr.baseAddress!))
+                guard let base = ptr.baseAddress else { return }
+                codec2_encode(state, &outBytes, UnsafeMutablePointer(mutating: base))
             }
             encoded.append(contentsOf: outBytes)
             offset += stride
@@ -173,10 +182,11 @@ public final class Codec2Codec: Codec {
             mode = frameMode
         }
 
-        try ensureState()
+        let state = try ensureState()
 
         // Drop the mode-header byte; the remainder is the codec2 payload.
         let payload = Data(data.dropFirst())
+        guard bytesPerFrame > 0 else { throw CodecError.encoderNotConfigured }
         guard payload.count % bytesPerFrame == 0 else { throw CodecError.invalidFrame }
 
         var allSamples = [Float]()
@@ -186,9 +196,8 @@ public final class Codec2Codec: Codec {
             let chunk = Data(payload[(f * bytesPerFrame) ..< ((f + 1) * bytesPerFrame)])
             var pcm16 = [Int16](repeating: 0, count: samplesPerFrame)
             chunk.withUnsafeBytes { ptr in
-                codec2_decode(state!,
-                              &pcm16,
-                              UnsafePointer(ptr.bindMemory(to: UInt8.self).baseAddress!))
+                guard let base = ptr.bindMemory(to: UInt8.self).baseAddress else { return }
+                codec2_decode(state, &pcm16, UnsafePointer(base))
             }
             // Convert Int16 → Float32 normalised to [-1, 1]
             allSamples.append(contentsOf: pcm16.map { Float($0) / 32768.0 })

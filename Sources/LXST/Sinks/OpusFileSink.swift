@@ -178,8 +178,9 @@ public final class OpusFileSink: LocalSink {
         let maxBytes = max(profile.maxBytesPerFrame(frameDurationMs: 20) * 4, 4096)
         var outBuf = [UInt8](repeating: 0, count: maxBytes)
 
-        let encoded = pcm.withUnsafeBufferPointer { ptr in
-            opus_encode_float(enc, ptr.baseAddress!, Int32(n), &outBuf, Int32(maxBytes))
+        let encoded = pcm.withUnsafeBufferPointer { ptr -> Int32 in
+            guard let base = ptr.baseAddress else { return 0 }
+            return opus_encode_float(enc, base, Int32(n), &outBuf, Int32(maxBytes))
         }
         guard encoded > 0 else { return }
 

@@ -94,13 +94,14 @@ public final class RawCodec: Codec {
                 for i in 0..<totalSamples { samples[i] = floats[i] }
             } else {
                 // For other depths, do a naive byte copy into Float32 slot
+                guard let srcBase = ptr.baseAddress else { return }
                 for i in 0..<totalSamples {
                     var v: Float = 0
                     let offset = i * bytesPerSample
                     withUnsafeMutableBytes(of: &v) { dest in
-                        let src = ptr.baseAddress!.advanced(by: offset)
-                        dest.baseAddress!.copyMemory(from: src,
-                                                     byteCount: min(4, bytesPerSample))
+                        guard let destBase = dest.baseAddress else { return }
+                        destBase.copyMemory(from: srcBase.advanced(by: offset),
+                                            byteCount: min(4, bytesPerSample))
                     }
                     samples[i] = v
                 }

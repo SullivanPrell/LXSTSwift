@@ -21,6 +21,13 @@ public protocol AudioBackend: AnyObject {
     func stopPlayback()
 }
 
+/// Failures raised by an ``AudioBackend``.
+public enum AudioBackendError: Error, Equatable {
+  /// The requested sample rate and channel count don't describe a format
+  /// `AVAudioFormat` can represent.
+  case unsupportedFormat(sampleRate: Double, channelCount: Int)
+}
+
 // MARK: - AudioPlayer protocol
 
 public protocol AudioPlayer: AnyObject {
@@ -104,10 +111,15 @@ public final class AVAudioEngineBackend: AudioBackend {
                                channelCount: Int) throws -> any AudioPlayer {
         let engine = AVAudioEngine()
         let player = AVAudioPlayerNode()
-        let format = AVAudioFormat(commonFormat: .pcmFormatFloat32,
-                                   sampleRate: sampleRate,
-                                   channels: AVAudioChannelCount(channelCount),
-                                   interleaved: false)!
+        guard channelCount > 0,
+              let format = AVAudioFormat(commonFormat: .pcmFormatFloat32,
+                                         sampleRate: sampleRate,
+                                         channels: AVAudioChannelCount(channelCount),
+                                         interleaved: false)
+        else {
+            throw AudioBackendError.unsupportedFormat(sampleRate: sampleRate,
+                                                      channelCount: channelCount)
+        }
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: format)
         try engine.start()

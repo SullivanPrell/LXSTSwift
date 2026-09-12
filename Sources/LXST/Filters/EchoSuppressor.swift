@@ -661,9 +661,10 @@ public final class EchoSuppressor: Filter, ReferenceSink {
         var c = [Float](repeating: 0, count: L)
         refWindow.withUnsafeBufferPointer { rp in
             micWindow.withUnsafeBufferPointer { mp in
+                guard let ref = rp.baseAddress, let mic = mp.baseAddress else { return }
                 for k in 0..<L {
                     var dp: Float = 0
-                    vDSP_dotpr(rp.baseAddress! + k, 1, mp.baseAddress!, 1, &dp, vDSP_Length(Nc))
+                    vDSP_dotpr(ref + k, 1, mic, 1, &dp, vDSP_Length(Nc))
                     c[k] = dp
                 }
             }
@@ -716,15 +717,15 @@ public final class EchoSuppressor: Filter, ReferenceSink {
         let sr = samplerate ?? 48000
 
         if bestVal >= correlationThreshold {
-            if delaySamplesValue == nil {
-                delaySamplesValue = Double(bestDelayDs * decimFactor)
-                delayMsValue = rawDelayMs
-                delayConfidence = bestVal
-            } else {
-                let ds = emaAlpha * Double(bestDelayDs * decimFactor) + (1.0 - emaAlpha) * delaySamplesValue!
+            if let previous = delaySamplesValue {
+                let ds = emaAlpha * Double(bestDelayDs * decimFactor) + (1.0 - emaAlpha) * previous
                 delaySamplesValue = ds
                 delayMsValue = ds / sr * 1000.0
                 delayConfidence = emaAlpha * bestVal + (1.0 - emaAlpha) * delayConfidence
+            } else {
+                delaySamplesValue = Double(bestDelayDs * decimFactor)
+                delayMsValue = rawDelayMs
+                delayConfidence = bestVal
             }
         }
     }

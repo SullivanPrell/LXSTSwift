@@ -73,7 +73,7 @@ public final class LinkSource: RemoteSource {
             let payload    = Data(frameBytes.dropFirst())
 
             // Dynamic codec switching: replace codec if type changed
-            if codec == nil || type(of: codec!).headerByte != headerByte {
+            if codec.map({ type(of: $0).headerByte != headerByte }) ?? true {
                 if let newCodec = LinkSource.makeReceiveCodec(for: headerByte,
                                                               sink: sink, source: self) {
                     codec = newCodec
