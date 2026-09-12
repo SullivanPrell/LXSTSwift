@@ -223,6 +223,7 @@ public final class EchoSuppressor: Filter, ReferenceSink {
     }
 
     /// Hamming-windowed sinc low-pass FIR, normalised to unity DC gain.
+    ///
     /// Python: `_design_decimator_taps`.
     static func designDecimatorTaps(numTaps: Int, cutoffHz: Double, samplerate: Double) -> [Float] {
         let fc = cutoffHz / samplerate
@@ -271,7 +272,9 @@ public final class EchoSuppressor: Filter, ReferenceSink {
         return out
     }
 
-    /// First-order pre-emphasis. Python `_preemph`: y[0]=x[0]-a*state; y[i]=x[i]-a*x[i-1]; new state = x[-1].
+    /// First-order pre-emphasis.
+    ///
+    /// Python `_preemph`: y[0]=x[0]-a*state; y[i]=x[i]-a*x[i-1]; new state = x[-1].
     func preemph(_ x: [Float], state: Float) -> (out: [Float], state: Float) {
         if x.isEmpty { return ([], state) }
         var y = [Float](repeating: 0, count: x.count)

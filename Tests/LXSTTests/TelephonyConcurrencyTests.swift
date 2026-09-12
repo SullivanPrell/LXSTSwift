@@ -13,7 +13,9 @@ import ReticulumSwift
 @testable import LXST
 
 /// Concurrency stress test for the `Telephone.pipelineLock` hardening in the
-/// 2026-07-19 deferred data-race pass. The rest of the telephony suite is
+/// 2026-07-19 deferred data-race pass.
+///
+/// The rest of the telephony suite is
 /// single-threaded and cannot exercise the races on the seven pipeline
 /// class-reference FIELDS (receiveMixer / transmitMixer / audioInput / audioOutput
 /// / dialTone / receivePipeline / transmitPipeline), which were previously mutated

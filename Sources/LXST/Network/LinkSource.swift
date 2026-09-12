@@ -37,7 +37,9 @@ public final class LinkSource: RemoteSource {
     // MARK: - Receive-path codec construction
 
     /// Build the codec for a wire header byte, already wired to the sink the stream will be
-    /// played through. Returns nil for a header byte no codec claims.
+    /// played through.
+    ///
+    /// Returns nil for a header byte no codec claims.
     ///
     /// The sink is attached **here**, not by the caller, because `decode` configures itself from
     /// it — Opus takes its output rate and channel count from the sink (Python `Opus.py:170,174`)

@@ -72,6 +72,7 @@ public enum CodecError: Error, Equatable {
 // MARK: - Raw bitdepth constants
 
 /// Raw PCM bitdepth identifier byte, packed into the Raw sub-header.
+///
 /// Python: `Raw.BITDEPTH_16 = 0x00`, `BITDEPTH_32 = 0x01`, etc.
 public enum RawBitDepth: UInt8, CaseIterable {
     case float16  = 0x00   // Python: BITDEPTH_16

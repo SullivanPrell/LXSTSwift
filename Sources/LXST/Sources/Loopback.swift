@@ -11,6 +11,7 @@
 import Foundation
 
 /// A combined Source+Sink that routes frames back through itself.
+///
 /// Useful for testing pipelines and as a pass-through stage.
 ///
 /// Python: `LXST.Sources.Loopback`

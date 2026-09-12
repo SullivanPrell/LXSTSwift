@@ -169,7 +169,9 @@ final class MixerTests: XCTestCase {
     /// The core regression test for the ThreadSanitizer race in `Mixer.setGain`:
     /// while the mix loop reads `gain`/`muted`/`referenceOuts`/`shouldRun` every
     /// frame on the `lxst.mixer` thread, hammer all of them (plus the frame queue)
-    /// from several control threads. Must be clean under `--sanitize=thread`.
+    /// from several control threads.
+    ///
+    /// Must be clean under `--sanitize=thread`.
     func testConcurrentControlPlaneStressIsRaceFree() {
         let m = Mixer(targetFrameMs: 5, sampleRate: 48000)
         m.sink = CountingSink()

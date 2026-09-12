@@ -48,6 +48,7 @@ public let codecCodec2: UInt8 = 0x02
 // MARK: - Platform audio backend factory
 
 /// Returns the appropriate platform audio backend.
+///
 /// Python: `LXST.Sources.get_backend()` / `LXST.Sinks.get_backend()`
 /// On Apple platforms returns `AVAudioEngineBackend`; elsewhere returns nil.
 public func getBackend() -> (any AudioBackend)? {

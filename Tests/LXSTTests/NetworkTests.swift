@@ -123,7 +123,9 @@ final class NetworkTests: XCTestCase {
     }
 
     /// The key regression: a `PREFERRED_PROFILE + profile` composite must survive
-    /// the wire as a plain int. The old code forced it through UInt8, so 0x13F
+    /// the wire as a plain int.
+    ///
+    /// The old code forced it through UInt8, so 0x13F
     /// wrapped to 0x3F and the profile signal was lost.
     func testSignallingRoundTripProfileComposite() {
         let composite = Int(signallingPreferredProfile) + Int(TelephonyProfile.qualityHigh.rawValue) // 0x14F

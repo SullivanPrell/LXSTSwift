@@ -12,7 +12,9 @@ import Foundation
 
 /// A sink that receives a mixer's *reference* output — the mixed signal as it
 /// is played out (before codec encoding) — for use as an echo-cancellation
-/// reference. Python: any object with `handle_reference(frame, samplerate)`
+/// reference.
+///
+/// Python: any object with `handle_reference(frame, samplerate)`
 /// registered in `Mixer.reference_outs`.
 public protocol ReferenceSink: AnyObject {
     func handleReference(_ frame: AudioFrame, samplerate: Double)
@@ -69,7 +71,9 @@ public final class Mixer: Source, Sink {
         get { stateLock.lock(); defer { stateLock.unlock() }; return unsafeMuted }
         set { stateLock.lock(); unsafeMuted = newValue; stateLock.unlock() }
     }
-    /// Whether the mix loop is running. Python: `should_run`.
+    /// Whether the mix loop is running.
+    ///
+    /// Python: `should_run`.
     public private(set) var shouldRun: Bool {
         get { stateLock.lock(); defer { stateLock.unlock() }; return unsafeShouldRun }
         set { stateLock.lock(); unsafeShouldRun = newValue; stateLock.unlock() }

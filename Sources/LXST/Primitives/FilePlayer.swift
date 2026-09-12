@@ -14,7 +14,9 @@ import Foundation
 /// Python: `LXST.Primitives.Players.FilePlayer`
 public final class FilePlayer {
     public private(set) var running: Bool = false
-    /// Alias for `running`. Python: `playing` property.
+    /// Alias for `running`.
+    ///
+    /// Python: `playing` property.
     public var playing: Bool { running }
 
     /// Python: `finished_callback` property (getter/setter with type check).
@@ -52,7 +54,9 @@ public final class FilePlayer {
     public func start() { running = true }
     public func stop()  { running = false }
 
-    /// Stop playback and release all pipeline resources. Idempotent.
+    /// Stop playback and release all pipeline resources.
+    ///
+    /// Idempotent.
     /// Python: `FilePlayer.release()` (commit 2730af9)
     public func release() { stop() }
 }

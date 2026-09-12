@@ -132,7 +132,9 @@ final class TelephonyTests: XCTestCase {
     /// The Telephone must serve the `lxst.telephony` destination — the same
     /// app_name + primitive (`APP_NAME="lxst"`, `PRIMITIVE_NAME="telephony"`) a
     /// Python `rnphone`/LXST node uses — or cross-implementation calls can never
-    /// reach it. Pins the aspect against a manually-built destination hash.
+    /// reach it.
+    ///
+    /// Pins the aspect against a manually-built destination hash.
     func testTelephoneServesLxstTelephonyDestination() throws {
         let identity = Identity()
         let phone = Telephone(identity: identity, transport: Transport())

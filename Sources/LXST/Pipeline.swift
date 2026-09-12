@@ -19,7 +19,9 @@ public final class Pipeline {
     public let source: any Source
     public let sink:   any Sink
 
-    /// The active codec. Assigning a new value switches codecs mid-stream.
+    /// The active codec.
+    ///
+    /// Assigning a new value switches codecs mid-stream.
     /// Python: `@codec.setter` — replaces codec without dropping frames.
     public var codec: any Codec {
         get { source.codec ?? storedCodec }
@@ -33,10 +35,12 @@ public final class Pipeline {
     private var storedCodec: any Codec
 
     /// Whether the pipeline is currently running.
+    ///
     /// Python: `Pipeline.running` property.
     public var running: Bool { source.shouldRun }
 
     /// Initialise a pipeline.
+    ///
     /// Python: `Pipeline.__init__(source, codec, sink)`
     /// Throws `PipelineError` if any argument is incompatible.
     public init(source: any Source, codec: any Codec, sink: any Sink) throws {
@@ -76,7 +80,9 @@ public final class Pipeline {
     }
 
     private var released = false
-    /// Release pipeline resources and stop. Idempotent.
+    /// Release pipeline resources and stop.
+    ///
+    /// Idempotent.
     /// Python: `Pipeline.release()` (commit 2730af9)
     public func release() {
         guard !released else { return }

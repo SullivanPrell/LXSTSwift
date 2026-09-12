@@ -40,7 +40,9 @@ public final class LineSink: LocalSink {
     private var backend: (any AudioBackend)?
     private var player:  (any AudioPlayer)?
 
-    /// Test hook: whether a player is currently held. Used to assert that a
+    /// Test hook: whether a player is currently held.
+    ///
+    /// Used to assert that a
     /// failed channel-map rebuild does not leave the sink silent.
     var currentPlayerForTesting: (any AudioPlayer)? { player }
 

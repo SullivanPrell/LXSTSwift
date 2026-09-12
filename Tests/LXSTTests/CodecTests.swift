@@ -325,7 +325,9 @@ final class CodecTests: XCTestCase {
     }
 
     /// A sink rate that is *not* one of libopus's five supported output rates still gets frames
-    /// at its own rate. Real hardware reports 44.1 kHz routinely (`AudioBackend.swift:56` adopts
+    /// at its own rate.
+    ///
+    /// Real hardware reports 44.1 kHz routinely (`AudioBackend.swift:56` adopts
     /// the device format), and a frame the sink cannot play is the same defect as a frame at the
     /// wrong rate.
     func testOpusDecodeMatchesASinkRateOpusCannotDecodeAt() throws {
@@ -343,7 +345,9 @@ final class CodecTests: XCTestCase {
 
     /// Channel count comes from the sink where the sink declares one
     /// (Python: `Opus.py:169-170` — `if self.sink and self.sink.channels`), and the rate is the
-    /// sink's independently of that. Previously ran sink-less and asserted the channel count
+    /// sink's independently of that.
+    ///
+    /// Previously ran sink-less and asserted the channel count
     /// against the profile that produced it.
     func testOpusDecodeOutputHasCorrectChannelCount() throws {
         // voiceMax profile = stereo @ 48 kHz
@@ -377,7 +381,9 @@ final class CodecTests: XCTestCase {
                       codecRate: codec.profile.sampleRate, durationMs: 20)
     }
 
-    /// Attaching a different sink after a decode reconfigures the decoder. The pre-fix
+    /// Attaching a different sink after a decode reconfigures the decoder.
+    ///
+    /// The pre-fix
     /// `ensureDecoder()` cached on `decoder == nil` alone, so nothing short of a profile change
     /// could ever rebuild it.
     func testOpusDecoderFollowsAChangedSink() throws {

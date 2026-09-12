@@ -73,6 +73,7 @@ open class SignallingReceiver {
     }
 
     /// Propagate received signals to proxy.
+    ///
     /// Python: `signalling_received(signals, source)`
     /// Open so `Telephone` can override it.
     open func signallingReceived(_ signals: [Int], from source: (any Source)?) {
@@ -89,7 +90,9 @@ open class SignallingReceiver {
         ]))
     }
 
-    /// Decode the integer signal list from a received packet. Returns nil if the
+    /// Decode the integer signal list from a received packet.
+    ///
+    /// Returns nil if the
     /// packet carries no `fieldSignalling` field. A scalar value is wrapped in a
     /// single-element list (Python: `if type(signalling)==list ... else [signalling]`).
     static func decodeSignals(_ data: Data) -> [Int]? {
@@ -133,6 +136,7 @@ open class SignallingReceiver {
     // MARK: - Internal
 
     /// Decode a received signalling packet and dispatch to `signallingReceived`.
+    ///
     /// Split out from the Link callback so the wire-decode path is testable
     /// without a live Link. Python: `SignallingReceiver._packet`.
     func processSignallingData(_ data: Data, from source: (any Source)?) {

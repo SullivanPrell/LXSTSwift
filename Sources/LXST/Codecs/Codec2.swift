@@ -25,6 +25,7 @@ public enum Codec2Mode: Int, CaseIterable {
     case mode3200 = 3200   // Python: CODEC2_3200
 
     /// C-library mode constant (codec2.h: CODEC2_MODE_*).
+    ///
     /// Python: `Codec2.MODE_HEADERS` maps Python mode int → header byte,
     /// but the C library uses its own ordering. We map our enum → C constant.
     internal var cMode: Int32 {
@@ -105,7 +106,9 @@ public final class Codec2Codec: Codec {
         self.mode = mode
     }
 
-    /// Change the active mode. Resets the codec state.
+    /// Change the active mode.
+    ///
+    /// Resets the codec state.
     /// Python: `Codec2.set_mode(mode)`
     public func setMode(_ newMode: Codec2Mode) {
         guard newMode != mode else { return }

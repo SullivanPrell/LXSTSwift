@@ -12,6 +12,7 @@ import XCTest
 @testable import LXST
 
 /// Tests for LXST wire-format constants, codec header bytes, and msgpack structure.
+///
 /// Every value is verified against the Python 0.4.6 reference.
 final class WireFormatTests: XCTestCase {
 

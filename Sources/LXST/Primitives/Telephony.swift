@@ -42,14 +42,18 @@ public enum SignallingStatus: UInt8, Equatable, CaseIterable {
 public let signallingPreferredProfile: UInt8 = 0xFF
 
 /// Marker byte added to `CallMode.rawValue` to signal a preferred call mode
-/// (full/half duplex). Composite values (`0xF1`, `0xF2`) sit below
+/// (full/half duplex).
+///
+/// Composite values (`0xF1`, `0xF2`) sit below
 /// `PREFERRED_PROFILE` (0xFF) so profile and mode composites never overlap.
 /// Python: `Signalling.PREFERRED_MODE = 0xF0`
 public let signallingPreferredMode: UInt8 = 0xF0
 
 // MARK: - CallMode
 
-/// Duplex mode for a telephony call. In half-duplex mode the local transmit
+/// Duplex mode for a telephony call.
+///
+/// In half-duplex mode the local transmit
 /// packetizer is squelched, so audio only flows one way at a time.
 /// Python: `Profiles.MODE_FULL_DUPLEX` / `Profiles.MODE_HALF_DUPLEX`.
 public enum CallMode: UInt8, CaseIterable {
@@ -208,7 +212,9 @@ public final class ActiveCall {
     public var audioSource: LinkSource?
     public var filters: [any Filter] = []
     /// The echo suppressor in this call's mic filter chain, if echo
-    /// cancellation is enabled. Its reference input is the receive mixer's
+    /// cancellation is enabled.
+    ///
+    /// Its reference input is the receive mixer's
     /// played-out signal. Python: `link.echo_suppressor`.
     public var echoSuppressor: EchoSuppressor?
 
@@ -264,7 +270,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     public private(set) var activeCall: ActiveCall?
 
     /// Incoming links that have established but whose caller has not yet
-    /// identified. They sit in AVAILABLE state until the remote identifies (or
+    /// identified.
+    ///
+    /// They sit in AVAILABLE state until the remote identifies (or
     /// the link closes). Mirrors Python's `self.links` dict — an incoming link
     /// is only promoted to `activeCall` once the caller is identified and
     /// allowed. Keyed by link id.
@@ -307,7 +315,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     /// Factory for the platform audio backend used by the call's capture
     /// (`LineSource`) and playback (`LineSink`). `Telephone` itself is
     /// platform-agnostic; a host app injects this to wire real mic/speaker I/O
-    /// (e.g. `{ AVAudioEngineBackend() }`). Each call returns a fresh instance
+    /// (e.g. `{ AVAudioEngineBackend() }`).
+    ///
+    /// Each call returns a fresh instance
     /// because a backend owns a single engine, and capture + playback run on
     /// separate ones. When `nil`, the call still completes signalling but moves
     /// no audio (used by tests).
@@ -330,6 +340,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     private var transmitCodec: (any Codec)?
     private var targetFrameTimeMs: Double = 60
     /// Receive-mixer per-source frame buffer depth for the active profile.
+    ///
     /// Python: `target_buffer_frames`. Default matches the default profile.
     private var targetBufferFrames: Int = TelephonyProfile.defaultProfile.bufferFrames
 
@@ -530,6 +541,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     }
 
     /// Convenience single-signal overload.
+    ///
     /// The value is an `Int` (not `UInt8`) so the composite
     /// `PREFERRED_PROFILE + profile` (e.g. `0x13F`) round-trips intact.
     public func sendSignal(_ signal: Int, on link: Link) {
@@ -837,7 +849,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 
     // MARK: - Incoming link
 
-    /// An incoming call link has established. Mirrors Python
+    /// An incoming call link has established.
+    ///
+    /// Mirrors Python
     /// `__incoming_link_established`: we do NOT promote it to `activeCall` and
     /// do NOT ring yet — we register a remote-identified callback, park the link
     /// in `pendingIncomingLinks`, and signal AVAILABLE. The caller responds to
@@ -863,7 +877,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         sendSignal(.available, on: link)
     }
 
-    /// The caller on an incoming link has identified. Mirrors Python
+    /// The caller on an incoming link has identified.
+    ///
+    /// Mirrors Python
     /// `__caller_identified`: re-check busy/allowed (signalling BUSY + tearing
     /// down if not), otherwise promote the link to `activeCall`, ring, fire the
     /// ringing callback, and arm the ring timeout.
@@ -919,7 +935,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         if isActive, !terminating { hangup() }
     }
 
-    /// Whether `identity` is permitted to call. Mirrors Python `__is_allowed`.
+    /// Whether `identity` is permitted to call.
+    ///
+    /// Mirrors Python `__is_allowed`.
     private func isAllowed(_ identity: Identity) -> Bool {
         if let blocked, blocked.contains(identity.hash) { return false }
         switch allowed {
@@ -945,7 +963,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     }
 
     /// Locking wrapper for callers that do NOT already hold `pipelineLock`
-    /// (the `.ringing` and incoming-caller-identified paths). Callers already
+    /// (the `.ringing` and incoming-caller-identified paths).
+    ///
+    /// Callers already
     /// holding the lock (`openPipelines`, `resetDiallingPipelines`) must call
     /// `prepareDiallingPipelinesLocked()` directly to avoid re-entering the
     /// non-recursive lock.
@@ -954,7 +974,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
         prepareDiallingPipelinesLocked()
     }
 
-    /// Builds the receive-side dialling pipeline. Caller MUST hold `pipelineLock`.
+    /// Builds the receive-side dialling pipeline.
+    ///
+    /// Caller MUST hold `pipelineLock`.
     /// The body is byte-identical to the original `prepareDiallingPipelines` — the
     /// nil-check-then-assign order (audioOutput → receiveMixer → dialTone →
     /// receivePipeline) and every constructor argument are unchanged, so audio/wire
@@ -1135,7 +1157,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
 
     /// Nil out every pipeline field + reset the mute flags, all under `pipelineLock`
     /// (the mute flags are guarded there too so this stays consistent with the gain/
-    /// mute accessors). Pipeline .stop() is done by the caller (stopPipelines) first.
+    /// mute accessors).
+    ///
+    /// Pipeline .stop() is done by the caller (stopPipelines) first.
     private func clearPipelineFields() {
         pipelineLock.lock()
         receiveMixer      = nil

@@ -14,7 +14,9 @@ import Foundation
 /// Python: `LXST.Primitives.Recorders.FileRecorder`
 public final class FileRecorder {
     public private(set) var running: Bool = false
-    /// Alias for `running`. Python: `recording` property.
+    /// Alias for `running`.
+    ///
+    /// Python: `recording` property.
     public var recording: Bool { running }
 
     private var path: URL?

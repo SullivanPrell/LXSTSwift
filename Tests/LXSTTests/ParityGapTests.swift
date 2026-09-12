@@ -12,6 +12,7 @@ import XCTest
 @testable import LXST
 
 /// Tests for the small parity gaps identified in the gap analysis.
+///
 /// All values verified against Python LXST 0.4.6.
 final class ParityGapTests: XCTestCase {
 

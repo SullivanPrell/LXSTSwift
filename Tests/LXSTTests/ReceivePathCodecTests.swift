@@ -24,7 +24,9 @@ final class ReceivePathCodecTests: XCTestCase {
         try XCTUnwrap(LinkSource.makeReceiveCodec(for: headerByte, sink: sink, source: nil))
     }
 
-    /// Every codec the receive path can build arrives with its sink attached. Enumerated from
+    /// Every codec the receive path can build arrives with its sink attached.
+    ///
+    /// Enumerated from
     /// `codecType(for:)` rather than hand-listed, so a codec added to the wire table without
     /// being added here fails instead of going unchecked.
     func testEveryReceiveCodecIsBuiltWithItsSinkAttached() throws {
@@ -50,7 +52,9 @@ final class ReceivePathCodecTests: XCTestCase {
     }
 
     /// The worked example from `bugs/017`: a `qualityMedium` sender (Opus 24 kHz) reaching a
-    /// receiver whose codec is the 8 kHz default, playing into a 48 kHz sink. Before the fix the
+    /// receiver whose codec is the 8 kHz default, playing into a 48 kHz sink.
+    ///
+    /// Before the fix the
     /// receiver got 480 samples where the mixer expected 2880 — 10 ms of speech at six times
     /// pitch, then 50 ms of silence, with signalling reporting an established call throughout.
     func testAReceiveCodecDecodesAtTheSinkRateOnItsFirstFrame() throws {
