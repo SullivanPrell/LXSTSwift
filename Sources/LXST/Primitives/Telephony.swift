@@ -247,6 +247,18 @@ public final class ActiveCall {
   public var audioSource: LinkSource?
   /// Filters applied to captured audio.
   public var filters: [any Filter] = []
+  /// The gain control in this call's mic filter chain, if it is enabled.
+  ///
+  /// Half-duplex squelch pauses it, so the squelched stretch does not wind the
+  /// gain up against the noise floor. Python: `link.filter_agc`
+  /// (`Telephony.py:777-778`).
+  public var filterAGC: AGC?
+  /// Whether a mode switch signalled by the peer is ignored.
+  ///
+  /// Python sets `link.mode_switch_disabled` and then tests only that the
+  /// attribute exists (`Telephony.py:599`), never clearing it, so the flag is the
+  /// same gate.
+  public var modeSwitchDisabled: Bool = false
   /// The echo suppressor in this call's mic filter chain, if echo
   /// cancellation is enabled.
   ///
@@ -366,6 +378,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
   // Mute state (persists when no active call so they can be applied on answer)
   private var receiveIsMuted: Bool = false
   private var transmitIsMuted: Bool = false
+  private var loudspeakerIsOn: Bool = false
 
   // Mic filter chain toggles. Python: use_agc / use_bandpass / use_echo_cancellation.
   /// Whether automatic gain control is applied.
@@ -378,6 +391,10 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
   // Audio device selection
   /// Device call audio is played on.
   public var speakerDevice: String? = nil
+  /// Device call audio is played on while the loudspeaker is switched on.
+  ///
+  /// Python: `loudspeaker_device`, set by `set_loudspeaker` (`Telephony.py:284-286`).
+  public var loudspeakerDevice: String? = nil
   /// Device call audio is captured from.
   public var microphoneDevice: String? = nil
   /// Device the ringtone is played on.
@@ -645,6 +662,15 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     return m?.muted ?? fallback
   }
 
+  /// Whether call audio is routed to the loudspeaker.
+  ///
+  /// Python: `loudspeaker_on` property (`Telephony.py:468-470`).
+  public var loudspeakerOn: Bool {
+    pipelineLock.lock()
+    defer { pipelineLock.unlock() }
+    return loudspeakerIsOn
+  }
+
   /// Whether transmitted audio is muted.
   ///
   /// Python: `transmit_muted` property
@@ -698,17 +724,54 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     sendSignal(Int(status.rawValue), on: link)
   }
 
+  // MARK: - Loudspeaker
+
+  /// Route call audio to the loudspeaker, or back to the speaker when `enable` is false.
+  ///
+  /// Python: `Telephone.enable_loudspeaker(enable=True)` (`Telephony.py:551-554`).
+  public func enableLoudspeaker(_ enable: Bool = true) {
+    pipelineLock.lock()
+    let changed = loudspeakerIsOn != enable
+    loudspeakerIsOn = enable
+    pipelineLock.unlock()
+    // Python rebuilds only on a change, so a repeated call does not drop audio.
+    if changed { updateAudioOutput() }
+  }
+
+  /// Route call audio back to the speaker, or to the loudspeaker when `disable` is false.
+  ///
+  /// Python: `Telephone.disable_loudspeaker(disable=True)` (`Telephony.py:556-559`).
+  public func disableLoudspeaker(_ disable: Bool = true) {
+    enableLoudspeaker(!disable)
+  }
+
   // MARK: - Transmit squelch (half-duplex)
+
+  /// Pause the call's gain control, or resume it when `pause` is false.
+  ///
+  /// Python: `Telephone.pause_agc(pause=True)` (`Telephony.py:561-564`).
+  public func pauseAGC(_ pause: Bool = true) {
+    activeCall?.filterAGC?.paused = pause
+  }
+
+  /// Resume the call's gain control, or pause it when `resume` is false.
+  ///
+  /// Python: `Telephone.resume_agc(resume=True)` (`Telephony.py:566-569`).
+  public func resumeAGC(_ resume: Bool = true) {
+    activeCall?.filterAGC?.paused = !resume
+  }
 
   /// Squelch the local transmit path (used by half-duplex mode).
   /// Python: `Telephone.squelch_transmit(squelch=True)`
   public func squelchTransmit(_ squelch: Bool = true) {
+    pauseAGC(squelch)
     guard let pkt = activeCall?.packetizer else { return }
     if squelch { pkt.squelch() } else { pkt.unsquelch() }
   }
 
   /// Resume the local transmit path. Python: `Telephone.unsquelch_transmit(unsquelch=True)`
   public func unsquelchTransmit(_ unsquelch: Bool = true) {
+    resumeAGC(unsquelch)
     guard let pkt = activeCall?.packetizer else { return }
     if unsquelch { pkt.unsquelch() } else { pkt.squelch() }
   }
@@ -867,6 +930,9 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
   /// Python: `Telephone.switch_mode(mode=None, from_signalling=False)`
   public func switchMode(_ mode: CallMode, fromSignalling: Bool = false) {
     guard let call = activeCall else { return }
+    // `Telephony.py:599`—the local side keeps control of the mode once it has
+    // stopped following the peer.
+    guard !(fromSignalling && call.modeSwitchDisabled) else { return }
     guard call.callMode != mode else { return }
     guard CallMode.available.contains(mode) else { return }
     guard callStatus == .established else { return }
@@ -877,6 +943,17 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
       sendSignal(composite, on: call.link)
     }
     selectCallMode(mode)
+  }
+
+  /// Stop following mode switches signalled by the peer, reporting whether a call
+  /// was in progress to apply it to.
+  ///
+  /// Python: `Telephone.disable_remote_mode_follow()` (`Telephony.py:591-596`).
+  @discardableResult
+  public func disableRemoteModeFollow() -> Bool {
+    guard let call = activeCall else { return false }
+    call.modeSwitchDisabled = true
+    return true
   }
 
   /// Apply a duplex mode locally (default to `DEFAULT_MODE` when nil), squelching
@@ -1145,7 +1222,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     // Python: self.__select_call_mode(self.active_call.call_mode)
     selectCallMode(activeCall?.callMode)
     if audioOutput == nil {
-      audioOutput = LineSink(device: speakerDevice, backend: makeAudioBackend?())
+      audioOutput = LineSink(device: outputDeviceLocked(), backend: makeAudioBackend?())
     }
     if receiveMixer == nil {
       receiveMixer = Mixer(targetFrameMs: targetFrameTimeMs, gain: receiveGain)
@@ -1189,7 +1266,13 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     // Python: filter_chain construction in __open_audio_pipelines.
     var filters: [any Filter] = []
     if useBandpass { filters.append(BandPass(lowCut: 250, highCut: 8500)) }
-    if useAGC { filters.append(AGC(targetLevel: -15)) }
+    if useAGC {
+      // Python keeps the instance on the call so squelch can pause it
+      // (`Telephony.py:777-778`).
+      let agc = AGC(targetLevel: -15)
+      activeCall?.filterAGC = agc
+      filters.append(agc)
+    }
     var suppressor: EchoSuppressor? = nil
     if useEchoCancellation {
       let es = EchoSuppressor()
@@ -1249,6 +1332,39 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     }
     sendSignal(.established, on: call.link)
     _ = output
+  }
+
+  /// The playback device the receive path plays on.
+  ///
+  /// Python: `LineSink(preferred_device=self.speaker_device)`, or the loudspeaker
+  /// when it is switched on (`Telephony.py:669`).
+  /// Caller MUST hold `pipelineLock`.
+  private func outputDeviceLocked() -> String? {
+    loudspeakerIsOn ? loudspeakerDevice : speakerDevice
+  }
+
+  /// Rebuild the receive output and its pipeline on the currently selected device.
+  ///
+  /// Python: `Telephone.__update_audio_output()` (`Telephony.py:676-688`). The lock
+  /// is held across the whole swap, as `resetDiallingPipelines` holds it, so no
+  /// observer sees the pipeline pointing at a stopped sink.
+  private func updateAudioOutput() {
+    pipelineLock.lock()
+    defer { pipelineLock.unlock() }
+    guard activeCall != nil, receivePipeline != nil, let mixer = receiveMixer,
+      let previousOutput = audioOutput
+    else { return }
+
+    let previousPipeline = receivePipeline
+    let output = LineSink(device: outputDeviceLocked(), backend: makeAudioBackend?())
+    audioOutput = output
+    receivePipeline = try? Pipeline(source: mixer, codec: NullCodec(), sink: output)
+    receivePipeline?.start()
+    previousPipeline?.stop()
+    previousOutput.stop()
+    // Stopping the old pipeline stops its source, which is this same mixer, so the
+    // restart is what keeps audio flowing. Python ends the swap the same way.
+    mixer.start()
   }
 
   private func startPipelines() {
@@ -1347,6 +1463,7 @@ public final class Telephone: SignallingReceiver, SignallingHandler {
     dialTone = nil
     receiveIsMuted = false
     transmitIsMuted = false
+    loudspeakerIsOn = false
     pipelineLock.unlock()
   }
 }
@@ -1391,6 +1508,22 @@ extension Telephone {
     }
   }
 
+  /// Test-only: install an active call without driving link establishment.
+  func testSetActiveCall(_ call: ActiveCall) { activeCall = call }
+  /// Test-only: build the call's audio pipelines, as answering a call does.
+  func testOpenPipelines(for identity: Identity) { openPipelines(for: identity) }
+  /// Test-only: the device the receive output was built on.
+  func testAudioOutputDevice() -> String? {
+    pipelineLock.lock()
+    defer { pipelineLock.unlock() }
+    return audioOutput?.device
+  }
+  /// Test-only: identity of the receive output, to tell a rebuild from a no-op.
+  func testAudioOutputIdentity() -> ObjectIdentifier? {
+    pipelineLock.lock()
+    defer { pipelineLock.unlock() }
+    return audioOutput.map(ObjectIdentifier.init)
+  }
   /// Test-only: populate the receive-side dialling pipeline (no call/link needed),
   /// exercising the locking `prepareDiallingPipelines()` wrapper.
   func testPreparePipelines() { prepareDiallingPipelines() }

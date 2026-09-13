@@ -236,7 +236,38 @@ public final class Mixer: Source, Sink {
 
   // MARK: - Mixing loop (Python: _mixer_job)
 
+  private let jobLock = NSLock()
+  private var unsafeRunningJobs = 0
+  private var unsafePeakConcurrentJobs = 0
+
+  /// The most mix loops that have ever run at the same time.
+  ///
+  /// One, for the guard in ``mixerJob()`` to be doing its job.
+  var peakConcurrentJobs: Int {
+    jobLock.lock()
+    defer { jobLock.unlock() }
+    return unsafePeakConcurrentJobs
+  }
+
   private func mixerJob() {
+    // Python: `if self.mixer_lock.locked(): return` (`Mixer.py:105`). `stop()` only
+    // clears the run flag, so a stop immediately followed by a start—switching the
+    // call's playback device does exactly that—can spawn a second loop while the
+    // first is still inside a frame interval and has yet to re-read the flag.
+    jobLock.lock()
+    guard unsafeRunningJobs == 0 else {
+      jobLock.unlock()
+      return
+    }
+    unsafeRunningJobs += 1
+    unsafePeakConcurrentJobs = max(unsafePeakConcurrentJobs, unsafeRunningJobs)
+    jobLock.unlock()
+    defer {
+      jobLock.lock()
+      unsafeRunningJobs -= 1
+      jobLock.unlock()
+    }
+
     let frameSamples = Int(sampleRate * targetFrameMs / 1000) * channelCount
     while shouldRun {
       Thread.sleep(forTimeInterval: targetFrameMs / 1000)

@@ -131,6 +131,13 @@ public final class AGC: Filter {
   /// Gain hold time, in seconds.
   public let holdTime: Double
 
+  /// Whether the filter passes frames through untouched.
+  ///
+  /// A half-duplex call squelches the microphone rather than muting it, and the
+  /// gain control would otherwise spend the squelched stretch winding itself up
+  /// against the residual noise floor. Python: `AGC.paused` (`Filters.py:189`).
+  public var paused: Bool = false
+
   private var currentGain: Float = 1.0
   private var holdSamples: Int = 0
 
@@ -151,6 +158,8 @@ public final class AGC: Filter {
 
   /// Returns `frame` with its level driven toward the target.
   public func handleFrame(_ frame: AudioFrame) -> AudioFrame {
+    // `Filters.py:202`, ahead of the empty-frame check as upstream orders it.
+    guard !paused else { return frame }
     guard !frame.samples.isEmpty else { return frame }
 
     // Python: `target_linear`/`max_gain_linear = 10 ** (x / 10)`

@@ -27,6 +27,12 @@ public final class FilePlayer {
   /// Python: `FilePlayer(release_on_finish=False)` (commit 2730af9)
   public var releaseOnFinish: Bool
 
+  /// Gain applied to playback, in decibels.
+  ///
+  /// Python: `FilePlayer.gain` (`Players.py:28-35`), which forwards the value to
+  /// the `OpusFileSource` it holds.
+  public var gain: Float
+
   private var path: URL?
   private var device: String?
   /// Whether the file restarts when it ends.
@@ -34,14 +40,15 @@ public final class FilePlayer {
 
   /// Creates a player for `path` on `device`.
   ///
-  /// Python: `FilePlayer.__init__(path=None, device=None, loop=False, release_on_finish=False)`
+  /// Python: `FilePlayer.__init__(path, device, loop, gain, release_on_finish)`
   public init(
-    path: URL? = nil, device: String? = nil, loop: Bool = false,
+    path: URL? = nil, device: String? = nil, loop: Bool = false, gain: Float = 0.0,
     releaseOnFinish: Bool = false
   ) {
     self.path = path
     self.device = device
     self.loop = loop
+    self.gain = gain
     self.releaseOnFinish = releaseOnFinish
     if let p = path { setSource(p) }
   }
