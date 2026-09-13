@@ -33,6 +33,13 @@ public final class LineSink: LocalSink {
   /// Python: `LineSink.FRAME_TIMEOUT = 8`
   public static let frameTimeout: Int = 8
 
+  /// Device playback is routed to.
+  ///
+  /// Python: `LineSink.preferred_device`. Device selection itself belongs to the
+  /// injected ``AudioBackend``, which the host app builds for the route it wants;
+  /// this records which route the sink was asked for.
+  public let device: String?
+
   /// Whether frames are decoded on arrival.
   public var autodigest: Bool = true
   /// Whether playback runs in low-latency mode.
@@ -66,6 +73,7 @@ public final class LineSink: LocalSink {
     lowLatency: Bool = false,
     backend: (any AudioBackend)? = nil
   ) {
+    self.device = device
     super.init()
     self.autodigest = autodigest
     self.lowLatency = lowLatency

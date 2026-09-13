@@ -3,7 +3,65 @@
 All notable changes to LXSTSwift are documented here. This project follows
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [Unreleased]—LXST 0.5.3 parity
+
+Catches the port up to Python LXST 0.5.3.
+
+### Added
+
+- **Loudspeaker routing on a call**—`Telephone.enableLoudspeaker(_:)`,
+  `disableLoudspeaker(_:)`, `loudspeakerOn` and `loudspeakerDevice`. Switching
+  rebuilds the receive sink and its pipeline on the other device and restarts the
+  mixer, and does so only when the setting changed (`Telephony.py:551-559`,
+  `:676-688`). The flag clears with the mute flags when a call ends.
+- **`AGC.paused`**, with `Telephone.pauseAGC(_:)` and `resumeAGC(_:)` driven from
+  `squelchTransmit` and `unsquelchTransmit`, so a half-duplex call no longer spends
+  its squelched stretch winding the gain up against the noise floor
+  (`Filters.py:189`, `:202`; `Telephony.py:561-570`, `:777-778`).
+- **`Telephone.disableRemoteModeFollow()`**, after which a mode switch signalled by
+  the peer is ignored and the local side keeps control (`Telephony.py:591-599`).
+- **Gain on `OpusFileSource` and `FilePlayer`**, in decibels through the same
+  power-dB seam as every other gain site (`Sources.py:291-292`, `:384`;
+  `Players.py:13`, `:28-35`).
+- `LineSink.device` records the route the sink was built for. Selecting the device
+  belongs to the injected `AudioBackend`.
+
+### Fixed
+
+- **A stop immediately followed by a start could leave two mix loops running on one
+  `Mixer`.** `stop()` only clears the run flag, so the loop runs on until it next
+  reads it, while `start()` spawned a second thread; a 500-iteration restart storm
+  reached 501 concurrent loops. `mixerJob` now returns when a loop is already
+  running, as `if self.mixer_lock.locked(): return` does upstream (`Mixer.py:105`).
+  Switching a call's playback device is exactly that stop-then-start.
+
+### Audited, not ported
+
+- `LineSink.streaming`, `wait_for_frames()` and the underrun sleep (`Sinks.py:148`,
+  `:190-195`, `:229`), and `Telephone.__update_output_buffer_targets`
+  (`Telephony.py:660-669`): there is no frame deque or playback loop here to starve.
+  `LineSink.handleFrame` hands each frame straight to an `AVAudioPlayerNode`, which
+  does the buffering.
+- Moving `codec.encode` inside the `can_receive` guard, under a try/except
+  (`Sources.py:271-277`, `:393-398`): the encode already sits inside the sink, in
+  `Packetizer.handleFrame`'s `do`/`catch`, and `Mixer.handleFrame` enforces the same
+  per-source limit that `can_receive` reports.
+- `Pipeline`'s added `source._sink = sink` for a `Mixer` source (`Pipeline.py:29`):
+  the setter it bypasses assigns that same field, and the line above it already ran
+  `self.source.sink = sink`. Pinned by a test.
+- The `EchoSuppressor` try/except (`Filters.py:874-876`) and the `RNS.sl()` log
+  gates: `log10` cannot throw in Swift, and `Reticulum.log` already checks the level.
+- The 0.5 s ringtone debounce (`Telephony.py:701`) and
+  `Platforms/linux/soundcard.py`: this port has no ringer pipeline and no Linux
+  backend.
+
+### Known limitation
+
+`FilePlayer` holds `gain`, `path`, `loop` and the running flag, but builds no
+pipeline, so nothing reads the gain. Python's `FilePlayer` wires
+`OpusFileSource` → `Raw` → `Loopback` → `LineSink` (`Players.py:22-24`, `:75`).
+
+## [1.3.0]—sample-rate handling and the dB gain convention
 
 ### Fixed
 

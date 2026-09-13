@@ -29,22 +29,55 @@ public final class OpusFileSource: LocalSource {
   /// Whether frames are emitted in real time.
   public let timed: Bool
 
+  /// Gain applied to decoded audio, in decibels.
+  ///
+  /// Settable mid-playback, so both it and the multiplier derived from it are
+  /// read on the ingest thread under `gainLock`.
+  /// Python: `OpusFileSource.gain` (`Sources.py:326-332`).
+  public var gain: Float {
+    get {
+      gainLock.lock()
+      defer { gainLock.unlock() }
+      return unsafeGain
+    }
+    set {
+      gainLock.lock()
+      unsafeGain = newValue
+      unsafeLinearGain = Self.linearGain(newValue)
+      gainLock.unlock()
+    }
+  }
+  private let gainLock = NSLock()
+  private var unsafeGain: Float
+  private var unsafeLinearGain: Float
+
+  /// Converts a decibel gain to the linear multiplier applied to samples.
+  ///
+  /// Python: `@staticmethod linear_gain(gain_db): return 10**(gain_db/10)`
+  /// (`Sources.py:291-292`—the power-dB seam, see DBGain).
+  public static func linearGain(_ gainDB: Float) -> Float {
+    DBGain.linear(gainDB)
+  }
+
   private var ingestThread: Thread?
 
   /// Creates a source reading Opus from `filePath`.
   ///
-  /// Python: `OpusFileSource.__init__(file_path, target_frame_ms, loop, codec, sink, timed)`
+  /// Python: `OpusFileSource.__init__(file_path, target_frame_ms, loop, codec, sink, timed, gain)`
   public init(
     filePath: URL,
     targetFrameMs: Double = OpusFileSource.defaultFrameMs,
     loop: Bool = false,
     codec: (any Codec)? = nil,
     sink: (any Sink)? = nil,
-    timed: Bool = false
+    timed: Bool = false,
+    gain: Float = 0.0
   ) {
     self.filePath = filePath
     self.loop = loop
     self.timed = timed
+    self.unsafeGain = gain
+    self.unsafeLinearGain = Self.linearGain(gain)
     super.init()
     self.targetFrameMs = targetFrameMs
     self.codec = codec
@@ -163,8 +196,14 @@ public final class OpusFileSource: LocalSource {
       }
       guard n > 0 else { continue }
 
+      var samples = Array(decoded.prefix(Int(n) * Int(ch)))
+      // Python: `if self.__gain != 1.0: frame_samples *= self.__gain` (`Sources.py:384`).
+      gainLock.lock()
+      let g = unsafeLinearGain
+      gainLock.unlock()
+      if g != 1.0 { samples = samples.map { $0 * g } }
       let frame = AudioFrame(
-        samples: Array(decoded.prefix(Int(n) * Int(ch))),
+        samples: samples,
         channelCount: Int(ch),
         sampleRate: file.sampleRate
       )
